@@ -19,7 +19,6 @@ import (
 	"fmt"
 	"go/build"
 	"io"
-	"log"
 	"os"
 	"path/filepath"
 	"strings"
@@ -130,8 +129,7 @@ func Load(_ context.Context, path string, opts *deps.Options) ([]*deps.Repo, err
 		for dir := range vfs.dirs {
 			pkg, err := bc.ImportDir(dir, 0)
 			if err != nil {
-				log.Printf("[skipping] %v", err)
-				continue
+				continue // no importable go package here; skip it
 			}
 			rec := &deps.Package{
 				Name:       pkg.Name,
