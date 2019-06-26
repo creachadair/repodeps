@@ -3,6 +3,7 @@
 package main
 
 import (
+	"bufio"
 	"context"
 	"encoding/binary"
 	"encoding/json"
@@ -23,6 +24,7 @@ import (
 )
 
 var (
+	doReadInputs  = flag.Bool("stdin", false, "Read input filenames from stdin")
 	doSourceHash  = flag.Bool("sourcehash", false, "Record the names and digests of source files")
 	doSeparateOut = flag.Bool("separate", false, "Write output to a file per input")
 	doBinary      = flag.Bool("binary", false, "Write output as binary rather than JSON")
@@ -36,7 +38,7 @@ var (
 
 func main() {
 	flag.Parse()
-	if flag.NArg() == 0 {
+	if flag.NArg() == 0 && !*doReadInputs {
 		log.Fatalf("Usage: %s <repo-dir> ...", filepath.Base(os.Args[0]))
 	}
 	ctx, cancel := context.WithCancel(context.Background())
@@ -50,7 +52,7 @@ func main() {
 	// Each argument is either a directory path or a .siva file path.
 	// Currently only rooted siva files are supported.
 	start := time.Now()
-	for _, dir := range flag.Args() {
+	for dir := range inputs() {
 		dir := dir
 		path, err := filepath.Abs(dir)
 		if err != nil {
@@ -105,4 +107,25 @@ func encodeRepos(repos []*deps.Repo) ([]byte, error) {
 		return proto.Marshal(&deps.Deps{Repositories: repos})
 	}
 	return json.Marshal(repos)
+}
+
+// inputs returns a channel that delivers the paths of inputs and is closed
+// when no more are available.
+func inputs() <-chan string {
+	ch := make(chan string, len(flag.Args()))
+	for _, arg := range flag.Args() {
+		ch <- arg
+	}
+	if *doReadInputs {
+		s := bufio.NewScanner(os.Stdin)
+		go func() {
+			defer close(ch)
+			for s.Scan() {
+				ch <- s.Text()
+			}
+		}()
+	} else {
+		close(ch)
+	}
+	return ch
 }
