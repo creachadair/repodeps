@@ -102,7 +102,7 @@ func Load(_ context.Context, path string, opts *deps.Options) ([]*deps.Repo, err
 		}
 
 		// Record the directory structure to support the build.Context VFS.
-		vfs := newVFS()
+		vfs := newVFS(here.Remotes[0].URL)
 		if err := tree.Files().ForEach(func(f *object.File) error {
 			if !deps.IsVendor(f.Name) {
 				vfs.add(f)
@@ -163,28 +163,37 @@ func (vfile) Sys() interface{}     { return nil }
 // file listing in a Git repository, and exports accessors to support the VFS
 // used by the go/build package.
 type vfs struct {
+	// To get the right import path we have to convince the build package that
+	// the files are stored in a well-known relationship to the GOPATH.  We do
+	// this by prefixing each path with "/src/<url>", e.g., if the URL for the
+	// remote is github.com/foo/bar, this is /src/github.com/foo/bar.  During
+	// import, we use "/" as the GOPATH.
+	prefix string
+
 	files map[string]vfile    // :: path → file
 	dirs  map[string][]string // :: path → [name]
 }
 
-func newVFS() *vfs {
+func newVFS(root string) *vfs {
 	return &vfs{
-		files: make(map[string]vfile),
-		dirs:  make(map[string][]string),
+		prefix: filepath.Join("/src", root),
+		files:  make(map[string]vfile),
+		dirs:   make(map[string][]string),
 	}
 }
 
 func (v *vfs) add(f *object.File) {
-	dir, name := "/", f.Name
+	dir, name := v.prefix, f.Name
 	if i := strings.LastIndex(name, "/"); i >= 0 {
-		dir, name = "/"+name[:i], name[i+1:]
+		dir, name = filepath.Join(v.prefix, name[:i]), name[i+1:]
 	}
-	v.files["/"+f.Name] = vfile{f}
+	v.files[filepath.Join(v.prefix, f.Name)] = vfile{f}
 	v.dirs[dir] = append(v.dirs[dir], name)
 }
 
 func (v *vfs) buildContext() build.Context {
 	ctx := build.Default
+	ctx.GOPATH = "/"
 	ctx.IsDir = v.isDir
 	ctx.ReadDir = v.readDir
 	ctx.OpenFile = v.open
@@ -220,9 +229,11 @@ func (v *vfs) isDir(path string) bool {
 }
 
 func fixURL(s string) string {
+	const urlKey = "://"
+
 	s = strings.TrimSuffix(s, ".git")
-	if trim := strings.TrimPrefix(s, "git://"); trim != s {
-		return "https://" + trim
+	if i := strings.Index(s, urlKey); i >= 0 {
+		s = s[i+len(urlKey):]
 	}
 	return s
 }
