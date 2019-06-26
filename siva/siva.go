@@ -57,7 +57,7 @@ func Load(_ context.Context, path string, opts *deps.Options) ([]*deps.Repo, err
 			From: path,
 			Remotes: []*deps.Remote{{
 				Name: rem.Name,
-				URL:  fixURL(rem.URLs[0]),
+				Url:  fixURL(rem.URLs[0]),
 			}},
 		}
 		repos[rem.Name] = r
@@ -102,7 +102,7 @@ func Load(_ context.Context, path string, opts *deps.Options) ([]*deps.Repo, err
 		}
 
 		// Record the directory structure to support the build.Context VFS.
-		vfs := newVFS(here.Remotes[0].URL)
+		vfs := newVFS(here.Remotes[0].Url)
 		if err := tree.Files().ForEach(func(f *object.File) error {
 			if !deps.IsVendor(f.Name) {
 				vfs.add(f)
@@ -113,8 +113,8 @@ func Load(_ context.Context, path string, opts *deps.Options) ([]*deps.Repo, err
 		}
 
 		bc := vfs.buildContext()
-		for path := range vfs.dirs {
-			pkg, err := bc.ImportDir(path, 0)
+		for dir := range vfs.dirs {
+			pkg, err := bc.ImportDir(dir, 0)
 			if err != nil {
 				log.Printf("[skipping] %v", err)
 				continue
@@ -126,14 +126,14 @@ func Load(_ context.Context, path string, opts *deps.Options) ([]*deps.Repo, err
 			}
 			if opts.HashSourceFiles {
 				for _, name := range pkg.GoFiles {
-					path := filepath.Join(path, name)
-					r, err := vfs.open(path)
+					fpath := filepath.Join(dir, name)
+					r, err := vfs.open(fpath)
 					if err != nil {
 						return fmt.Errorf("reading file: %v", err)
 					}
-					rec.Source = append(rec.Source, &deps.File{
-						Name:   name,
-						Digest: deps.Hash(r),
+					rec.Sources = append(rec.Sources, &deps.File{
+						RepoPath: vfs.rel(here.Remotes[0].Url, fpath),
+						Digest:   deps.Hash(r),
 					})
 					r.Close()
 				}
@@ -180,6 +180,11 @@ func newVFS(root string) *vfs {
 		files:  make(map[string]vfile),
 		dirs:   make(map[string][]string),
 	}
+}
+
+func (v *vfs) rel(url, path string) string {
+	rel, _ := filepath.Rel(filepath.Join("/src", url), path)
+	return rel
 }
 
 func (v *vfs) add(f *object.File) {

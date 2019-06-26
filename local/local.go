@@ -52,14 +52,15 @@ func Load(ctx context.Context, dir string, opts *deps.Options) ([]*deps.Repo, er
 		}
 		if opts.HashSourceFiles {
 			for _, name := range pkg.GoFiles {
-				path := filepath.Join(path, name)
-				hash, err := hashFile(path)
+				fpath := filepath.Join(path, name)
+				hash, err := hashFile(fpath)
 				if err != nil {
 					log.Printf("Hashing %q failed: %v", path, err)
 				}
-				rec.Source = append(rec.Source, &deps.File{
-					Name:   name,
-					Digest: hash,
+				rel, _ := filepath.Rel(dir, fpath)
+				rec.Sources = append(rec.Sources, &deps.File{
+					RepoPath: rel,
+					Digest:   hash,
 				})
 			}
 		}
@@ -86,7 +87,7 @@ func gitRemotes(ctx context.Context, dir string) ([]*deps.Remote, error) {
 		if err != nil {
 			return nil, fmt.Errorf("getting remote URL for %q: %v", name, err)
 		}
-		rs = append(rs, &deps.Remote{Name: name, URL: parseRemote(bits)})
+		rs = append(rs, &deps.Remote{Name: name, Url: parseRemote(bits)})
 	}
 	return rs, nil
 }
