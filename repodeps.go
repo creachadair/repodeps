@@ -25,6 +25,12 @@ func main() {
 		log.Fatalf("Usage: %s <repo-dir> ...", filepath.Base(os.Args[0]))
 	}
 	ctx := context.Background()
+	opts := &deps.Options{
+		HashSourceFiles: *doSourceHash,
+	}
+
+	// Each argument is either a directory path or a .siva file path.
+	// Currently only rooted siva files are supported.
 	for _, dir := range flag.Args() {
 		path, err := filepath.Abs(dir)
 		if err != nil {
@@ -34,9 +40,9 @@ func main() {
 
 		var repos []*deps.Repo
 		if filepath.Ext(path) == ".siva" {
-			repos, err = siva.Load(ctx, path, &deps.Options{HashSourceFiles: *doSourceHash})
+			repos, err = siva.Load(ctx, path, opts)
 		} else {
-			repos, err = local.Load(ctx, path, &deps.Options{HashSourceFiles: *doSourceHash})
+			repos, err = local.Load(ctx, path, opts)
 		}
 		if err != nil {
 			log.Printf("Skipped %q:\n  %v", dir, err)
