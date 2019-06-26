@@ -4,6 +4,7 @@ package main
 
 import (
 	"context"
+	"encoding/binary"
 	"encoding/json"
 	"flag"
 	"io"
@@ -88,6 +89,11 @@ func writeRepos(ctx context.Context, path string, repos []*deps.Repo) error {
 	}
 	out.Lock()
 	defer out.Unlock()
+	if *doBinary {
+		var buf [10]byte
+		n := binary.PutUvarint(buf[:], uint64(len(bits)))
+		out.Write(buf[:n])
+	}
 	_, err = out.Write(bits)
 	return err
 }
