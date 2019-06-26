@@ -92,7 +92,9 @@ func writeRepos(ctx context.Context, path string, repos []*deps.Repo) error {
 	if *doBinary {
 		var buf [10]byte
 		n := binary.PutUvarint(buf[:], uint64(len(bits)))
-		out.Write(buf[:n])
+		bits = append(buf[:n], bits...)
+	} else {
+		bits = append(bits, '\n')
 	}
 	_, err = out.Write(bits)
 	return err
