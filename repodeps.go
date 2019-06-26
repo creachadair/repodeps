@@ -105,8 +105,7 @@ func writeRepos(ctx context.Context, path string, repos []*deps.Repo) error {
 	if *doSeparateOut {
 		return atomicfile.WriteData(path+".deps", bits, 0644)
 	}
-	out.Lock()
-	defer out.Unlock()
+
 	if *doBinary {
 		var buf [10]byte
 		n := binary.PutUvarint(buf[:], uint64(len(bits)))
@@ -114,6 +113,8 @@ func writeRepos(ctx context.Context, path string, repos []*deps.Repo) error {
 	} else {
 		bits = append(bits, '\n')
 	}
+	out.Lock()
+	defer out.Unlock()
 	_, err = out.Write(bits)
 	return err
 }
