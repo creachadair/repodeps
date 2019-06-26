@@ -95,9 +95,9 @@ func parseRemote(bits []byte) string {
 	url := strings.TrimSpace(string(bits))
 	if trim := strings.TrimPrefix(url, "git@"); trim != url {
 		parts := strings.SplitN(trim, ":", 2)
-		url = "https://" + parts[0] + "/"
+		url = parts[0]
 		if len(parts) == 2 {
-			url += parts[1]
+			url += "/" + parts[1]
 		}
 	}
 	return strings.TrimSuffix(url, ".git")
