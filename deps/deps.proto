@@ -1,0 +1,36 @@
+// Protocol buffer definitions for Go package dependencies.
+
+syntax = "proto3";
+
+package deps;
+
+message Repo {
+  string from = 1;
+  repeated Remote remotes = 2;
+  repeated Package packages = 3;
+
+  // next id: 4
+}
+
+message Remote {
+  string name = 1;
+  string url = 2;
+
+  // next id: 3
+}
+
+message Package {
+  string name = 1;
+  string import_path = 2;
+  repeated string imports = 3;
+  repeated File sources = 4;
+
+  // next id: 5
+}
+
+message File {
+  string repo_path = 1;
+  bytes digest = 2;
+
+  // next id: 3
+}
