@@ -57,8 +57,7 @@ func Load(ctx context.Context, dir string, opts *deps.Options) ([]*deps.Repo, er
 		}
 		pkg, err := build.Default.ImportDir(path, 0)
 		if err != nil {
-			log.Printf("[skipping] %v", err)
-			return nil
+			return nil // no importable go package here; skip it
 		}
 		rec := &deps.Package{
 			Name:       pkg.Name,
