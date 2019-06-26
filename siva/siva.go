@@ -56,7 +56,7 @@ func Load(_ context.Context, path string, opts *deps.Options) ([]*deps.Repo, err
 		r := &deps.Repo{
 			Remotes: []*deps.Remote{{
 				Name: rem.Name,
-				URL:  rem.URLs[0],
+				URL:  fixURL(rem.URLs[0]),
 			}},
 		}
 		repos[rem.Name] = r
@@ -216,4 +216,12 @@ func (v *vfs) readDir(path string) ([]os.FileInfo, error) {
 func (v *vfs) isDir(path string) bool {
 	_, ok := v.dirs[path]
 	return ok
+}
+
+func fixURL(s string) string {
+	s = strings.TrimSuffix(s, ".git")
+	if trim := strings.TrimPrefix(s, "git://"); trim != s {
+		return "https://" + trim
+	}
+	return s
 }
