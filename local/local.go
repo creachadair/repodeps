@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// Package local analyzes Go dependencies for local Git repositories.
 package local
 
 import (
