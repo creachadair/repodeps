@@ -65,6 +65,7 @@ func main() {
 
 	// Each argument is either a directory path or a .siva file path.
 	// Currently only rooted siva files are supported.
+	var numRepos int
 	start := time.Now()
 	for dir := range inputs() {
 		dir := dir
@@ -72,6 +73,7 @@ func main() {
 		if err != nil {
 			log.Fatalf("Resolving path: %v", err)
 		}
+		numRepos++
 		run(func() error {
 			log.Printf("Processing %q...", dir)
 
@@ -92,7 +94,7 @@ func main() {
 	if err := g.Wait(); err != nil {
 		log.Fatalf("Analysis failed: %v", err)
 	}
-	log.Printf("Analysis complete for %d inputs [%v elapsed]", flag.NArg(), time.Since(start))
+	log.Printf("Analysis complete for %d inputs [%v elapsed]", numRepos, time.Since(start))
 }
 
 func writeRepos(ctx context.Context, path string, repos []*deps.Repo) error {
