@@ -28,7 +28,7 @@ func Load(ctx context.Context, dir string, opts *deps.Options) ([]*deps.Repo, er
 		return nil, errors.New("no remotes defined")
 	}
 
-	repo := &deps.Repo{Remotes: remotes}
+	repo := &deps.Repo{From: dir, Remotes: remotes}
 
 	// Find the import paths of the packages defined by this repository, and the
 	// import paths of their dependencies. This is basically "go list".

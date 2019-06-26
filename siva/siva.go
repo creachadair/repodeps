@@ -54,6 +54,7 @@ func Load(_ context.Context, path string, opts *deps.Options) ([]*deps.Repo, err
 	repos := make(map[string]*deps.Repo)
 	for _, rem := range cfg.Remotes {
 		r := &deps.Repo{
+			From: path,
 			Remotes: []*deps.Remote{{
 				Name: rem.Name,
 				URL:  fixURL(rem.URLs[0]),
