@@ -4,6 +4,8 @@ syntax = "proto3";
 
 package deps;
 
+message Deps { repeated Repo repositories = 1; }
+
 message Repo {
   string from = 1;
   repeated Remote remotes = 2;
