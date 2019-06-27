@@ -1,0 +1,17 @@
+// Protocol definitions for dependency graph storage.
+
+syntax = "proto3";
+
+package graph;
+
+// A Row is a single row of the dependency graph adjacency list.
+message Row {
+  // The simple name and import path of the package whose row this is.
+  string name = 1;
+  string import_path = 2;
+
+  // The import paths of the direct dependencies of source.
+  repeated string directs = 3;
+
+  // next id: 4
+}
