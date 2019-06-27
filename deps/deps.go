@@ -37,5 +37,5 @@ func Hash(r io.Reader) []byte {
 
 // IsVendor reports whether the specified path is in a vendor/ directory.
 func IsVendor(path string) bool {
-	return strings.Contains(path, "/vendor/") || strings.HasPrefix(path, "vendor/")
+	return strings.HasPrefix(path, "vendor/") || strings.Contains(path, "/vendor/")
 }
