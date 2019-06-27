@@ -4,34 +4,47 @@ syntax = "proto3";
 
 package deps;
 
+// Deps records dependency information for a collection of repositories.
 message Deps { repeated Repo repositories = 1; }
 
+// Repo records information about a single repository.
 message Repo {
+  // The location where this repository was read from for diagnostic purposes;
+  // usually the path of either a directory (for a local repo) or an archive
+  // file.
   string from = 1;
+
+  // The remotes defined by this repository.
   repeated Remote remotes = 2;
+
+  // The Go source packages defined inside this repository.
   repeated Package packages = 3;
 
   // next id: 4
 }
 
+// A Remote records information about a Git remote.
 message Remote {
-  string name = 1;
-  string url = 2;
+  string name = 1; // the name of the remote ref
+  string url = 2;  // the remote fetch URL
 
   // next id: 3
 }
 
 message Package {
-  string name = 1;
-  string import_path = 2;
-  repeated string imports = 3;
-  repeated File sources = 4;
+  string name = 1;        // the simple name of the package (foo)
+  string import_path = 2; // the import path of the package (github.com/bar/foo)
+  repeated string imports = 3; // import paths of direct dependencies
+  repeated File sources = 4;   // the Go source files for the package
 
   // next id: 5
 }
 
 message File {
+  // The path of the file relative to the enclosing repository root.
   string repo_path = 1;
+
+  // A hash of the content of the file (sha256).
   bytes digest = 2;
 
   // next id: 3

@@ -20,6 +20,7 @@ var _ = math.Inf
 // proto package needs to be updated.
 const _ = proto.ProtoPackageIsVersion3 // please upgrade the proto package
 
+// Deps records dependency information for a collection of repositories.
 type Deps struct {
 	Repositories         []*Repo  `protobuf:"bytes,1,rep,name=repositories,proto3" json:"repositories,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
@@ -59,9 +60,15 @@ func (m *Deps) GetRepositories() []*Repo {
 	return nil
 }
 
+// Repo records information about a single repository.
 type Repo struct {
-	From                 string     `protobuf:"bytes,1,opt,name=from,proto3" json:"from,omitempty"`
-	Remotes              []*Remote  `protobuf:"bytes,2,rep,name=remotes,proto3" json:"remotes,omitempty"`
+	// The location where this repository was read from for diagnostic purposes;
+	// usually the path of either a directory (for a local repo) or an archive
+	// file.
+	From string `protobuf:"bytes,1,opt,name=from,proto3" json:"from,omitempty"`
+	// The remotes defined by this repository.
+	Remotes []*Remote `protobuf:"bytes,2,rep,name=remotes,proto3" json:"remotes,omitempty"`
+	// The Go source packages defined inside this repository.
 	Packages             []*Package `protobuf:"bytes,3,rep,name=packages,proto3" json:"packages,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}   `json:"-"`
 	XXX_unrecognized     []byte     `json:"-"`
@@ -114,6 +121,7 @@ func (m *Repo) GetPackages() []*Package {
 	return nil
 }
 
+// A Remote records information about a Git remote.
 type Remote struct {
 	Name                 string   `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
 	Url                  string   `protobuf:"bytes,2,opt,name=url,proto3" json:"url,omitempty"`
@@ -225,7 +233,9 @@ func (m *Package) GetSources() []*File {
 }
 
 type File struct {
-	RepoPath             string   `protobuf:"bytes,1,opt,name=repo_path,json=repoPath,proto3" json:"repo_path,omitempty"`
+	// The path of the file relative to the enclosing repository root.
+	RepoPath string `protobuf:"bytes,1,opt,name=repo_path,json=repoPath,proto3" json:"repo_path,omitempty"`
+	// A hash of the content of the file (sha256).
 	Digest               []byte   `protobuf:"bytes,2,opt,name=digest,proto3" json:"digest,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
