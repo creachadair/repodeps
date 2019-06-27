@@ -5,6 +5,7 @@ import (
 	"context"
 
 	"github.com/creachadair/repodeps/deps"
+	"github.com/golang/protobuf/proto"
 )
 
 //go:generate protoc --go_out=. graph.proto
@@ -38,8 +39,8 @@ func (g *Graph) Imports(ctx context.Context, pkg string) ([]string, error) {
 // Storage represents the interface to persistent storage.
 type Storage interface {
 	// Load reads the data for the specified key and unmarshals it into val.
-	Load(ctx context.Context, key string, val interface{}) error
+	Load(ctx context.Context, key string, val proto.Message) error
 
 	// Store marshals the data from value and stores it under key.
-	Store(ctx context.Context, key string, val interface{}) error
+	Store(ctx context.Context, key string, val proto.Message) error
 }
