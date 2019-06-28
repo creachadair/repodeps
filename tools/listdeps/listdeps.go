@@ -3,10 +3,10 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"flag"
-	"fmt"
 	"log"
-	"strings"
+	"os"
 
 	"github.com/creachadair/repodeps/graph"
 	"github.com/creachadair/repodeps/tools"
@@ -25,10 +25,10 @@ func main() {
 		pfxs = append(pfxs, "") // list all
 	}
 	ctx := context.Background()
+	enc := json.NewEncoder(os.Stdout)
 	for _, pfx := range pfxs {
 		if err := g.Scan(ctx, pfx, func(row *graph.Row) error {
-			fmt.Printf("%s,%s\n", row.ImportPath, strings.Join(row.Directs, ","))
-			return nil
+			return enc.Encode(row)
 		}); err != nil {
 			log.Fatalf("Scan failed: %v", err)
 		}
