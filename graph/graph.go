@@ -10,6 +10,10 @@ import (
 
 //go:generate protoc --go_out=. graph.proto
 
+// TODO: Identifiable errors.
+// TODO: Reverse index.
+// TODO: RDF output.
+
 // A Graph is an interface to a package dependency graph.
 type Graph struct {
 	st Storage
@@ -27,11 +31,20 @@ func (g *Graph) Add(ctx context.Context, pkg *deps.Package) error {
 	})
 }
 
-// Imports returns the import paths if the direct dependencies of pkg.
-func (g *Graph) Imports(ctx context.Context, pkg string) ([]string, error) {
+// Row loads the complete row for the specified import path.
+func (g *Graph) Row(ctx context.Context, pkg string) (*Row, error) {
 	var row Row
 	if err := g.st.Load(ctx, pkg, &row); err != nil {
-		return nil, err // TODO: distinguish pkg not found
+		return nil, err
+	}
+	return &row, nil
+}
+
+// Imports returns the import paths if the direct dependencies of pkg.
+func (g *Graph) Imports(ctx context.Context, pkg string) ([]string, error) {
+	row, err := g.Row(ctx, pkg)
+	if err != nil {
+		return nil, err
 	}
 	return row.Directs, nil
 }
