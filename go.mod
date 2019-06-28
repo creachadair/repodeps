@@ -4,7 +4,7 @@ go 1.12
 
 require (
 	github.com/creachadair/atomicfile v0.2.0
-	github.com/creachadair/badgerstore v0.0.0-20190627151828-4a8c2e9988f0
+	github.com/creachadair/badgerstore v0.0.1
 	github.com/creachadair/ffs v0.0.0-20190622160218-fd16ac7ed292
 	github.com/creachadair/fileinput v0.0.2
 	github.com/creachadair/taskgroup v0.1.0
