@@ -3,6 +3,7 @@ package storage
 
 import (
 	"context"
+	"strings"
 
 	"github.com/creachadair/ffs/blob"
 	"github.com/creachadair/repodeps/graph"
@@ -35,5 +36,17 @@ func (s storage) Store(ctx context.Context, key string, val proto.Message) error
 		Key:     key,
 		Data:    bits,
 		Replace: true,
+	})
+}
+
+// Scan implements part of the graph.Storage interface.
+func (s storage) Scan(ctx context.Context, prefix string, f func(string) error) error {
+	return s.bs.List(ctx, prefix, func(key string) error {
+		if !strings.HasPrefix(key, prefix) {
+			return blob.ErrStopListing
+		} else if err := f(key); err != nil {
+			return err
+		}
+		return nil
 	})
 }
