@@ -8,28 +8,16 @@ import (
 	"log"
 	"os"
 
-	"github.com/creachadair/badgerstore"
-	"github.com/creachadair/repodeps/graph"
-	"github.com/creachadair/repodeps/storage"
-)
-
-var (
-	storePath = flag.String("store", "", "Storage path (required)")
+	"github.com/creachadair/repodeps/tools"
 )
 
 func main() {
 	flag.Parse()
-	switch {
-	case *storePath == "":
-		log.Fatal("You must provide a non-empty -store path")
-	}
-
-	s, err := badgerstore.NewPath(*storePath)
+	g, c, err := tools.OpenGraph()
 	if err != nil {
-		log.Fatalf("Opening storage: %v", err)
+		log.Fatalf("Opening graph: %v", err)
 	}
-	defer s.Close()
-	g := graph.New(storage.NewBlob(s))
+	defer c.Close()
 
 	ctx := context.Background()
 	enc := json.NewEncoder(os.Stdout)

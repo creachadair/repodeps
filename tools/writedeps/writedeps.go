@@ -10,29 +10,18 @@ import (
 	"log"
 	"os"
 
-	"github.com/creachadair/badgerstore"
 	"github.com/creachadair/fileinput"
 	"github.com/creachadair/repodeps/deps"
-	"github.com/creachadair/repodeps/graph"
-	"github.com/creachadair/repodeps/storage"
-)
-
-var (
-	storePath = flag.String("store", "", "Storage path (required)")
+	"github.com/creachadair/repodeps/tools"
 )
 
 func main() {
 	flag.Parse()
-	switch {
-	case *storePath == "":
-		log.Fatal("You must provide a non-empty -store path")
-	}
 
-	s, err := badgerstore.NewPath(*storePath)
+	g, c, err := tools.OpenGraph()
 	if err != nil {
-		log.Fatalf("Opening storage: %v", err)
+		log.Fatalf("Opening graph: %v", err)
 	}
-	g := graph.New(storage.NewBlob(s))
 
 	ctx := context.Background()
 	rc := fileinput.CatOrFile(ctx, flag.Args(), os.Stdin)
@@ -53,7 +42,7 @@ func main() {
 		}
 	}
 
-	if err := s.Close(); err != nil {
+	if err := c.Close(); err != nil {
 		log.Fatalf("Closing storage: %v", err)
 	}
 }
