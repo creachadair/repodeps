@@ -69,6 +69,20 @@ func (g *Graph) Imports(ctx context.Context, pkg string) ([]string, error) {
 	return row.Directs, nil
 }
 
+// Importers calls f with the import path of each package that directly depends
+// on pkg. The order of results is unspecified.
+func (g *Graph) Importers(ctx context.Context, pkg string, f func(string)) error {
+	return g.Scan(ctx, "", func(row *Row) error {
+		for _, elt := range row.Directs {
+			if elt == pkg {
+				f(row.ImportPath)
+				break
+			}
+		}
+		return nil
+	})
+}
+
 // Storage represents the interface to persistent storage.
 type Storage interface {
 	// Load reads the data for the specified key and unmarshals it into val.
