@@ -3,13 +3,15 @@
 package main
 
 import (
+	"encoding/json"
 	"encoding/xml"
 	"errors"
 	"flag"
-	"fmt"
 	"io"
 	"log"
 	"net/http"
+	"os"
+	"sort"
 	"strings"
 
 	"github.com/creachadair/repodeps/tools"
@@ -20,15 +22,15 @@ var doReadStdin = flag.Bool("stdin", false, "Read import paths from stdin")
 func main() {
 	flag.Parse()
 
-	pfx := make(map[string]string) // :: prefix → url
+	repos := make(map[string]*bundle)
 
 nextPath:
 	for ip := range tools.Inputs(*doReadStdin) {
 		// Check whether we already have a prefix for this import path, and skip
 		// a lookup in that case.
-		for p, url := range pfx {
-			if strings.HasPrefix(ip, p) {
-				fmt.Printf("%s\t%s\t%s\n", ip, p, url)
+		for pfx, b := range repos {
+			if strings.HasPrefix(ip, pfx) {
+				b.ImportPaths = append(b.ImportPaths, ip)
 				continue nextPath
 			}
 		}
@@ -43,14 +45,33 @@ nextPath:
 			log.Printf("Resolving %q: not found", ip)
 			continue
 		}
-		pfx[imps[0].Prefix] = imps[0].Repo // cache this prefix
-		fmt.Printf("%s\t%s\t%s\n", ip, imps[0].Prefix, imps[0].Repo)
+		repos[imps[0].Prefix] = &bundle{
+			Repo:        imps[0].Repo,
+			Prefix:      imps[0].Prefix,
+			ImportPaths: []string{ip},
+		}
 	}
+
+	enc := json.NewEncoder(os.Stdout)
+	for _, b := range repos {
+		sort.Strings(b.ImportPaths)
+		if err := enc.Encode(b); err != nil {
+			log.Fatalf("Encoding failed: %v", err)
+		}
+	}
+}
+
+type bundle struct {
+	Repo        string   `json:"repo"`
+	Prefix      string   `json:"prefix"`
+	ImportPaths []string `json:"importPaths,omitempty"`
 }
 
 // resolveImportRepo attempts to resolve the URL of the specified import path
 // using the HTTP metadata protocol used by "go get". Unlike "go get", this
 // resolver only considers Git targets.
+//
+// TODO: Handle bitbucket.org, which doesn't answer HTTP correctly but works.
 func resolveImportRepo(ipath string) ([]metaImport, error) {
 	url := "https://" + ipath + "?go-get=1"
 	rsp, err := http.Get(url)
