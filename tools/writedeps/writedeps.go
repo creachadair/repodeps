@@ -17,6 +17,7 @@
 package main
 
 import (
+	"bufio"
 	"context"
 	"encoding/json"
 	"flag"
@@ -42,7 +43,7 @@ func main() {
 	ctx := context.Background()
 	rc := fileinput.CatOrFile(ctx, flag.Args(), os.Stdin)
 	defer rc.Close()
-	dec := json.NewDecoder(rc)
+	dec := json.NewDecoder(bufio.NewReader(rc))
 	for dec.More() {
 		var msg []*deps.Repo
 		if err := dec.Decode(&msg); err != nil {
