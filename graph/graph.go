@@ -12,7 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package graph defines a storage format for a package dependency graph.
+// Package graph defines a storage format for a simple package dependency
+// graph. Nodes in the graph are named packages, and edges record direct
+// forward dependencies between nodes.
 package graph
 
 import (

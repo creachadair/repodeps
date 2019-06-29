@@ -1,4 +1,4 @@
-// Protocol buffer definitions for Go package dependencies.
+// Protocol buffer definitions for recording package dependencies.
 
 syntax = "proto3";
 
@@ -17,7 +17,7 @@ message Repo {
   // The remotes defined by this repository.
   repeated Remote remotes = 2;
 
-  // The Go source packages defined inside this repository.
+  // The source packages defined inside this repository.
   repeated Package packages = 3;
 
   // next id: 4
@@ -35,7 +35,7 @@ message Package {
   string name = 1;        // the simple name of the package (foo)
   string import_path = 2; // the import path of the package (github.com/bar/foo)
   repeated string imports = 3; // import paths of direct dependencies
-  repeated File sources = 4;   // the Go source files for the package
+  repeated File sources = 4;   // the source files comprising the package
 
   // next id: 5
 }

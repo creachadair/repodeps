@@ -68,7 +68,7 @@ type Repo struct {
 	From string `protobuf:"bytes,1,opt,name=from,proto3" json:"from,omitempty"`
 	// The remotes defined by this repository.
 	Remotes []*Remote `protobuf:"bytes,2,rep,name=remotes,proto3" json:"remotes,omitempty"`
-	// The Go source packages defined inside this repository.
+	// The source packages defined inside this repository.
 	Packages             []*Package `protobuf:"bytes,3,rep,name=packages,proto3" json:"packages,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}   `json:"-"`
 	XXX_unrecognized     []byte     `json:"-"`

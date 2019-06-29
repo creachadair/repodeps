@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// Package deps defines data structures and functions for recording the
+// dependencies between packages.
 package deps
 
 import (
