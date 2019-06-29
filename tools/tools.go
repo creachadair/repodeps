@@ -28,12 +28,27 @@ import (
 // OpenGraph opens the graph indicated by the -store flag.
 // The caller must ensure the closer is closed.
 func OpenGraph(path string) (*graph.Graph, io.Closer, error) {
-	if path == "" {
-		return nil, nil, errors.New("no -store path was provided")
-	}
 	s, err := badgerstore.NewPath(path)
 	if err != nil {
 		return nil, nil, fmt.Errorf("opening storage: %v", err)
+	}
+	return openGraphStorage(path, s)
+}
+
+// OpenGraphReadOnly opens the graph indicated by the -store flag for read only.
+// This allows for multiple concurent queries to the same store.
+// The caller must ensure the closer is closed.
+func OpenGraphReadOnly(path string) (*graph.Graph, io.Closer, error) {
+	s, err := badgerstore.NewPathReadOnly(path)
+	if err != nil {
+		return nil, nil, fmt.Errorf("opening read-only storage: %v", err)
+	}
+	return openGraphStorage(path, s)
+}
+
+func openGraphStorage(path string, s *badgerstore.Store) (*graph.Graph, io.Closer, error) {
+	if path == "" {
+		return nil, nil, errors.New("no -store path was provided")
 	}
 	return graph.New(storage.NewBlob(s)), s, nil
 }

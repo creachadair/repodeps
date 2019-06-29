@@ -14,3 +14,6 @@ require (
 	gopkg.in/src-d/go-git.v4 v4.12.0
 	gopkg.in/src-d/go-siva.v1 v1.5.0 // indirect
 )
+
+// TODO: remove as soon as https://github.com/creachadair/badgerstore/pull/1 merged
+replace github.com/creachadair/badgerstore v0.0.1 => github.com/bzz/badgerstore v0.0.2
