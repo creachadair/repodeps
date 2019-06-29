@@ -45,7 +45,7 @@ func main() {
 	defer c.Close()
 
 	ctx := context.Background()
-	var numPkgs, numDeps int64
+	var numPkgs, numDeps, numNonDom int64
 	dhist := make(map[string]int64)
 	phist := make(map[string]int64)
 	if err := g.Scan(ctx, "", func(row *graph.Row) error {
@@ -56,6 +56,7 @@ func main() {
 			prefix := strings.SplitN(ip, "/", 2)[0]
 			isDom := strings.Index(prefix, ".") > 0
 			if !isDom {
+				numNonDom++
 				continue // skip non-domain imports
 			}
 
@@ -75,8 +76,8 @@ func main() {
 
 	// Output headers
 	tw := tabwriter.NewWriter(os.Stdout, 0, 8, 2, ' ', 0)
-	fmt.Fprintf(tw, "PKGS\t%d\n", numPkgs) // total packages scanned
-	fmt.Fprintf(tw, "DEPS\t%d\n", numDeps) // total dependencies observed
+	fmt.Fprintf(tw, "PKGS\t%d\t%d non-domain\n", numPkgs, numNonDom) // total packages scanned
+	fmt.Fprintf(tw, "DEPS\t%d\n", numDeps)                           // total dependencies observed
 	fmt.Fprint(tw, "PATH\tDEPS\t%DEPS\tPKGS\t%PKGS\n")
 
 	dkeys := stringset.FromKeys(dhist).Unordered()
