@@ -195,7 +195,7 @@ func checkWellKnown(ip string) []metaImport {
 			prefix := strings.Join(parts[:3], "/")
 			return []metaImport{{
 				Prefix:     prefix,
-				Repo:       "https://" + prefix + ".git",
+				Repo:       "https://" + prefix,
 				ImportPath: ip,
 			}}
 		}
