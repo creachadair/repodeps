@@ -78,7 +78,7 @@ func main() {
 	tw := tabwriter.NewWriter(os.Stdout, 0, 8, 2, ' ', 0)
 	fmt.Fprintf(tw, "PKGS\t%d\t%d non-domain\n", numPkgs, numNonDom) // total packages scanned
 	fmt.Fprintf(tw, "DEPS\t%d\n", numDeps)                           // total dependencies observed
-	fmt.Fprint(tw, "PATH\tDEPS\t%DEPS\tPKGS\t%PKGS\n")
+	fmt.Fprint(tw, "PATH\tDEPS\t%DEPS\tPKGS\t%PKGS\tDEPS/PKG\n")
 
 	dkeys := stringset.FromKeys(dhist).Unordered()
 	sort.Slice(dkeys, func(i, j int) bool {
@@ -88,9 +88,10 @@ func main() {
 		dkeys = dkeys[:*limit]
 	}
 	for _, key := range dkeys {
-		fmt.Fprintf(tw, "%s\t%d\t%3.2g%%\t%d\t%3.2g%%\n", key,
+		fmt.Fprintf(tw, "%s\t%d\t%3.2g%%\t%d\t%3.2g%%\t%2.1f\n", key,
 			dhist[key], 100*float64(dhist[key])/float64(numDeps),
 			phist[key], 100*float64(phist[key])/float64(numPkgs),
+			float64(dhist[key])/float64(phist[key]),
 		)
 	}
 	tw.Flush()
