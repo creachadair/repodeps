@@ -204,18 +204,27 @@ func checkWellKnown(ip string) []metaImport {
 		// The actual mapping to source code requires version information, but we
 		// can construct the repository URL from the import alone.
 		parts := strings.SplitN(ip, "/", 4)
-		if len(parts) < 3 {
-			break
+		if len(parts) < 2 {
+			return nil
 		}
-		ext := filepath.Ext(parts[2])
-		repo := strings.TrimSuffix(parts[2], ext)
+
+		var user, repo, prefix string
+		if len(parts) == 2 {
+			// Rule 1: gopkg.in/pkg.vN      ⇒ github.com/go-pkg/pkg
+			repo = trimExt(parts[1])
+			user = "go-" + repo
+			prefix = strings.Join(parts[:2], "/")
+		} else {
+			// Rule 2: gopkg.in/user/pkg.vN ⇒ github.com/user/pkg
+			repo = trimExt(parts[2])
+			user = parts[1]
+			prefix = strings.Join(parts[:3], "/")
+		}
 		url := strings.Join([]string{
-			"https://github.com",
-			parts[1], // username
-			repo,
+			"https://github.com", user, repo,
 		}, "/")
 		return []metaImport{{
-			Prefix:     strings.Join(parts[:3], "/"),
+			Prefix:     prefix,
 			Repo:       url,
 			ImportPath: ip,
 		}}
@@ -238,3 +247,6 @@ func attrValue(attrs []xml.Attr, name string) string {
 	}
 	return ""
 }
+
+// trimExt returns a copy of s with a trailing extension removed.
+func trimExt(s string) string { return strings.TrimSuffix(s, filepath.Ext(s)) }
