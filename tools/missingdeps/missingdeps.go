@@ -22,6 +22,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"path/filepath"
 
 	"bitbucket.org/creachadair/stringset"
 	"github.com/creachadair/repodeps/graph"
@@ -32,6 +33,24 @@ var (
 	storePath   = flag.String("store", os.Getenv("REPODEPS_DB"), "Storage path (required)")
 	doFilterDom = flag.Bool("domain-only", false, "Print only import paths that begin with a domain")
 )
+
+func init() {
+	flag.Usage = func() {
+		fmt.Fprintf(os.Stderr, `Usage: %[1]s [options]
+
+Scan the contents of a dependency graph to find import paths mentioned by one
+or more packages in the graph that do not have a corresponding graph node.
+
+By default, all missing import paths are printed. With -domain-only, only
+import paths having the form "host.dom/path/to/pkg" are considered. This filter
+eliminates packages accessed via custom build hooks, as well as the standard
+library.
+
+Options:
+`, filepath.Base(os.Args[0]))
+		flag.PrintDefaults()
+	}
+}
 
 func main() {
 	flag.Parse()
