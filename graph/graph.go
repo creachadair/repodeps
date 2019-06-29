@@ -20,6 +20,7 @@ package graph
 import (
 	"context"
 	"errors"
+	"strings"
 
 	"github.com/creachadair/repodeps/deps"
 	"github.com/golang/protobuf/proto"
@@ -91,11 +92,17 @@ func (g *Graph) Imports(ctx context.Context, pkg string) ([]string, error) {
 }
 
 // Importers calls f with the import path of each package that directly depends
-// on pkg. The order of results is unspecified.
+// on pkg. If pkg ends with "/...", any package with that prefix is matched,
+// so for example "regexp/..." matches "regexp" and "regexp/syntax".
+// The order of results is unspecified.
 func (g *Graph) Importers(ctx context.Context, pkg string, f func(string)) error {
+	match := func(s string) bool { return s == pkg }
+	if t := strings.TrimSuffix(pkg, "/..."); t != pkg {
+		match = func(s string) bool { return strings.HasPrefix(s, t) }
+	}
 	return g.Scan(ctx, "", func(row *Row) error {
 		for _, elt := range row.Directs {
-			if elt == pkg {
+			if match(elt) {
 				f(row.ImportPath)
 				break
 			}
