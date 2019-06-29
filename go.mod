@@ -3,6 +3,7 @@ module github.com/creachadair/repodeps
 go 1.12
 
 require (
+	bitbucket.org/creachadair/stringset v0.0.7
 	github.com/creachadair/atomicfile v0.2.0
 	github.com/creachadair/badgerstore v0.0.1
 	github.com/creachadair/ffs v0.0.0-20190622160218-fd16ac7ed292

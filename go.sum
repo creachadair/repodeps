@@ -1,5 +1,8 @@
+bitbucket.org/creachadair/stringset v0.0.7 h1:0BcF5uWBXLPdXIeYE5YVWX5ciCYWV5qePGGnKGpkdxU=
+bitbucket.org/creachadair/stringset v0.0.7/go.mod h1:GqOef/L3LzxUUGnQobbltX6Us45D0gTEg9B4tYoOSG4=
 github.com/AndreasBriese/bbloom v0.0.0-20180913140656-343706a395b7 h1:PqzgE6kAMi81xWQA2QIVxjWkFHptGgC547vchpUbtFo=
 github.com/AndreasBriese/bbloom v0.0.0-20180913140656-343706a395b7/go.mod h1:bOvUY6CB00SOBii9/FifXqc0awNKxLFCL/+pkDPuyl8=
+github.com/BurntSushi/toml v0.3.1/go.mod h1:xHWCNGjB5oqiDr8zfno3MHue2Ht5sIBksp03qcyfWMU=
 github.com/alcortesm/tgz v0.0.0-20161220082320-9c5fe88206d7 h1:uSoVVbwJiQipAclBbw+8quDsfcvFjOpI5iCf4p/cqCs=
 github.com/alcortesm/tgz v0.0.0-20161220082320-9c5fe88206d7/go.mod h1:6zEj6s6u/ghQa61ZWa/C2Aw3RkjiTBOix7dkqa1VLIs=
 github.com/anmitsu/go-shlex v0.0.0-20161002113705-648efa622239 h1:kFOfPq6dUM1hTo4JG6LR5AXSUEsOjtdm0kw0FtQtMJA=
@@ -15,6 +18,7 @@ github.com/creachadair/ffs v0.0.0-20190622160218-fd16ac7ed292 h1:UprIbniL1mSq5tV
 github.com/creachadair/ffs v0.0.0-20190622160218-fd16ac7ed292/go.mod h1:XHWmBqkuEfU/xnIqVdo2KiLKj1dhYksw7c5z9lf3NDM=
 github.com/creachadair/fileinput v0.0.2 h1:VJH3tAfaI7WPH+phQUS/7DlGGmjh6TUNiNgt+wvV668=
 github.com/creachadair/fileinput v0.0.2/go.mod h1:p0gRgcsdi/KSB7Ulhw4c7PgbNNLE9gCIkyP32AqCBmk=
+github.com/creachadair/staticfile v0.0.3/go.mod h1:a3qySzCIXEprDGxk6tSxSI+dBBdLzqeBOMhZ+o2d3pM=
 github.com/creachadair/taskgroup v0.1.0 h1:C2rWAAoycU32iGw505qNE9nYTR/HAmkubHIu/xjZ83c=
 github.com/creachadair/taskgroup v0.1.0/go.mod h1:Sm24mgZhn5FscwtrzVkci2Lzi3uu4TshjR+T3hTtvaI=
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
