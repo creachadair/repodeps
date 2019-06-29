@@ -91,11 +91,15 @@ func (g *Graph) Imports(ctx context.Context, pkg string) ([]string, error) {
 	return row.Directs, nil
 }
 
-// Importers calls f with the import path of each package that directly depends
-// on pkg. If pkg ends with "/...", any package with that prefix is matched,
-// so for example "regexp/..." matches "regexp" and "regexp/syntax".
+// Importers calls f for each package that directly depends on pkg.
+// If pkg ends with "/...", any package with that prefix is matched.  For
+// example "regexp/..." matches "regexp" and "regexp/syntax".
+//
+// The arguments to f are the target package (either pkg itself, or one of its
+// subpackages) and the import path of the dependent package.
+//
 // The order of results is unspecified.
-func (g *Graph) Importers(ctx context.Context, pkg string, f func(string)) error {
+func (g *Graph) Importers(ctx context.Context, pkg string, f func(tpkg, ipkg string)) error {
 	match := func(s string) bool { return s == pkg }
 	if t := strings.TrimSuffix(pkg, "/..."); t != pkg {
 		match = func(s string) bool { return strings.HasPrefix(s, t) }
@@ -103,7 +107,7 @@ func (g *Graph) Importers(ctx context.Context, pkg string, f func(string)) error
 	return g.Scan(ctx, "", func(row *Row) error {
 		for _, elt := range row.Directs {
 			if match(elt) {
-				f(row.ImportPath)
+				f(elt, row.ImportPath)
 				break
 			}
 		}

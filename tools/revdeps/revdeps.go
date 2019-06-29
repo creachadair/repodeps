@@ -37,7 +37,7 @@ func main() {
 
 	ctx := context.Background()
 	for _, pkg := range flag.Args() {
-		if err := g.Importers(ctx, pkg, func(ipath string) {
+		if err := g.Importers(ctx, pkg, func(_, ipath string) {
 			fmt.Println(ipath)
 		}); err != nil {
 			log.Fatalf("Importers failed: %v", err)
