@@ -20,13 +20,14 @@ import (
 	"flag"
 	"fmt"
 	"io"
+	"os"
 
 	"github.com/creachadair/badgerstore"
 	"github.com/creachadair/repodeps/graph"
 	"github.com/creachadair/repodeps/storage"
 )
 
-var storePath = flag.String("store", "", "Storage path (required)")
+var storePath = flag.String("store", os.Getenv("REPODEPS_DB"), "Storage path (required)")
 
 // OpenGraph opens the graph indicated by the -store flag.
 // The caller must ensure the closer is closed.
