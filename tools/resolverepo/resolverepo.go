@@ -11,6 +11,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"path/filepath"
 	"sort"
 	"strings"
 
@@ -84,7 +85,7 @@ func resolveImportRepo(ipath string) ([]metaImport, error) {
 		return nil, err
 	}
 	defer rsp.Body.Close()
-	if rsp.StatusCode != http.StatusOK {
+	if rsp.StatusCode != http.StatusOK && rsp.StatusCode != http.StatusNotFound {
 		return nil, errors.New(rsp.Status)
 	}
 
@@ -124,6 +125,9 @@ func resolveImportRepo(ipath string) ([]metaImport, error) {
 			})
 		}
 	}
+	if rsp.StatusCode != http.StatusOK && len(imp) == 0 {
+		return nil, errors.New(rsp.Status)
+	}
 	return imp, nil
 }
 
@@ -141,6 +145,25 @@ func checkWellKnown(ip string) []metaImport {
 				Repo:   "https://" + prefix + ".git",
 			}}
 		}
+
+	case "gopkg.in":
+		// The actual mapping to source code requires version information, but we
+		// can construct the repository URL from the import alone.
+		parts := strings.SplitN(ip, "/", 4)
+		if len(parts) < 3 {
+			break
+		}
+		ext := filepath.Ext(parts[2])
+		repo := strings.TrimSuffix(parts[2], ext)
+		url := strings.Join([]string{
+			"https://github.com",
+			parts[1], // username
+			repo,
+		}, "/")
+		return []metaImport{{
+			Prefix: strings.Join(parts[:3], "/"),
+			Repo:   url,
+		}}
 	}
 	return nil
 }
