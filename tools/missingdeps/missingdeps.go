@@ -22,7 +22,6 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"strings"
 
 	"bitbucket.org/creachadair/stringset"
 	"github.com/creachadair/repodeps/graph"
@@ -30,8 +29,8 @@ import (
 )
 
 var (
-	storePath  = flag.String("store", os.Getenv("REPODEPS_DB"), "Storage path (required)")
-	doRepoName = flag.Bool("repo", false, "Stem package names to guess repository URLs")
+	storePath   = flag.String("store", os.Getenv("REPODEPS_DB"), "Storage path (required)")
+	doFilterDom = flag.Bool("domain-only", false, "Print only import paths that begin with a domain")
 )
 
 func main() {
@@ -53,27 +52,10 @@ func main() {
 		log.Fatalf("Scan failed: %v", err)
 	}
 
-	repos := stringset.New()
 	for pkg := range want.Diff(have) {
-		if *doRepoName {
-			repo := packageRepo(pkg)
-			if !repos.Contains(repo) {
-				fmt.Println(repo)
-				repos.Add(repo)
-			}
-		} else {
+		_, ok := tools.HasDomain(pkg)
+		if ok || !*doFilterDom {
 			fmt.Println(pkg)
 		}
 	}
-}
-
-func packageRepo(pkg string) string {
-	parts := strings.Split(pkg, "/")
-	switch parts[0] {
-	case "github.com", "bitbucket.org":
-		if len(parts) >= 3 {
-			return strings.Join(parts[:3], "/")
-		}
-	}
-	return pkg // don't know what this is; leave it alone
 }
