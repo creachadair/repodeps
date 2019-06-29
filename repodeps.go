@@ -30,7 +30,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/creachadair/atomicfile"
 	"github.com/creachadair/repodeps/deps"
 	"github.com/creachadair/repodeps/local"
 	"github.com/creachadair/repodeps/siva"
@@ -39,11 +38,10 @@ import (
 )
 
 var (
-	doReadInputs  = flag.Bool("stdin", false, "Read input filenames from stdin")
-	doSourceHash  = flag.Bool("sourcehash", false, "Record the names and digests of source files")
-	doSeparateOut = flag.Bool("separate", false, "Write output to a file per input")
-	doBinary      = flag.Bool("binary", false, "Write output as binary rather than JSON")
-	concurrency   = flag.Int("concurrency", 32, "Maximum concurrent workers")
+	doReadInputs = flag.Bool("stdin", false, "Read input filenames from stdin")
+	doSourceHash = flag.Bool("sourcehash", false, "Record the names and digests of source files")
+	doBinary     = flag.Bool("binary", false, "Write output as binary rather than JSON")
+	concurrency  = flag.Int("concurrency", 32, "Maximum concurrent workers")
 
 	out = &struct {
 		sync.Mutex
@@ -67,8 +65,7 @@ If -sourcehash is set, the repository-relative paths and content digests of the
 Go source file in each packge are also captured.
 
 By default, output is streamed as JSON format to stdout. Use -binary to write
-binary protobuf records instead,[2] each prefixed by a varint length tag. Use
--separate to write output to a separate file per input path ("input.deps").
+binary protobuf records instead.[2]
 
 Inputs are processed concurrently with up to -concurrency in parallel.
 
@@ -133,10 +130,6 @@ func writeRepos(ctx context.Context, path string, repos []*deps.Repo) error {
 	if err != nil {
 		return err
 	}
-	if *doSeparateOut {
-		return atomicfile.WriteData(path+".deps", bits, 0644)
-	}
-
 	if *doBinary {
 		var buf [10]byte
 		n := binary.PutUvarint(buf[:], uint64(len(bits)))
