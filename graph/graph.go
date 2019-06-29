@@ -40,10 +40,15 @@ type Graph struct {
 func New(st Storage) *Graph { return &Graph{st: st} }
 
 // Add adds the specified package to the graph.
-func (g *Graph) Add(ctx context.Context, pkg *deps.Package) error {
+func (g *Graph) Add(ctx context.Context, repo *deps.Repo, pkg *deps.Package) error {
+	var url string
+	if len(repo.Remotes) != 0 {
+		url = repo.Remotes[0].Url
+	}
 	return g.st.Store(ctx, pkg.ImportPath, &Row{
 		Name:       pkg.Name,
 		ImportPath: pkg.ImportPath,
+		Repository: url,
 		Directs:    pkg.Imports,
 	})
 }

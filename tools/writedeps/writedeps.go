@@ -50,7 +50,7 @@ func main() {
 		}
 		for _, repo := range msg {
 			for _, pkg := range repo.Packages {
-				if err := g.Add(ctx, pkg); err != nil {
+				if err := g.Add(ctx, repo, pkg); err != nil {
 					log.Fatalf("Adding package %q: %v", pkg.ImportPath, err)
 				}
 				fmt.Println(pkg.ImportPath)

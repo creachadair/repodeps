@@ -10,8 +10,11 @@ message Row {
   string name = 1;
   string import_path = 2;
 
-  // The import paths of the direct dependencies of source.
-  repeated string directs = 3;
+  // The repository where the package was defined.
+  string repository = 3;
 
-  // next id: 4
+  // The import paths of the direct dependencies of source.
+  repeated string directs = 4;
+
+  // next id: 5
 }
