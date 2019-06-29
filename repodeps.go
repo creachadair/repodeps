@@ -17,7 +17,6 @@
 package main
 
 import (
-	"bufio"
 	"context"
 	"encoding/json"
 	"flag"
@@ -32,11 +31,12 @@ import (
 	"github.com/creachadair/repodeps/deps"
 	"github.com/creachadair/repodeps/local"
 	"github.com/creachadair/repodeps/siva"
+	"github.com/creachadair/repodeps/tools"
 	"github.com/creachadair/taskgroup"
 )
 
 var (
-	doReadInputs = flag.Bool("stdin", false, "Read input filenames from stdin")
+	doReadStdin  = flag.Bool("stdin", false, "Read input filenames from stdin")
 	doSourceHash = flag.Bool("sourcehash", false, "Record the names and digests of source files")
 	concurrency  = flag.Int("concurrency", 32, "Maximum concurrent workers")
 
@@ -74,7 +74,7 @@ Options:
 
 func main() {
 	flag.Parse()
-	if flag.NArg() == 0 && !*doReadInputs {
+	if flag.NArg() == 0 && !*doReadStdin {
 		log.Fatalf("Usage: %s <repo-dir> ...", filepath.Base(os.Args[0]))
 	}
 	ctx, cancel := context.WithCancel(context.Background())
@@ -89,7 +89,7 @@ func main() {
 	// Currently only rooted siva files are supported.
 	var numRepos int
 	start := time.Now()
-	for dir := range inputs() {
+	for dir := range tools.Inputs(*doReadStdin) {
 		dir := dir
 		path, err := filepath.Abs(dir)
 		if err != nil {
@@ -129,25 +129,4 @@ func writeRepos(ctx context.Context, path string, repos []*deps.Repo) error {
 	defer out.Unlock()
 	_, err = out.Write(bits)
 	return err
-}
-
-// inputs returns a channel that delivers the paths of inputs and is closed
-// when no more are available.
-func inputs() <-chan string {
-	ch := make(chan string, len(flag.Args()))
-	for _, arg := range flag.Args() {
-		ch <- arg
-	}
-	if *doReadInputs {
-		s := bufio.NewScanner(os.Stdin)
-		go func() {
-			defer close(ch)
-			for s.Scan() {
-				ch <- s.Text()
-			}
-		}()
-	} else {
-		close(ch)
-	}
-	return ch
 }

@@ -16,9 +16,12 @@
 package tools
 
 import (
+	"bufio"
 	"errors"
+	"flag"
 	"fmt"
 	"io"
+	"os"
 
 	"github.com/creachadair/badgerstore"
 	"github.com/creachadair/repodeps/graph"
@@ -36,4 +39,27 @@ func OpenGraph(path string) (*graph.Graph, io.Closer, error) {
 		return nil, nil, fmt.Errorf("opening storage: %v", err)
 	}
 	return graph.New(storage.NewBlob(s)), s, nil
+}
+
+// Inputs returns a channel that delivers the paths of inputs and is closed
+// when no more are available. The non-flag arguments are read, and if
+// readStdin is true each line of stdin is also read. The caller must fully
+// drain the channel.
+func Inputs(readStdin bool) <-chan string {
+	ch := make(chan string, len(flag.Args()))
+	for _, arg := range flag.Args() {
+		ch <- arg
+	}
+	if readStdin {
+		s := bufio.NewScanner(os.Stdin)
+		go func() {
+			defer close(ch)
+			for s.Scan() {
+				ch <- s.Text()
+			}
+		}()
+	} else {
+		close(ch)
+	}
+	return ch
 }
