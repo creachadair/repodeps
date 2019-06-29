@@ -8,6 +8,7 @@ import (
 	"encoding/xml"
 	"errors"
 	"flag"
+	"fmt"
 	"io"
 	"log"
 	"net/http"
@@ -26,6 +27,30 @@ var (
 	doReadStdin = flag.Bool("stdin", false, "Read import paths from stdin")
 	concurrency = flag.Int("concurrency", 16, "Number of concurrent workers")
 )
+
+func init() {
+	flag.Usage = func() {
+		fmt.Fprintf(os.Stderr, `Usage: %[1]s [options] <import-path>...
+
+Resolve Go import paths to Git repository URLs for vanity domains.  The
+resolution algorithm is borrowed from the "go get" command, which issues an
+HTTP query to the hosting site to request import information.
+
+For each resolved repository, the tool prints a JSON text to stdout having the
+fields:
+
+   "repo":        repository fetch URL (string)
+   "prefix":      import path prefix covered by this repository (string)
+   "importPaths": import paths (array of strings)
+
+The non-flag arguments name the import paths to resolve. With -stdin, each line
+of stdin will be read as an additional import path to resolve.
+
+Options:
+`, filepath.Base(os.Args[0]))
+		flag.PrintDefaults()
+	}
+}
 
 func main() {
 	flag.Parse()
