@@ -23,7 +23,6 @@ import (
 	"log"
 	"os"
 	"sort"
-	"strings"
 	"text/tabwriter"
 
 	"bitbucket.org/creachadair/stringset"
@@ -53,9 +52,8 @@ func main() {
 		numDeps += int64(len(row.Directs))
 		seen := stringset.New()
 		for _, ip := range row.Directs {
-			prefix := strings.SplitN(ip, "/", 2)[0]
-			isDom := strings.Index(prefix, ".") > 0
-			if !isDom {
+			prefix, hasDom := tools.HasDomain(ip)
+			if !hasDom {
 				numNonDom++
 				continue // skip non-domain imports
 			}
