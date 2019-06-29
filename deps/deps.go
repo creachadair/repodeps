@@ -27,7 +27,8 @@ import (
 // Options control the behaviour of the Load function. A nil *Options behaves
 // as a zero-valued Options struct.
 type Options struct {
-	HashSourceFiles bool // record source file digests
+	HashSourceFiles   bool // record source file digests
+	UseImportComments bool // use import comments to name packages
 }
 
 // Hash produces a SHA-256 digest of the contents of r.

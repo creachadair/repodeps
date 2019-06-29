@@ -125,9 +125,13 @@ func Load(_ context.Context, path string, opts *deps.Options) ([]*deps.Repo, err
 			return err
 		}
 
+		var importMode build.ImportMode
+		if opts.UseImportComments {
+			importMode |= build.ImportComment
+		}
 		bc := vfs.buildContext()
 		for dir := range vfs.dirs {
-			pkg, err := bc.ImportDir(dir, 0)
+			pkg, err := bc.ImportDir(dir, importMode)
 			if err != nil {
 				continue // no importable go package here; skip it
 			}
@@ -135,6 +139,9 @@ func Load(_ context.Context, path string, opts *deps.Options) ([]*deps.Repo, err
 				Name:       pkg.Name,
 				ImportPath: pkg.ImportPath,
 				Imports:    pkg.Imports,
+			}
+			if opts.UseImportComments && pkg.ImportComment != "" {
+				rec.ImportPath = pkg.ImportComment
 			}
 			if opts.HashSourceFiles {
 				for _, name := range pkg.GoFiles {

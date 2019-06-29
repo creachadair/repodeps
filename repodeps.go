@@ -38,6 +38,7 @@ import (
 var (
 	doReadStdin  = flag.Bool("stdin", false, "Read input filenames from stdin")
 	doSourceHash = flag.Bool("sourcehash", false, "Record the names and digests of source files")
+	doImportComm = flag.Bool("import-comments", false, "Parse and use import comments")
 	concurrency  = flag.Int("concurrency", 32, "Maximum concurrent workers")
 
 	out = &struct {
@@ -79,7 +80,8 @@ func main() {
 	}
 	ctx, cancel := context.WithCancel(context.Background())
 	opts := &deps.Options{
-		HashSourceFiles: *doSourceHash,
+		HashSourceFiles:   *doSourceHash,
+		UseImportComments: *doImportComm,
 	}
 	defer cancel()
 

@@ -44,6 +44,10 @@ func Load(ctx context.Context, dir string, opts *deps.Options) ([]*deps.Repo, er
 	}
 
 	repo := &deps.Repo{From: dir, Remotes: remotes}
+	var importMode build.ImportMode
+	if opts.UseImportComments {
+		importMode |= build.ImportComment
+	}
 
 	// Find the import paths of the packages defined by this repository, and the
 	// import paths of their dependencies. This is basically "go list".
@@ -55,7 +59,7 @@ func Load(ctx context.Context, dir string, opts *deps.Options) ([]*deps.Repo, er
 		} else if base := filepath.Base(path); base == ".git" || base == "vendor" {
 			return filepath.SkipDir
 		}
-		pkg, err := build.Default.ImportDir(path, 0)
+		pkg, err := build.Default.ImportDir(path, importMode)
 		if err != nil {
 			return nil // no importable go package here; skip it
 		}
@@ -63,6 +67,9 @@ func Load(ctx context.Context, dir string, opts *deps.Options) ([]*deps.Repo, er
 			Name:       pkg.Name,
 			ImportPath: pkg.ImportPath,
 			Imports:    pkg.Imports,
+		}
+		if opts.UseImportComments && pkg.ImportComment != "" {
+			rec.ImportPath = pkg.ImportComment
 		}
 		if opts.HashSourceFiles {
 			for _, name := range pkg.GoFiles {
