@@ -70,9 +70,14 @@ type bundle struct {
 // resolveImportRepo attempts to resolve the URL of the specified import path
 // using the HTTP metadata protocol used by "go get". Unlike "go get", this
 // resolver only considers Git targets.
-//
-// TODO: Handle bitbucket.org, which doesn't answer HTTP correctly but works.
 func resolveImportRepo(ipath string) ([]metaImport, error) {
+	// Shortcut well-known Git hosting providers, to save network traffic.
+	if wk := checkWellKnown(ipath); wk != nil {
+		return wk, nil
+	}
+
+	// Request package resolution. If the site supports it, we will receive a
+	// <meta name="go-import" content="<prefix> <vcs> <url>"> tag.
 	url := "https://" + ipath + "?go-get=1"
 	rsp, err := http.Get(url)
 	if err != nil {
@@ -120,6 +125,24 @@ func resolveImportRepo(ipath string) ([]metaImport, error) {
 		}
 	}
 	return imp, nil
+}
+
+// checkWellKnown checks whether ip is lexically associated with a well-known
+// git host. If so, it synthesizes an import location; otherwise returns nil.
+func checkWellKnown(ip string) []metaImport {
+	pfx, _ := tools.HasDomain(ip)
+	switch pfx {
+	case "github.com", "bitbucket.org":
+		parts := strings.Split(ip, "/")
+		if len(parts) >= 3 {
+			prefix := strings.Join(parts[:3], "/")
+			return []metaImport{{
+				Prefix: prefix,
+				Repo:   "https://" + prefix + ".git",
+			}}
+		}
+	}
+	return nil
 }
 
 type metaImport struct {
