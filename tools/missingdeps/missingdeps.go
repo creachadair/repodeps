@@ -21,15 +21,18 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"os"
 
 	"bitbucket.org/creachadair/stringset"
 	"github.com/creachadair/repodeps/graph"
 	"github.com/creachadair/repodeps/tools"
 )
 
+var storePath = flag.String("store", os.Getenv("REPODEPS_DB"), "Storage path (required)")
+
 func main() {
 	flag.Parse()
-	g, c, err := tools.OpenGraph()
+	g, c, err := tools.OpenGraph(*storePath)
 	if err != nil {
 		log.Fatalf("Opening graph: %v", err)
 	}

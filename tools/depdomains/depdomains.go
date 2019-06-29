@@ -31,11 +31,14 @@ import (
 	"github.com/creachadair/repodeps/tools"
 )
 
-var limit = flag.Int("limit", 0, "Show only this many top order statistics")
+var (
+	limit     = flag.Int("limit", 0, "Show only this many top order statistics")
+	storePath = flag.String("store", os.Getenv("REPODEPS_DB"), "Storage path (required)")
+)
 
 func main() {
 	flag.Parse()
-	g, c, err := tools.OpenGraph()
+	g, c, err := tools.OpenGraph(*storePath)
 	if err != nil {
 		log.Fatalf("Opening graph: %v", err)
 	}

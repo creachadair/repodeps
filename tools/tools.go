@@ -17,25 +17,21 @@ package tools
 
 import (
 	"errors"
-	"flag"
 	"fmt"
 	"io"
-	"os"
 
 	"github.com/creachadair/badgerstore"
 	"github.com/creachadair/repodeps/graph"
 	"github.com/creachadair/repodeps/storage"
 )
 
-var storePath = flag.String("store", os.Getenv("REPODEPS_DB"), "Storage path (required)")
-
 // OpenGraph opens the graph indicated by the -store flag.
 // The caller must ensure the closer is closed.
-func OpenGraph() (*graph.Graph, io.Closer, error) {
-	if *storePath == "" {
+func OpenGraph(path string) (*graph.Graph, io.Closer, error) {
+	if path == "" {
 		return nil, nil, errors.New("no -store path was provided")
 	}
-	s, err := badgerstore.NewPath(*storePath)
+	s, err := badgerstore.NewPath(path)
 	if err != nil {
 		return nil, nil, fmt.Errorf("opening storage: %v", err)
 	}

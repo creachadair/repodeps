@@ -29,10 +29,12 @@ import (
 	"github.com/creachadair/repodeps/tools"
 )
 
+var storePath = flag.String("store", "", "Storage path (required)")
+
 func main() {
 	flag.Parse()
 
-	g, c, err := tools.OpenGraph()
+	g, c, err := tools.OpenGraph(*storePath)
 	if err != nil {
 		log.Fatalf("Opening graph: %v", err)
 	}
