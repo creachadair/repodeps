@@ -3,6 +3,7 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"encoding/xml"
 	"errors"
@@ -14,54 +15,96 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/creachadair/repodeps/tools"
+	"github.com/creachadair/taskgroup"
 )
 
-var doReadStdin = flag.Bool("stdin", false, "Read import paths from stdin")
+var (
+	doReadStdin = flag.Bool("stdin", false, "Read import paths from stdin")
+	concurrency = flag.Int("concurrency", 16, "Number of concurrent workers")
+)
 
 func main() {
 	flag.Parse()
 
+	// Input paths described on the command line and/or read from stdin.
+	inputs := tools.Inputs(*doReadStdin)
+
+	// Accumulated repository mappings, becomes output.
+	var rmu sync.RWMutex // protects repos
 	repos := make(map[string]*bundle)
 
-	var numPaths int64
-	start := time.Now()
-nextPath:
-	for ip := range tools.Inputs(*doReadStdin) {
-		numPaths++
-		if numPaths%100 == 0 {
-			log.Printf("[progress] %d repositories, %d import paths", len(repos), numPaths)
-		}
-		// Check whether we already have a prefix for this import path, and skip
-		// a lookup in that case.
+	// Receive results from concurrent resolver tasks.
+	results := make(chan metaImport, *concurrency)
+	find := func(ip string) bool {
+		rmu.RLock()
+		defer rmu.RUnlock()
 		for pfx, b := range repos {
 			if strings.HasPrefix(ip, pfx) {
 				b.ImportPaths = append(b.ImportPaths, ip)
-				continue nextPath
+				return true
 			}
 		}
-
-		// Otherwise, we have to make a query.
-		imps, err := resolveImportRepo(ip)
-		if err != nil {
-			log.Printf("Resolving %q: %v [skipped]", ip, err)
-			continue
-		}
-		if len(imps) == 0 {
-			log.Printf("Resolving %q: not found", ip)
-			continue
-		}
-		repos[imps[0].Prefix] = &bundle{
-			Repo:        imps[0].Repo,
-			Prefix:      imps[0].Prefix,
-			ImportPaths: []string{ip},
-		}
+		return false
 	}
-	log.Printf("[done] %d repositories, %d import paths [%v elapsed]",
-		len(repos), numPaths, time.Since(start))
 
+	start := time.Now()
+
+	// Collect lookup results and update the repository map.
+	ctx, cancel := context.WithCancel(context.Background())
+	go func() {
+		defer cancel()
+		for imp := range results {
+			rmu.Lock()
+			b := repos[imp.Prefix]
+			if b == nil {
+				b = &bundle{
+					Repo:        imp.Repo,
+					Prefix:      imp.Prefix,
+					ImportPaths: []string{imp.ImportPath},
+				}
+				repos[imp.Prefix] = b
+			} else {
+				b.ImportPaths = append(b.ImportPaths, imp.ImportPath)
+			}
+			rmu.Unlock()
+		}
+	}()
+
+	// Process inputs and send results to the collector.
+	g := taskgroup.New(nil)
+	for i := 0; i < *concurrency; i++ {
+		g.Go(func() error {
+			for ip := range inputs {
+				if find(ip) {
+					continue // already handled
+				}
+				imps, err := resolveImportRepo(ip)
+				if err != nil {
+					log.Printf("[skipped] resolving %q: %v", ip, err)
+				} else if len(imps) == 0 {
+					log.Printf("[skipped] resolving %q: not found", ip)
+				} else {
+					results <- imps[0]
+				}
+			}
+			return nil
+		})
+	}
+
+	// Wait for all the workers to complete.
+	if err := g.Wait(); err != nil {
+		log.Fatalf("Processing failed: %v", err)
+	}
+	close(results)
+	<-ctx.Done() // wait for the collector to complete
+
+	log.Printf("[done] %d repositories found [%v elapsed]", len(repos), time.Since(start))
+
+	// Encode the output.
 	enc := json.NewEncoder(os.Stdout)
 	for _, b := range repos {
 		sort.Strings(b.ImportPaths)
@@ -129,8 +172,9 @@ func resolveImportRepo(ipath string) ([]metaImport, error) {
 		fields := strings.Fields(attrValue(st.Attr, "content"))
 		if len(fields) == 3 && fields[1] == "git" {
 			imp = append(imp, metaImport{
-				Prefix: fields[0],
-				Repo:   fields[2],
+				Prefix:     fields[0],
+				Repo:       fields[2],
+				ImportPath: ipath,
 			})
 		}
 	}
@@ -150,8 +194,9 @@ func checkWellKnown(ip string) []metaImport {
 		if len(parts) >= 3 {
 			prefix := strings.Join(parts[:3], "/")
 			return []metaImport{{
-				Prefix: prefix,
-				Repo:   "https://" + prefix + ".git",
+				Prefix:     prefix,
+				Repo:       "https://" + prefix + ".git",
+				ImportPath: ip,
 			}}
 		}
 
@@ -170,8 +215,9 @@ func checkWellKnown(ip string) []metaImport {
 			repo,
 		}, "/")
 		return []metaImport{{
-			Prefix: strings.Join(parts[:3], "/"),
-			Repo:   url,
+			Prefix:     strings.Join(parts[:3], "/"),
+			Repo:       url,
+			ImportPath: ip,
 		}}
 	}
 	return nil
@@ -179,6 +225,7 @@ func checkWellKnown(ip string) []metaImport {
 
 type metaImport struct {
 	Prefix, Repo string
+	ImportPath   string
 }
 
 // attrValue returns the value for the named attribute, or "" if the name is
