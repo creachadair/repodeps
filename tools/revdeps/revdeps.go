@@ -25,7 +25,10 @@ import (
 	"github.com/creachadair/repodeps/tools"
 )
 
-var storePath = flag.String("store", os.Getenv("REPODEPS_DB"), "Storage path (required)")
+var (
+	storePath   = flag.String("store", os.Getenv("REPODEPS_DB"), "Storage path (required)")
+	matchPerfix = flag.Bool("prefix", false, "Prefix-based matching")
+)
 
 func main() {
 	flag.Parse()
@@ -35,9 +38,16 @@ func main() {
 	}
 	defer c.Close()
 
+	var importers func(context.Context, string, func(string)) error
+	if *matchPerfix {
+		importers = g.ImportersScan
+	} else {
+		importers = g.Importers
+	}
+
 	ctx := context.Background()
 	for _, pkg := range flag.Args() {
-		if err := g.Importers(ctx, pkg, func(ipath string) {
+		if err := importers(ctx, pkg, func(ipath string) {
 			fmt.Println(ipath)
 		}); err != nil {
 			log.Fatalf("Importers failed: %v", err)

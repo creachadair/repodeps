@@ -20,6 +20,7 @@ package graph
 import (
 	"context"
 	"errors"
+	"strings"
 
 	"github.com/creachadair/repodeps/deps"
 	"github.com/golang/protobuf/proto"
@@ -96,6 +97,20 @@ func (g *Graph) Importers(ctx context.Context, pkg string, f func(string)) error
 	return g.Scan(ctx, "", func(row *Row) error {
 		for _, elt := range row.Directs {
 			if elt == pkg {
+				f(row.ImportPath)
+				break
+			}
+		}
+		return nil
+	})
+}
+
+// ImportersScan calls f with the import path of each package that directly depends
+// on anything with pkg prefix. The order of results is unspecified.
+func (g *Graph) ImportersScan(ctx context.Context, pkg string, f func(string)) error {
+	return g.Scan(ctx, "", func(row *Row) error {
+		for _, elt := range row.Directs {
+			if strings.HasPrefix(elt, pkg) {
 				f(row.ImportPath)
 				break
 			}
