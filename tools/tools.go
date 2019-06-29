@@ -29,13 +29,28 @@ import (
 	"github.com/creachadair/repodeps/storage"
 )
 
+// OpenMode controls how OpenGraph accesses storage.
+type OpenMode int
+
+// Mode constants for OpenGraph.
+const (
+	ReadOnly OpenMode = iota
+	ReadWrite
+)
+
 // OpenGraph opens the graph indicated by the -store flag.
 // The caller must ensure the closer is closed.
-func OpenGraph(path string) (*graph.Graph, io.Closer, error) {
+func OpenGraph(path string, mode OpenMode) (*graph.Graph, io.Closer, error) {
 	if path == "" {
 		return nil, nil, errors.New("no -store path was provided")
 	}
-	s, err := badgerstore.NewPath(path)
+	var s *badgerstore.Store
+	var err error
+	if mode == ReadWrite {
+		s, err = badgerstore.NewPath(path)
+	} else {
+		s, err = badgerstore.NewPathReadOnly(path)
+	}
 	if err != nil {
 		return nil, nil, fmt.Errorf("opening storage: %v", err)
 	}

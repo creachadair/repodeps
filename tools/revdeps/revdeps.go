@@ -29,7 +29,7 @@ var storePath = flag.String("store", os.Getenv("REPODEPS_DB"), "Storage path (re
 
 func main() {
 	flag.Parse()
-	g, c, err := tools.OpenGraph(*storePath)
+	g, c, err := tools.OpenGraph(*storePath, tools.ReadOnly)
 	if err != nil {
 		log.Fatalf("Opening graph: %v", err)
 	}
