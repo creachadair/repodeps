@@ -14,6 +14,7 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
+	"time"
 
 	"github.com/creachadair/repodeps/tools"
 )
@@ -25,8 +26,14 @@ func main() {
 
 	repos := make(map[string]*bundle)
 
+	var numPaths int64
+	start := time.Now()
 nextPath:
 	for ip := range tools.Inputs(*doReadStdin) {
+		numPaths++
+		if numPaths%100 == 0 {
+			log.Printf("[progress] %d repositories, %d import paths", len(repos), numPaths)
+		}
 		// Check whether we already have a prefix for this import path, and skip
 		// a lookup in that case.
 		for pfx, b := range repos {
@@ -52,6 +59,8 @@ nextPath:
 			ImportPaths: []string{ip},
 		}
 	}
+	log.Printf("[done] %d repositories, %d import paths [%v elapsed]",
+		len(repos), numPaths, time.Since(start))
 
 	enc := json.NewEncoder(os.Stdout)
 	for _, b := range repos {
