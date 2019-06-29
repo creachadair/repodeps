@@ -93,11 +93,11 @@ func (g *Graph) Imports(ctx context.Context, pkg string) ([]string, error) {
 
 // Importers calls f with the import path of each package that directly depends
 // on pkg. The order of results is unspecified.
-func (g *Graph) Importers(ctx context.Context, pkg string, f func(string)) error {
+func (g *Graph) Importers(ctx context.Context, pkg string, f func(*Row, int)) error {
 	return g.Scan(ctx, "", func(row *Row) error {
-		for _, elt := range row.Directs {
+		for i, elt := range row.Directs {
 			if elt == pkg {
-				f(row.ImportPath)
+				f(row, i)
 				break
 			}
 		}
@@ -107,11 +107,11 @@ func (g *Graph) Importers(ctx context.Context, pkg string, f func(string)) error
 
 // ImportersScan calls f with the import path of each package that directly depends
 // on anything with pkg prefix. The order of results is unspecified.
-func (g *Graph) ImportersScan(ctx context.Context, pkg string, f func(string)) error {
+func (g *Graph) ImportersScan(ctx context.Context, pkg string, f func(*Row, int)) error {
 	return g.Scan(ctx, "", func(row *Row) error {
-		for _, elt := range row.Directs {
+		for i, elt := range row.Directs {
 			if strings.HasPrefix(elt, pkg) {
-				f(row.ImportPath)
+				f(row, i)
 				break
 			}
 		}

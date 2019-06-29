@@ -22,12 +22,14 @@ import (
 	"log"
 	"os"
 
+	"github.com/creachadair/repodeps/graph"
 	"github.com/creachadair/repodeps/tools"
 )
 
 var (
 	storePath   = flag.String("store", os.Getenv("REPODEPS_DB"), "Storage path (required)")
 	matchPerfix = flag.Bool("prefix", false, "Prefix-based matching")
+	printDirect = flag.Bool("direct", false, "Print direct dependencies as well")
 )
 
 func main() {
@@ -38,7 +40,7 @@ func main() {
 	}
 	defer c.Close()
 
-	var importers func(context.Context, string, func(string)) error
+	var importers func(context.Context, string, func(*graph.Row, int)) error
 	if *matchPerfix {
 		importers = g.ImportersScan
 	} else {
@@ -47,8 +49,11 @@ func main() {
 
 	ctx := context.Background()
 	for _, pkg := range flag.Args() {
-		if err := importers(ctx, pkg, func(ipath string) {
-			fmt.Println(ipath)
+		if err := importers(ctx, pkg, func(row *graph.Row, i int) {
+			if *printDirect {
+				fmt.Printf("%s ", row.Directs[i])
+			}
+			fmt.Println(row.ImportPath)
 		}); err != nil {
 			log.Fatalf("Importers failed: %v", err)
 		}
