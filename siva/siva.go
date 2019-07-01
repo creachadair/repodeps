@@ -101,7 +101,7 @@ func Load(ctx context.Context, path string, opts *deps.Options) ([]*deps.Repo, e
 
 	var cur string
 	if err := refs.ForEach(func(ref *plumbing.Reference) error {
-		if err := check("scanning references"); err != nil {
+		if err := check("next reference"); err != nil {
 			return err
 		}
 		// Rooted references have the form REFNAME/REMOTE. Skip refs that don't
