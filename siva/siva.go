@@ -108,11 +108,11 @@ func Load(_ context.Context, path string, opts *deps.Options) ([]*deps.Repo, err
 		here := repos[cur]
 		comm, err := repo.CommitObject(ref.Hash())
 		if err != nil {
-			return err
+			return fmt.Errorf("fetching commit: %v", err)
 		}
 		tree, err := comm.Tree()
 		if err != nil {
-			return err
+			return fmt.Errorf("fetching tree: %v", err)
 		}
 
 		// Record the directory structure to support the build.Context VFS.
