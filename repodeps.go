@@ -100,6 +100,9 @@ func main() {
 		}
 		numRepos++
 		run(func() error {
+			// Each repository or archive has a separate task timeout to ensure
+			// pathological repos do not choke the tool. We start timing once the
+			// goroutine runs so that wait time doesn't count against the task.
 			tctx, cancel := context.WithTimeout(ctx, *taskTimeout)
 			defer cancel()
 			log.Printf("Processing %q...", dir)
