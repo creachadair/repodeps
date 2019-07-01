@@ -46,7 +46,7 @@ Be warned that this code is not production ready and may change without notice.
 
    ```shell
    find ~/crawl/siva -type f -name '*.siva' -print \
-   | go run repodeps.go -sourcehash -import-comments \
+   | go run repodeps.go -stdin -sourcehash -import-comments \
    | xz -cz > deps.json.xz
    ```
 
