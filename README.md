@@ -38,7 +38,8 @@ Be warned that this code is not production ready and may change without notice.
       repos.txt
    ```
 
-   Depending how big your seed list is, this may take a while.
+   Depending how big your seed list is, this may take a while. Repositories
+   that require authentication will be skipped.
 
 
 3. Extract dependency information:
