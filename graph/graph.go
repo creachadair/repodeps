@@ -20,6 +20,7 @@ package graph
 import (
 	"context"
 	"errors"
+	"sort"
 	"strings"
 
 	"github.com/creachadair/repodeps/deps"
@@ -46,11 +47,22 @@ func (g *Graph) Add(ctx context.Context, repo *deps.Repo, pkg *deps.Package) err
 	if len(repo.Remotes) != 0 {
 		url = repo.Remotes[0].Url
 	}
+	var files []*Row_File
+	for _, file := range pkg.Sources {
+		files = append(files, &Row_File{
+			RepoPath: file.RepoPath,
+			Digest:   file.Digest,
+		})
+	}
+	sort.Slice(files, func(i, j int) bool {
+		return files[i].RepoPath < files[j].RepoPath
+	})
 	return g.st.Store(ctx, pkg.ImportPath, &Row{
-		Name:       pkg.Name,
-		ImportPath: pkg.ImportPath,
-		Repository: url,
-		Directs:    pkg.Imports,
+		Name:        pkg.Name,
+		ImportPath:  pkg.ImportPath,
+		Repository:  url,
+		Directs:     pkg.Imports,
+		SourceFiles: files,
 	})
 }
 

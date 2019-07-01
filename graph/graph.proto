@@ -16,5 +16,13 @@ message Row {
   // The import paths of the direct dependencies of source.
   repeated string directs = 4;
 
-  // next id: 5
+  // The names and content digests of source files in this package.
+  repeated File source_files = 5;
+
+  // next id: 6
+
+  message File {
+    string repo_path = 1; // file path relative to the repository root
+    bytes digest = 2;     // content digest (sha256)
+  }
 }
