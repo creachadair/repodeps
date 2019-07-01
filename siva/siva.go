@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// Package siva analyzes Go dependences for rooted Git repositories packed into
+// siva archives by github.com/src-d/borges.
 package siva
 
 import (
