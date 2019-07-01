@@ -41,6 +41,14 @@ import (
 // Load reads the repository structure of a Siva archive file.  This may return
 // multiple repositories, if the file is rooted.
 func Load(ctx context.Context, path string, opts *deps.Options) ([]*deps.Repo, error) {
+	check := func() error {
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		default:
+			return nil
+		}
+	}
 	if opts == nil {
 		opts = new(deps.Options)
 	}
@@ -93,10 +101,8 @@ func Load(ctx context.Context, path string, opts *deps.Options) ([]*deps.Repo, e
 
 	var cur string
 	if err := refs.ForEach(func(ref *plumbing.Reference) error {
-		select {
-		case <-ctx.Done():
-			return ctx.Err()
-		default:
+		if err := check(); err != nil {
+			return err
 		}
 		// Rooted references have the form REFNAME/REMOTE. Skip refs that don't
 		// look like this.
@@ -123,13 +129,10 @@ func Load(ctx context.Context, path string, opts *deps.Options) ([]*deps.Repo, e
 		// Record the directory structure to support the build.Context VFS.
 		vfs := newVFS(here.Remotes[0].Url)
 		if err := tree.Files().ForEach(func(f *object.File) error {
-			select {
-			case <-ctx.Done():
-				return ctx.Err()
-			default:
-				if !deps.IsVendor(f.Name) {
-					vfs.add(f)
-				}
+			if err := check(); err != nil {
+				return err
+			} else if !deps.IsVendor(f.Name) {
+				vfs.add(f)
 			}
 			return nil
 		}); err != nil {
@@ -142,6 +145,9 @@ func Load(ctx context.Context, path string, opts *deps.Options) ([]*deps.Repo, e
 		}
 		bc := vfs.buildContext()
 		for dir := range vfs.dirs {
+			if err := check(); err != nil {
+				return err
+			}
 			pkg, err := bc.ImportDir(dir, importMode)
 			if err != nil {
 				continue // no importable go package here; skip it
