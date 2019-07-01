@@ -22,10 +22,14 @@ Be warned that this code is not production ready and may change without notice.
    as the godoc.org corpus includes vendored packages, internal packages, code
    that doesn't build, and so forth.
 
+
 2. Fetch the repositories using [Borges](https://github.com/src-d/borges).
 
    ```shell
+   export GITHUB_TOKEN=<token-string>  # recommended, because rate limits
+
    mkdir ~/crawl
+
    borges pack \
       --workers=0 \
       --log-level=info \
@@ -36,6 +40,7 @@ Be warned that this code is not production ready and may change without notice.
 
    Depending how big your seed list is, this may take a while.
 
+
 3. Extract dependency information:
 
    ```shell
@@ -43,6 +48,7 @@ Be warned that this code is not production ready and may change without notice.
    | go run repodeps.go -sourcehash -import-comments \
    | xz -cz > deps.json.xz
    ```
+
 
 4. Load the results into a database:
 
