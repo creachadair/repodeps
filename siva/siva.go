@@ -27,7 +27,6 @@ import (
 	"github.com/creachadair/repodeps/deps"
 
 	sivafs "gopkg.in/src-d/go-billy-siva.v4"
-	"gopkg.in/src-d/go-billy.v4/memfs"
 	"gopkg.in/src-d/go-billy.v4/osfs"
 	git "gopkg.in/src-d/go-git.v4"
 	"gopkg.in/src-d/go-git.v4/plumbing"
@@ -44,7 +43,7 @@ func Load(_ context.Context, path string, opts *deps.Options) ([]*deps.Repo, err
 		opts = new(deps.Options)
 	}
 	fs := osfs.New("/")
-	sfs, err := sivafs.NewFilesystem(fs, path, memfs.New())
+	sfs, err := sivafs.NewFilesystemReadOnly(fs, path, 0)
 	if err != nil {
 		return nil, fmt.Errorf("opening siva filesystem: %v", err)
 	}
