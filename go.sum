@@ -19,8 +19,8 @@ github.com/creachadair/ffs v0.0.0-20190622160218-fd16ac7ed292/go.mod h1:XHWmBqku
 github.com/creachadair/fileinput v0.0.2 h1:VJH3tAfaI7WPH+phQUS/7DlGGmjh6TUNiNgt+wvV668=
 github.com/creachadair/fileinput v0.0.2/go.mod h1:p0gRgcsdi/KSB7Ulhw4c7PgbNNLE9gCIkyP32AqCBmk=
 github.com/creachadair/staticfile v0.0.3/go.mod h1:a3qySzCIXEprDGxk6tSxSI+dBBdLzqeBOMhZ+o2d3pM=
-github.com/creachadair/taskgroup v0.1.0 h1:C2rWAAoycU32iGw505qNE9nYTR/HAmkubHIu/xjZ83c=
-github.com/creachadair/taskgroup v0.1.0/go.mod h1:Sm24mgZhn5FscwtrzVkci2Lzi3uu4TshjR+T3hTtvaI=
+github.com/creachadair/taskgroup v0.2.0 h1:ekz6LTCIK5IiC+MBTy1XGqIvXLq18Hpw5S3/PLFKW8s=
+github.com/creachadair/taskgroup v0.2.0/go.mod h1:Sm24mgZhn5FscwtrzVkci2Lzi3uu4TshjR+T3hTtvaI=
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
