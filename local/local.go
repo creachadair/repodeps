@@ -59,6 +59,11 @@ func Load(ctx context.Context, dir string, opts *deps.Options) ([]*deps.Repo, er
 		} else if base := filepath.Base(path); base == ".git" || base == "vendor" {
 			return filepath.SkipDir
 		}
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		default:
+		}
 		pkg, err := build.Default.ImportDir(path, importMode)
 		if err != nil {
 			return nil // no importable go package here; skip it

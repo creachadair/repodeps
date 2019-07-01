@@ -39,6 +39,7 @@ var (
 	doReadStdin  = flag.Bool("stdin", false, "Read input filenames from stdin")
 	doSourceHash = flag.Bool("sourcehash", false, "Record the names and digests of source files")
 	doImportComm = flag.Bool("import-comments", false, "Parse and use import comments")
+	taskTimeout  = flag.Duration("timeout", 5*time.Minute, "Timeout on processing a single repository")
 	concurrency  = flag.Int("concurrency", 32, "Maximum concurrent workers")
 
 	out = &struct {
@@ -99,13 +100,15 @@ func main() {
 		}
 		numRepos++
 		run(func() error {
+			tctx, cancel := context.WithTimeout(ctx, *taskTimeout)
+			defer cancel()
 			log.Printf("Processing %q...", dir)
 
 			var repos []*deps.Repo
 			if filepath.Ext(path) == ".siva" {
-				repos, err = siva.Load(ctx, path, opts)
+				repos, err = siva.Load(tctx, path, opts)
 			} else {
-				repos, err = local.Load(ctx, path, opts)
+				repos, err = local.Load(tctx, path, opts)
 			}
 			if err != nil {
 				log.Printf("Skipped %q:\n  %v", dir, err)

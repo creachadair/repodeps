@@ -40,7 +40,7 @@ import (
 
 // Load reads the repository structure of a Siva archive file.  This may return
 // multiple repositories, if the file is rooted.
-func Load(_ context.Context, path string, opts *deps.Options) ([]*deps.Repo, error) {
+func Load(ctx context.Context, path string, opts *deps.Options) ([]*deps.Repo, error) {
 	if opts == nil {
 		opts = new(deps.Options)
 	}
@@ -93,6 +93,11 @@ func Load(_ context.Context, path string, opts *deps.Options) ([]*deps.Repo, err
 
 	var cur string
 	if err := refs.ForEach(func(ref *plumbing.Reference) error {
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		default:
+		}
 		// Rooted references have the form REFNAME/REMOTE. Skip refs that don't
 		// look like this.
 		name := string(ref.Name())
@@ -118,8 +123,13 @@ func Load(_ context.Context, path string, opts *deps.Options) ([]*deps.Repo, err
 		// Record the directory structure to support the build.Context VFS.
 		vfs := newVFS(here.Remotes[0].Url)
 		if err := tree.Files().ForEach(func(f *object.File) error {
-			if !deps.IsVendor(f.Name) {
-				vfs.add(f)
+			select {
+			case <-ctx.Done():
+				return ctx.Err()
+			default:
+				if !deps.IsVendor(f.Name) {
+					vfs.add(f)
+				}
 			}
 			return nil
 		}); err != nil {
