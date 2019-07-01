@@ -41,10 +41,10 @@ import (
 // Load reads the repository structure of a Siva archive file.  This may return
 // multiple repositories, if the file is rooted.
 func Load(ctx context.Context, path string, opts *deps.Options) ([]*deps.Repo, error) {
-	check := func() error {
+	check := func(op string) error {
 		select {
 		case <-ctx.Done():
-			return ctx.Err()
+			return fmt.Errorf("%s: %v", op, ctx.Err())
 		default:
 			return nil
 		}
@@ -101,7 +101,7 @@ func Load(ctx context.Context, path string, opts *deps.Options) ([]*deps.Repo, e
 
 	var cur string
 	if err := refs.ForEach(func(ref *plumbing.Reference) error {
-		if err := check(); err != nil {
+		if err := check("scanning references"); err != nil {
 			return err
 		}
 		// Rooted references have the form REFNAME/REMOTE. Skip refs that don't
@@ -129,7 +129,7 @@ func Load(ctx context.Context, path string, opts *deps.Options) ([]*deps.Repo, e
 		// Record the directory structure to support the build.Context VFS.
 		vfs := newVFS(here.Remotes[0].Url)
 		if err := tree.Files().ForEach(func(f *object.File) error {
-			if err := check(); err != nil {
+			if err := check("scanning files"); err != nil {
 				return err
 			} else if !deps.IsVendor(f.Name) {
 				vfs.add(f)
@@ -145,7 +145,7 @@ func Load(ctx context.Context, path string, opts *deps.Options) ([]*deps.Repo, e
 		}
 		bc := vfs.buildContext()
 		for dir := range vfs.dirs {
-			if err := check(); err != nil {
+			if err := check("importing packages"); err != nil {
 				return err
 			}
 			pkg, err := bc.ImportDir(dir, importMode)
