@@ -19,10 +19,20 @@ message Row {
   // The names and content digests of source files in this package.
   repeated File source_files = 5;
 
-  // next id: 6
+  // Classify the package type according to its role, if known.
+  Type type = 6;
+
+  // next id: 7
 
   message File {
     string repo_path = 1; // file path relative to the repository root
     bytes digest = 2;     // content digest (sha256)
+  }
+
+  enum Type {
+    UNKNOWN = 0; // the package type is not known
+    STDLIB = 1;  // this is a standard library package
+    LIBRARY = 2; // this is a library package
+    PROGRAM = 3; // this is an executable
   }
 }

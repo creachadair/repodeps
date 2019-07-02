@@ -63,6 +63,7 @@ func (g *Graph) Add(ctx context.Context, repo *deps.Repo, pkg *deps.Package) err
 		Repository:  url,
 		Directs:     pkg.Imports,
 		SourceFiles: files,
+		Type:        Row_Type(pkg.Type),
 	})
 }
 
