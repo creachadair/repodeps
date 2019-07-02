@@ -20,6 +20,8 @@ import (
 	"errors"
 	"fmt"
 	"go/build"
+	"io"
+	"io/ioutil"
 	"log"
 	"os"
 	"os/exec"
@@ -43,7 +45,17 @@ func Load(ctx context.Context, dir string, opts *deps.Options) ([]*deps.Repo, er
 		return nil, errors.New("no remotes defined")
 	}
 
+	// The local path of the checkout may be inside a GOPATH, in which case we
+	// will wind up with the wrong import path. To avoid this, set up a virtual
+	// GOPATH containing only this package, in a directory named by the remote
+	// URL of the repository.
 	repo := &deps.Repo{From: dir, Remotes: remotes}
+	root := filepath.Base(dir)
+	if url := strings.SplitN(remotes[0].Url, "://", 2); len(url) == 2 {
+		root = strings.TrimSuffix(url[1], ".git")
+	}
+	vfs := newVFS(dir, root)
+
 	var importMode build.ImportMode
 	if opts.UseImportComments {
 		importMode |= build.ImportComment
@@ -64,7 +76,7 @@ func Load(ctx context.Context, dir string, opts *deps.Options) ([]*deps.Repo, er
 			return ctx.Err()
 		default:
 		}
-		pkg, err := build.Default.ImportDir(path, importMode)
+		pkg, err := vfs.buildContext().ImportDir(vfs.fakePath(path), importMode)
 		if err != nil {
 			return nil // no importable go package here; skip it
 		}
@@ -137,4 +149,67 @@ func hashFile(path string) ([]byte, error) {
 	}
 	defer f.Close()
 	return deps.Hash(f), nil
+}
+
+// A vfs maps a physical directory to a virtual GOPATH.
+type vfs struct {
+	realDir string // actual filesystem path
+	root    string // advertised filesystem root
+}
+
+const separator = string(filepath.Separator)
+
+func newVFS(real, pkg string) vfs {
+	return vfs{realDir: real, root: filepath.Join("/go/src", pkg)}
+}
+
+// fakePath converts an actual filesystem path to a virtual equivalent.
+// If path is not inside the virualized directory, it is unmodified.
+func (v vfs) fakePath(path string) string {
+	if t := strings.TrimPrefix(path, v.realDir); t != path {
+		return filepath.Join(v.root, t)
+	}
+	return path
+}
+
+// fixPath converts a virtual path to its actual filesystem equivalent.
+func (v vfs) fixPath(path string) string {
+	if t := strings.TrimPrefix(path, v.root); t != path {
+		return filepath.Join(v.realDir, t)
+	}
+	return path
+}
+
+func (v vfs) openFile(path string) (io.ReadCloser, error) {
+	return os.Open(v.fixPath(path))
+}
+
+func (v vfs) readDir(path string) ([]os.FileInfo, error) {
+	return ioutil.ReadDir(v.fixPath(path))
+}
+
+func (v vfs) hasSubdir(root, dir string) (string, bool) {
+	if !strings.HasSuffix(root, separator) {
+		root += separator
+	}
+	clean := filepath.Clean(dir)
+	if t := strings.TrimPrefix(clean, root); t != clean {
+		return t, true
+	}
+	return "", false
+}
+
+func (v vfs) isDir(path string) bool {
+	fi, err := os.Stat(v.fixPath(path))
+	return err == nil && fi.Mode().IsDir()
+}
+
+func (v vfs) buildContext() *build.Context {
+	ctx := build.Default
+	ctx.GOPATH = "/go"
+	ctx.OpenFile = v.openFile
+	ctx.ReadDir = v.readDir
+	ctx.HasSubdir = v.hasSubdir
+	ctx.IsDir = v.isDir
+	return &ctx
 }
