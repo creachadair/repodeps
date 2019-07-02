@@ -17,12 +17,12 @@ package main
 
 import (
 	"context"
-	"encoding/json"
 	"flag"
 	"log"
 	"os"
 
 	"github.com/creachadair/repodeps/tools"
+	"github.com/gogo/protobuf/jsonpb"
 )
 
 var storePath = flag.String("store", os.Getenv("REPODEPS_DB"), "Storage path (required)")
@@ -36,14 +36,14 @@ func main() {
 	defer c.Close()
 
 	ctx := context.Background()
-	enc := json.NewEncoder(os.Stdout)
+	var enc jsonpb.Marshaler
 	for _, ipath := range flag.Args() {
 		row, err := g.Row(ctx, ipath)
 		if err != nil {
 			log.Printf("Reading %q: %v", ipath, err)
 			continue
 		}
-		if err := enc.Encode(row); err != nil {
+		if err := enc.Marshal(os.Stdout, row); err != nil {
 			log.Fatalf("Writing output: %v", err)
 		}
 	}

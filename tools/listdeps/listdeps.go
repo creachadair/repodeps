@@ -17,13 +17,13 @@ package main
 
 import (
 	"context"
-	"encoding/json"
 	"flag"
 	"log"
 	"os"
 
 	"github.com/creachadair/repodeps/graph"
 	"github.com/creachadair/repodeps/tools"
+	"github.com/gogo/protobuf/jsonpb"
 )
 
 var storePath = flag.String("store", os.Getenv("REPODEPS_DB"), "Storage path (required)")
@@ -41,10 +41,10 @@ func main() {
 		pfxs = append(pfxs, "") // list all
 	}
 	ctx := context.Background()
-	enc := json.NewEncoder(os.Stdout)
+	var enc jsonpb.Marshaler
 	for _, pfx := range pfxs {
 		if err := g.Scan(ctx, pfx, func(row *graph.Row) error {
-			return enc.Encode(row)
+			return enc.Marshal(os.Stdout, row)
 		}); err != nil {
 			log.Fatalf("Scan failed: %v", err)
 		}
