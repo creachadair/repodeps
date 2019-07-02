@@ -18,6 +18,7 @@ package deps
 
 import (
 	"crypto/sha256"
+	"go/build"
 	"io"
 	"strings"
 )
@@ -41,4 +42,16 @@ func Hash(r io.Reader) []byte {
 // IsVendor reports whether the specified path is in a vendor/ directory.
 func IsVendor(path string) bool {
 	return strings.HasPrefix(path, "vendor/") || strings.Contains(path, "/vendor/")
+}
+
+// PackageType classifies pkg based on its build metadata.
+func PackageType(pkg *build.Package) Package_Type {
+	switch {
+	case pkg.Goroot:
+		return Package_STDLIB
+	case pkg.Name == "main":
+		return Package_PROGRAM
+	default:
+		return Package_LIBRARY
+	}
 }

@@ -34,10 +34,20 @@ message Remote {
 message Package {
   string name = 1;        // the simple name of the package (foo)
   string import_path = 2; // the import path of the package (github.com/bar/foo)
+  Type type = 5;          // the type of package this is
+
   repeated string imports = 3; // import paths of direct dependencies
   repeated File sources = 4;   // the source files comprising the package
 
-  // next id: 5
+  // next id: 6
+
+  // Classify the package type according to its role, if known.
+  enum Type {
+    UNKNOWN = 0; // the package type is not known
+    STDLIB = 1;  // this is a standard library package
+    LIBRARY = 2; // this is a library package
+    PROGRAM = 3; // this is an executable
+  }
 }
 
 message File {

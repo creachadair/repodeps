@@ -156,6 +156,7 @@ func Load(ctx context.Context, path string, opts *deps.Options) ([]*deps.Repo, e
 				Name:       pkg.Name,
 				ImportPath: pkg.ImportPath,
 				Imports:    pkg.Imports,
+				Type:       deps.PackageType(pkg),
 			}
 			if opts.UseImportComments && pkg.ImportComment != "" {
 				rec.ImportPath = pkg.ImportComment
