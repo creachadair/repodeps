@@ -74,8 +74,8 @@ func main() {
 
 	// Output headers
 	tw := tabwriter.NewWriter(os.Stdout, 0, 8, 2, ' ', 0)
-	fmt.Fprintf(tw, "PKGS\t%d\t%d non-domain\n", numPkgs, numNonDom) // total packages scanned
-	fmt.Fprintf(tw, "DEPS\t%d\n", numDeps)                           // total dependencies observed
+	fmt.Fprintf(tw, "PKGS\t%d\n", numPkgs)                           // total packages scanned
+	fmt.Fprintf(tw, "DEPS\t%d\t%d non-domain\n", numDeps, numNonDom) // total dependencies observed
 	fmt.Fprint(tw, "PATH\tDEPS\t%DEPS\tPKGS\t%PKGS\tDEPS/PKG\n")
 
 	dkeys := stringset.FromKeys(dhist).Unordered()
