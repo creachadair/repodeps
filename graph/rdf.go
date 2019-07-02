@@ -21,6 +21,7 @@ const (
 	relDefinedIn = quad.IRI("dep:DefinedIn")
 	relRepoPath  = quad.IRI("dep:RepoPath")
 	relDigest    = quad.IRI("dep:Digest")
+	relHasFile   = quad.IRI("dep:HasFile")
 )
 
 // WriteQuads converts g to RDF 1.1 N-quads and writes them to w.
@@ -73,6 +74,7 @@ func (g *Graph) EncodeToQuads(ctx context.Context, f func(quad.Quad) error) (err
 		for _, src := range row.SourceFiles {
 			hd := hex.EncodeToString(src.Digest)
 			fid := quad.IRI("sha256:" + hd)
+			send(P(row.ImportPath), relHasFile, fid)
 			send(fid, relType, typeFile)
 			send(fid, relDigest, quad.String(hd))
 			send(fid, relRepoPath, quad.String(src.RepoPath))
