@@ -37,8 +37,8 @@ import (
 
 var (
 	doReadStdin  = flag.Bool("stdin", false, "Read input filenames from stdin")
-	doSourceHash = flag.Bool("sourcehash", false, "Record the names and digests of source files")
-	doImportComm = flag.Bool("import-comments", false, "Parse and use import comments")
+	doSourceHash = flag.Bool("sourcehash", true, "Record the names and digests of source files")
+	doImportComm = flag.Bool("import-comments", true, "Parse and use import comments")
 	taskTimeout  = flag.Duration("timeout", 5*time.Minute, "Timeout on processing a single repository")
 	concurrency  = flag.Int("concurrency", 32, "Maximum concurrent workers")
 
