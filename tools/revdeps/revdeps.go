@@ -21,11 +21,33 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"path/filepath"
+	"regexp"
+	"strings"
 
 	"github.com/creachadair/repodeps/tools"
 )
 
 var storePath = flag.String("store", os.Getenv("REPODEPS_DB"), "Storage path (required)")
+
+func init() {
+	flag.Usage = func() {
+		fmt.Fprintf(os.Stderr, `Usage: %[1]s <package>...
+
+Print the import paths of packages that depend directly on each named package.
+If a package ends with "/...", it matches any package with the given prefix.
+Each output line has the form:
+
+   target-package <TAB> source-package <LF>
+
+where source-package is the dependent package and target-package is the
+imported package.
+
+Options:
+`, filepath.Base(os.Args[0]))
+		flag.PrintDefaults()
+	}
+}
 
 func main() {
 	flag.Parse()
@@ -36,11 +58,22 @@ func main() {
 	defer c.Close()
 
 	ctx := context.Background()
-	for _, pkg := range flag.Args() {
-		if err := g.Importers(ctx, pkg, func(_, ipath string) {
-			fmt.Println(ipath)
-		}); err != nil {
-			log.Fatalf("Importers failed: %v", err)
+	if err := g.MatchImporters(ctx, newMatcher(flag.Args()), func(tpath, ipath string) {
+		fmt.Print(tpath, "\t", ipath, "\n")
+	}); err != nil {
+		log.Fatalf("Importers failed: %v", err)
+	}
+}
+
+func newMatcher(args []string) func(string) bool {
+	var ps []string
+	for _, arg := range args {
+		if t := strings.TrimSuffix(arg, "/..."); t != arg {
+			ps = append(ps, regexp.QuoteMeta(t))
+		} else {
+			ps = append(ps, regexp.QuoteMeta(arg)+"$")
 		}
 	}
+	re := regexp.MustCompile("^(?:" + strings.Join(ps, "|") + ")")
+	return re.MatchString
 }
