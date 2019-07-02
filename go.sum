@@ -10,6 +10,8 @@ github.com/anmitsu/go-shlex v0.0.0-20161002113705-648efa622239 h1:kFOfPq6dUM1hTo
 github.com/anmitsu/go-shlex v0.0.0-20161002113705-648efa622239/go.mod h1:2FmKhYUyUczH0OGQWaF5ceTx0UBShxjsH6f8oGKYe2c=
 github.com/armon/go-socks5 v0.0.0-20160902184237-e75332964ef5 h1:0CwZNZbxp69SHPdPJAN/hZIm0C4OItdklCFmMRWYpio=
 github.com/armon/go-socks5 v0.0.0-20160902184237-e75332964ef5/go.mod h1:wHh0iHkYZB8zMSxRWpUBQtwG5a7fFgvEO+odwuTv2gs=
+github.com/cayleygraph/cayley v0.7.5 h1:eUDWKF/Xg/N95ihuAdUKVPQ+pgaOvuvQ9h0XE3ZAPic=
+github.com/cayleygraph/cayley v0.7.5/go.mod h1:8bQ/gpnJrp0qT1pSNE6eLN/f57dfAIFaVieI4vngp/A=
 github.com/creachadair/atomicfile v0.2.0/go.mod h1:Tvr/wsb3lQY4dj+9utcmJ7Gp6wi3LKA8jRNqoxUhA2M=
 github.com/creachadair/badgerstore v0.0.3 h1:jkfZdCFINSAzGRx4sj+1hhrAEZ179gPU2Y12fk2MFB4=
 github.com/creachadair/badgerstore v0.0.3/go.mod h1:gE/0n5aidyp1GhbiwD97TA1EdaxRZPiF9pWc4QMy0K4=
