@@ -21,10 +21,16 @@ import (
 	"log"
 	"os"
 
+	"github.com/cayleygraph/cayley"
+	"github.com/cayleygraph/cayley/graph"
+	"github.com/cayleygraph/cayley/graph/kv/bolt"
 	"github.com/creachadair/repodeps/tools"
 )
 
-var storePath = flag.String("store", os.Getenv("REPODEPS_DB"), "Storage path (required)")
+var (
+	storePath  = flag.String("store", os.Getenv("REPODEPS_DB"), "Input storage path (required)")
+	outputPath = flag.String("output", "", "Output storage path (optional)")
+)
 
 func main() {
 	flag.Parse()
@@ -35,7 +41,25 @@ func main() {
 	defer c.Close()
 
 	ctx := context.Background()
-	if err := g.WriteQuads(ctx, os.Stdout); err != nil {
-		log.Fatalf("Encoding graph: %v", err)
+	var werr error
+	if *outputPath != "" {
+		if err := graph.InitQuadStore(bolt.Type, *outputPath, nil); err != nil {
+			log.Fatalf("Initializing output: %v", err)
+		}
+		st, err := cayley.NewGraph(bolt.Type, *outputPath, nil)
+		if err != nil {
+			log.Fatalf("Opening output: %v", err)
+		}
+		defer func() {
+			if err := st.Close(); err != nil {
+				log.Fatalf("Closing output: %v", err)
+			}
+		}()
+		werr = g.EncodeToQuads(ctx, st.QuadWriter.AddQuad)
+	} else {
+		werr = g.WriteQuads(ctx, os.Stdout)
+	}
+	if werr != nil {
+		log.Fatalf("Writing output: %v", err)
 	}
 }
