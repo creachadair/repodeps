@@ -50,11 +50,7 @@ func Load(ctx context.Context, dir string, opts *deps.Options) ([]*deps.Repo, er
 	// GOPATH containing only this package, in a directory named by the remote
 	// URL of the repository.
 	repo := &deps.Repo{From: dir, Remotes: remotes}
-	root := filepath.Base(dir)
-	if url := strings.SplitN(remotes[0].Url, "://", 2); len(url) == 2 {
-		root = strings.TrimSuffix(url[1], ".git")
-	}
-	vfs := newVFS(dir, root)
+	vfs := newVFS(dir, urlImportPath(remotes[0].Url))
 
 	var importMode build.ImportMode
 	if opts.UseImportComments {
@@ -212,4 +208,13 @@ func (v vfs) buildContext() *build.Context {
 	ctx.HasSubdir = v.hasSubdir
 	ctx.IsDir = v.isDir
 	return &ctx
+}
+
+func urlImportPath(url string) string {
+	if i := strings.Index(url, "@"); i >= 0 {
+		url = url[i+1:]
+	} else if ps := strings.SplitN(url, "://", 2); len(ps) == 2 {
+		url = ps[1]
+	}
+	return strings.TrimSuffix(url, ".git")
 }
