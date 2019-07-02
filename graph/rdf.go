@@ -29,7 +29,7 @@ func (g *Graph) WriteQuads(ctx context.Context, w io.Writer) error {
 	return g.EncodeToQuads(ctx, qw.WriteQuad)
 }
 
-// EncodeToQuads converts g to RDF 1.1 N-quads and calls f fo reach. If f
+// EncodeToQuads converts g to RDF 1.1 N-quads and calls f for each. If f
 // reports an error the conversion is terminated and the error is returned to
 // the caller of EncodeToQuads.
 func (g *Graph) EncodeToQuads(ctx context.Context, f func(quad.Quad) error) (err error) {
