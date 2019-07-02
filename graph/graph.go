@@ -107,16 +107,17 @@ func (g *Graph) Imports(ctx context.Context, pkg string) ([]string, error) {
 // Importers calls f for each package that directly depends on pkg.
 // If pkg ends with "/...", any package with that prefix is matched.  For
 // example "regexp/..." matches "regexp" and "regexp/syntax".
-//
-// The arguments to f are the target package (either pkg itself, or one of its
-// subpackages) and the import path of the dependent package.
-//
 // The order of results is unspecified.
 func (g *Graph) Importers(ctx context.Context, pkg string, f func(tpkg, ipkg string)) error {
-	match := func(s string) bool { return s == pkg }
 	if t := strings.TrimSuffix(pkg, "/..."); t != pkg {
-		match = func(s string) bool { return strings.HasPrefix(s, t) }
+		return g.MatchImporters(ctx, func(s string) bool { return strings.HasPrefix(s, t) }, f)
 	}
+	return g.MatchImporters(ctx, func(s string) bool { return s == pkg }, f)
+}
+
+// MatchImporters calls f(q, p) for each package p that directly depends on any
+// package q for which match(q) is true.  The order of results is unspecified.
+func (g *Graph) MatchImporters(ctx context.Context, match func(string) bool, f func(tpkg, ipkg string)) error {
 	return g.Scan(ctx, "", func(row *Row) error {
 		for _, elt := range row.Directs {
 			if match(elt) {
