@@ -40,7 +40,8 @@ type Graph struct {
 // New constructs a graph handle for the given storage.
 func New(st Storage) *Graph { return &Graph{st: st} }
 
-// Add adds the specified package to the graph.
+// Add adds the specified package to the graph. If an entry already exists for
+// the specified package, it is replaced.
 func (g *Graph) Add(ctx context.Context, repo *deps.Repo, pkg *deps.Package) error {
 	var url string
 	if len(repo.Remotes) != 0 {
