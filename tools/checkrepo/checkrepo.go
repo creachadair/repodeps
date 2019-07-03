@@ -24,6 +24,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"strings"
 	"sync"
 
 	"bitbucket.org/creachadair/stringset"
@@ -82,7 +83,7 @@ func main() {
 	enc := json.NewEncoder(os.Stdout)
 
 	for url := range tools.Inputs(*doReadStdin) {
-		url := url
+		url := fixURL(url)
 		if seen.Contains(url) {
 			log.Printf("[skipped] duplicate URL %q", url)
 			continue
@@ -136,12 +137,19 @@ func main() {
 }
 
 type result struct {
-	Need  bool   `json:"update"`
+	Need  bool   `json:"needsUpdate"`
 	Repo  string `json:"repository"`
 	Name  string `json:"name"`
 	Hex   string `json:"digest"`
 	Clone string `json:"clone,omitempty"`
-	Pkgs  int    `json:"packages"`
+	Pkgs  int    `json:"numPackages,omitempty"`
+}
+
+func fixURL(s string) string {
+	if !strings.HasPrefix(s, "git@") && !strings.Contains(s, "://") {
+		return "https://" + s
+	}
+	return s
 }
 
 func updater(ctx context.Context) (func(path string) (int, error), func() error) {
