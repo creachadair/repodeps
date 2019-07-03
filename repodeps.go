@@ -17,8 +17,8 @@
 package main
 
 import (
+	"bytes"
 	"context"
-	"encoding/json"
 	"flag"
 	"fmt"
 	"io"
@@ -33,6 +33,7 @@ import (
 	"github.com/creachadair/repodeps/siva"
 	"github.com/creachadair/repodeps/tools"
 	"github.com/creachadair/taskgroup"
+	"github.com/golang/protobuf/jsonpb"
 )
 
 var (
@@ -128,13 +129,20 @@ func main() {
 }
 
 func writeRepos(ctx context.Context, path string, repos []*deps.Repo) error {
-	bits, err := json.Marshal(repos)
-	if err != nil {
-		return err
+	var enc jsonpb.Marshaler
+	var buf bytes.Buffer
+	buf.WriteByte('[')
+	for i, repo := range repos {
+		if i > 0 {
+			buf.WriteByte(',')
+		}
+		if err := enc.Marshal(&buf, repo); err != nil {
+			return err
+		}
 	}
-	bits = append(bits, '\n')
+	buf.WriteString("]\n")
 	out.Lock()
 	defer out.Unlock()
-	_, err = out.Write(bits)
+	_, err := io.Copy(out, &buf)
 	return err
 }
