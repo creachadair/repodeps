@@ -55,10 +55,11 @@ func (c *CheckResult) NeedsUpdate() bool { return c.old != c.Digest }
 // Clone clones the repository state denoted by c in specified directory path.
 // The directory is created if it does not exist.
 func (c *CheckResult) Clone(ctx context.Context, path string) error {
-	if err := os.MkdirAll(filepath.Dir(path), 0700); err != nil {
+	dir, base := filepath.Split(path)
+	if err := os.MkdirAll(dir, 0700); err != nil {
 		return err
 	}
-	cmd := exec.CommandContext(ctx, "git", "clone", "--no-checkout", "--depth=1", c.URL, path)
+	cmd := exec.CommandContext(ctx, "git", "-C", dir, "clone", "--no-checkout", "--depth=1", c.URL, base)
 	if _, err := cmd.Output(); err != nil {
 		return runErr(err)
 	}
@@ -142,8 +143,9 @@ func firstHead(ctx context.Context, url, ref string) (name, digest string, _ err
 
 func runErr(err error) error {
 	if e, ok := err.(*exec.ExitError); ok {
-		line := strings.SplitN(string(e.Stderr), "\n", 2)[0]
-		return fmt.Errorf("%s: %v", line, err)
+		line := strings.Join(strings.Split(string(e.Stderr), "\n"), " ")
+		return fmt.Errorf("%v: %s", err, line)
 	}
+
 	return err
 }
