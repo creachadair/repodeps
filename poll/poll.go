@@ -25,6 +25,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/creachadair/repodeps/graph"
 	"github.com/golang/protobuf/ptypes"
@@ -67,25 +68,19 @@ func (c *CheckResult) Clone(ctx context.Context, path string) error {
 	return runErr(err)
 }
 
-// ScanURL calls f with the URL of each repository known by db having the
-// specified prefix.  If f returns false, scanning terminates without error.
-func (db *DB) ScanURL(ctx context.Context, prefix string, f func(string) bool) error {
-	return db.st.Scan(ctx, prefix, func(url string) error {
-		if !f(url) {
-			return graph.ErrStopScan
-		}
-		return nil
-	})
-}
-
 // Status returns the status record for the specified URL.  It is an error if
-// the given URl does not have a record in this database.
+// the given URL does not have a record in this database.
 func (db *DB) Status(ctx context.Context, url string) (*Status, error) {
 	var stat Status
 	if err := db.st.Load(ctx, url, &stat); err != nil {
 		return nil, err
 	}
 	return &stat, nil
+}
+
+// Scan scans the URLs of the database having the given prefix.
+func (db *DB) Scan(ctx context.Context, prefix string, f func(string) error) error {
+	return db.st.Scan(ctx, prefix, f)
 }
 
 // Check reports whether the specified repository requires an update. If the
@@ -177,4 +172,29 @@ func runErr(err error) error {
 	}
 
 	return err
+}
+
+// ShouldCheck reports whether the given status message should be checked,
+// based on its history of previous updates. No update will be suggested within
+// min of the most recent check. Otherwise, schedule an update once the current
+// time is at least the average gap between updates.
+func ShouldCheck(stat *Status, min time.Duration) bool {
+	now := time.Now()
+	then, _ := ptypes.Timestamp(stat.LastCheck)
+
+	// Do not do an update within min after the last update.
+	if then.Add(min).After(now) {
+		return false
+	}
+
+	n := len(stat.Updates)
+	if n == 0 {
+		return true
+	}
+	// Compute the average time between updates and schedule one if it has been
+	// at least that long since the last.
+	first, _ := ptypes.Timestamp(stat.Updates[0].When)
+	last, _ := ptypes.Timestamp(stat.Updates[n-1].When)
+	avg := last.Sub(first) / time.Duration(n)
+	return then.Add(avg).Before(now)
 }
