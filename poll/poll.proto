@@ -9,6 +9,7 @@ message Status {
   string repository = 1; // repository fetch URL
   string ref_name = 2;   // reference name to fetch (default is HEAD)
   bytes digest = 3;      // latest known digest
+  int32 error_count = 6; // fetch errors since last successful check
 
   // When the last check of this repository was made. If unset, the repository
   // has never been checked.
@@ -17,7 +18,7 @@ message Status {
   // The history of updates, oldest to newest.
   repeated Update updates = 5;
 
-  // next id: 6
+  // next id: 7
 
   message Update {
     // When this update was discovered.
