@@ -137,6 +137,7 @@ func (g *Graph) MatchImporters(ctx context.Context, match func(string) bool, f f
 // Storage represents the interface to persistent storage.
 type Storage interface {
 	// Load reads the data for the specified key and unmarshals it into val.
+	// If key is not present, Load must return ErrKeyNotFound.
 	Load(ctx context.Context, key string, val proto.Message) error
 
 	// Store marshals the data from value and stores it under key.
@@ -147,6 +148,11 @@ type Storage interface {
 	Scan(ctx context.Context, prefix string, f func(string) error) error
 }
 
-// ErrStopScan is returned by the callback to Scan to signal that scanning
-// should terminate without error.
-var ErrStopScan = errors.New("stop scanning")
+var (
+	// ErrStopScan is returned by the callback to Scan to signal that scanning
+	// should terminate without error.
+	ErrStopScan = errors.New("stop scanning")
+
+	// ErrKeyNotFound is returned by Load when the specified key is not found.
+	ErrKeyNotFound = errors.New("key not found")
+)
