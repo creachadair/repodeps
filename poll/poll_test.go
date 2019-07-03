@@ -2,6 +2,9 @@ package poll_test
 
 import (
 	"context"
+	"io/ioutil"
+	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/creachadair/ffs/blob/memstore"
@@ -14,7 +17,11 @@ func TestCheck(t *testing.T) {
 	st := storage.NewBlob(memstore.New())
 	db := poll.NewDB(st)
 
-	const url = "." // this repository
+	url, err := filepath.Abs("..") // this repository
+	if err != nil {
+		t.Fatalf("Getting working path: %v", err)
+	}
+	t.Logf("Repository path is %q", url)
 	ctx := context.Background()
 
 	// The first time we check the database is empty, so this should report that
@@ -27,6 +34,17 @@ func TestCheck(t *testing.T) {
 	if !res.NeedsUpdate() {
 		t.Error("NeedsUpdate: got false, want true")
 	}
+
+	// Verify that we can clone based on the status of the check.
+	tmp, err := ioutil.TempDir("", "clone")
+	if err != nil {
+		t.Fatalf("Creating temp dir: %v", err)
+	}
+	if err := res.Clone(ctx, tmp); err != nil {
+		t.Fatalf("Clone: %v", err)
+	}
+	t.Logf("Clone in %q", tmp)
+	defer os.RemoveAll(tmp)
 
 	// Now that we have checked, checking the same URL again without a change in
 	// between should report the repository is up-to-date.

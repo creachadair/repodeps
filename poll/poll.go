@@ -21,7 +21,9 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 
 	"github.com/creachadair/repodeps/graph"
@@ -49,6 +51,20 @@ type CheckResult struct {
 
 // NeedsUpdate reports whether c requires an update.
 func (c *CheckResult) NeedsUpdate() bool { return c.old != c.Digest }
+
+// Clone clones the repository state denoted by c in specified directory path.
+// The directory is created if it does not exist.
+func (c *CheckResult) Clone(ctx context.Context, path string) error {
+	if err := os.MkdirAll(filepath.Dir(path), 0700); err != nil {
+		return err
+	}
+	cmd := exec.CommandContext(ctx, "git", "clone", "--no-checkout", "--depth=1", c.URL, path)
+	if _, err := cmd.Output(); err != nil {
+		return runErr(err)
+	}
+	_, err := exec.CommandContext(ctx, "git", "-C", path, "checkout", "--detach", c.Digest).Output()
+	return runErr(err)
+}
 
 // Status returns the status record for the specified URL.  It is an error if
 // the given URl does not have a record in this database.
@@ -122,4 +138,12 @@ func firstHead(ctx context.Context, url, ref string) (name, digest string, _ err
 		}
 	}
 	return "", "", errors.New("no remote heads")
+}
+
+func runErr(err error) error {
+	if e, ok := err.(*exec.ExitError); ok {
+		line := strings.SplitN(string(e.Stderr), "\n", 2)[0]
+		return fmt.Errorf("%s: %v", line, err)
+	}
+	return err
 }
