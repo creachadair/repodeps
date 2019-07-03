@@ -44,6 +44,7 @@ var (
 	doScanDB    = flag.Bool("scan", false, "Read repo URLs from the poll database")
 	doClone     = flag.Bool("clone", false, "Clone updated repositories")
 	doUpdate    = flag.Bool("update", false, "Update cloned repositories (implies -clone)")
+	errorLimit  = flag.Int("error-limit", 10, "Discard repositories that fail more than this many times")
 	concurrency = flag.Int("concurrency", 16, "Number of concurrent workers")
 )
 
@@ -103,18 +104,23 @@ func main() {
 		seen.Add(url)
 		run(func() error {
 			res, err := db.Check(ctx, url)
-			if err != nil {
+			if err != nil && res == nil { // structural failure
 				log.Printf("[skipped] checking %q: %v", url, err)
 				return nil
+			}
+			if res.Errors > *errorLimit { // update failure
+				db.Remove(ctx, url)
+				log.Printf("Removed %q after %d failures", url, res.Errors)
 			}
 			out := &result{
 				Need: res.NeedsUpdate(),
 				Repo: res.URL,
 				Name: res.Name,
 				Hex:  res.Digest,
+				Errs: res.Errors,
 			}
 			if res.NeedsUpdate() && (*doClone || *doUpdate) {
-				path := filepath.Join(*cloneDir, fmt.Sprintf("%s.%d", res.Digest, res))
+				path := filepath.Join(*cloneDir, fmt.Sprintf("%s.%p", res.Digest, res))
 				if err := res.Clone(ctx, path); err != nil {
 					log.Printf("[skipped] cloning %q failed: %v", res.URL, err)
 					return nil
@@ -154,9 +160,10 @@ type result struct {
 	Need  bool   `json:"needsUpdate"`
 	Repo  string `json:"repository"`
 	Name  string `json:"name"`
-	Hex   string `json:"digest"`
+	Hex   string `json:"digest,omitempty"`
 	Clone string `json:"clone,omitempty"`
 	Pkgs  int    `json:"numPackages,omitempty"`
+	Errs  int    `json:"errors,omitempty"`
 }
 
 func updater(ctx context.Context) (func(path string) (int, error), func() error) {
