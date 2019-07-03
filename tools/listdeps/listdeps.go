@@ -12,12 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Program listdeps lists the keys of a graph.
+// Program listdeps lists the keys and values of a graph.
 package main
 
 import (
 	"context"
 	"flag"
+	"fmt"
 	"log"
 	"os"
 
@@ -26,7 +27,10 @@ import (
 	"github.com/gogo/protobuf/jsonpb"
 )
 
-var storePath = flag.String("store", os.Getenv("REPODEPS_DB"), "Storage path (required)")
+var (
+	storePath  = flag.String("store", os.Getenv("REPODEPS_DB"), "Storage path (required)")
+	doKeysOnly = flag.Bool("keys", false, "Print only keys, not values")
+)
 
 func main() {
 	flag.Parse()
@@ -43,9 +47,18 @@ func main() {
 	ctx := context.Background()
 	var enc jsonpb.Marshaler
 	for _, pfx := range pfxs {
-		if err := g.Scan(ctx, pfx, func(row *graph.Row) error {
-			return enc.Marshal(os.Stdout, row)
-		}); err != nil {
+		if *doKeysOnly {
+			err = g.List(ctx, pfx, func(key string) error {
+				fmt.Println(key)
+				return nil
+			})
+		} else {
+			err = g.Scan(ctx, pfx, func(row *graph.Row) error {
+				defer fmt.Println()
+				return enc.Marshal(os.Stdout, row)
+			})
+		}
+		if err != nil {
 			log.Fatalf("Scan failed: %v", err)
 		}
 	}
