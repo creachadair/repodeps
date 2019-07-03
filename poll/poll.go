@@ -21,52 +21,40 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
-	"os"
 	"os/exec"
-	"path/filepath"
 	"strings"
-	"time"
 
-	"github.com/creachadair/repodeps/graph"
+	"github.com/creachadair/repodeps/storage"
+	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/ptypes"
 )
 
 //go:generate protoc --go_out=. poll.proto
 
+// Storage represents the interface to persistent storage.
+type Storage interface {
+	// Load reads the data for the specified key and unmarshals it into val.
+	// If key is not present, Load must return storage.ErrKeyNotFound.
+	Load(ctx context.Context, key string, val proto.Message) error
+
+	// Store marshals the data from value and stores it under key.
+	Store(ctx context.Context, key string, val proto.Message) error
+
+	// Scan calls f with each key having the specified prefix. If f reports an
+	// error that error is propagated to the caller of Scan.
+	Scan(ctx context.Context, prefix string, f func(string) error) error
+
+	// Delete removes the specified key from the database.
+	Delete(ctx context.Context, key string) error
+}
+
 // A DB represents a cache of update statuses for repositories.
 type DB struct {
-	st graph.Storage
+	st Storage
 }
 
 // NewDB constructs a database handle for the given storage.
-func NewDB(st graph.Storage) *DB { return &DB{st: st} }
-
-// CheckResult records the update status of a repository.
-type CheckResult struct {
-	URL    string // repository fetch URL
-	Name   string // remote head name
-	Digest string // current digest value
-
-	old string // old digest value
-}
-
-// NeedsUpdate reports whether c requires an update.
-func (c *CheckResult) NeedsUpdate() bool { return c.old != c.Digest }
-
-// Clone clones the repository state denoted by c in specified directory path.
-// The directory is created if it does not exist.
-func (c *CheckResult) Clone(ctx context.Context, path string) error {
-	dir, base := filepath.Split(path)
-	if err := os.MkdirAll(dir, 0700); err != nil {
-		return err
-	}
-	cmd := git(ctx, "-C", dir, "clone", "--no-checkout", "--depth=1", c.URL, base)
-	if _, err := cmd.Output(); err != nil {
-		return runErr(err)
-	}
-	_, err := git(ctx, "-C", path, "checkout", "--detach", c.Digest).Output()
-	return runErr(err)
-}
+func NewDB(st Storage) *DB { return &DB{st: st} }
 
 // Status returns the status record for the specified URL.  It is an error if
 // the given URL does not have a record in this database.
@@ -85,9 +73,14 @@ func (db *DB) Scan(ctx context.Context, prefix string, f func(string) error) err
 
 // Check reports whether the specified repository requires an update. If the
 // repository does not exist, it is added and reported as needing update.
+//
+// If there is an error in updating the status, the check result will be
+// non-nil and the caller can check the Errors field to see how often an update
+// has been attempted without success. Repositories that fail too often may be
+// pruned from the database.
 func (db *DB) Check(ctx context.Context, url string) (*CheckResult, error) {
 	stat, err := db.Status(ctx, url)
-	if err == graph.ErrKeyNotFound {
+	if err == storage.ErrKeyNotFound {
 		// This is a new repository; set up the initial state.
 		stat = &Status{
 			Repository: url,
@@ -96,22 +89,28 @@ func (db *DB) Check(ctx context.Context, url string) (*CheckResult, error) {
 	} else if err != nil {
 		return nil, err
 	}
+	// Build the return value before updating the saved state.
+	st := &CheckResult{
+		URL:  url,
+		Name: stat.RefName,
+
+		old: hex.EncodeToString(stat.Digest),
+	}
+
+	// Try to update the repository state. If this fails, report the partial
+	// results back to the caller.
 	name, digest, err := bestHead(ctx, url, stat.RefName)
 	if err != nil {
-		return nil, err
+		stat.ErrorCount++
+		st.Errors = int(stat.ErrorCount)
+		db.st.Store(ctx, url, stat)
+		return st, err
 	}
+	st.Name = name
+	st.Digest = digest
 	dec, err := hex.DecodeString(digest)
 	if err != nil {
 		return nil, fmt.Errorf("invalid digest: %v", err)
-	}
-
-	// Build the return value before updating the saved state.
-	st := &CheckResult{
-		URL:    url,
-		Name:   name,
-		Digest: digest,
-
-		old: hex.EncodeToString(stat.Digest),
 	}
 
 	// If this isn't the first update, save the current value as history.
@@ -172,29 +171,4 @@ func runErr(err error) error {
 	}
 
 	return err
-}
-
-// ShouldCheck reports whether the given status message should be checked,
-// based on its history of previous updates. No update will be suggested within
-// min of the most recent check. Otherwise, schedule an update once the current
-// time is at least the average gap between updates.
-func ShouldCheck(stat *Status, min time.Duration) bool {
-	now := time.Now()
-	then, _ := ptypes.Timestamp(stat.LastCheck)
-
-	// Do not do an update within min after the last update.
-	if then.Add(min).After(now) {
-		return false
-	}
-
-	n := len(stat.Updates)
-	if n == 0 {
-		return true
-	}
-	// Compute the average time between updates and schedule one if it has been
-	// at least that long since the last.
-	first, _ := ptypes.Timestamp(stat.Updates[0].When)
-	last, _ := ptypes.Timestamp(stat.Updates[n-1].When)
-	avg := last.Sub(first) / time.Duration(n)
-	return then.Add(avg).Before(now)
 }
