@@ -26,6 +26,7 @@ import (
 	"path/filepath"
 	"strings"
 	"sync"
+	"time"
 
 	"bitbucket.org/creachadair/stringset"
 	"github.com/creachadair/repodeps/deps"
@@ -79,14 +80,15 @@ func main() {
 	g, run := taskgroup.New(taskgroup.Trigger(cancel)).Limit(*concurrency)
 
 	var omu sync.Mutex // guards stdout, numUpdates
-	var numUpdates int
+	var numUpdates, numDups int
 	seen := stringset.New()
 	enc := json.NewEncoder(os.Stdout)
 
+	start := time.Now()
 	for url := range tools.Inputs(*doReadStdin) {
 		url := fixURL(url)
 		if seen.Contains(url) {
-			log.Printf("[skipped] duplicate URL %q", url)
+			numDups++
 			continue
 		}
 		seen.Add(url)
@@ -108,9 +110,10 @@ func main() {
 					log.Printf("[skipped] cloning %q failed: %v", res.URL, err)
 					return nil
 				}
-				out.Clone = path
 				if *doUpdate && !*doClone {
 					defer os.RemoveAll(path) // clean up after update, if -clone is not set
+				} else {
+					out.Clone = path
 				}
 				n, err := update(path)
 				if err != nil {
@@ -132,6 +135,7 @@ func main() {
 	if err := c.Close(); err != nil {
 		log.Fatalf("Closing storage: %v", err)
 	}
+	log.Printf("Processing complete (%d duplicates, %v elapsed)", numDups, time.Since(start))
 	if *doUpdate {
 		log.Printf("Updated %d packages total", numUpdates)
 	}
