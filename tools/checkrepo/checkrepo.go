@@ -20,6 +20,7 @@ import (
 	"context"
 	"encoding/json"
 	"flag"
+	"fmt"
 	"io/ioutil"
 	"log"
 	"os"
@@ -113,7 +114,7 @@ func main() {
 				Hex:  res.Digest,
 			}
 			if res.NeedsUpdate() && (*doClone || *doUpdate) {
-				path := filepath.Join(*cloneDir, res.Digest)
+				path := filepath.Join(*cloneDir, fmt.Sprintf("%s.%d", res.Digest, res))
 				if err := res.Clone(ctx, path); err != nil {
 					log.Printf("[skipped] cloning %q failed: %v", res.URL, err)
 					return nil
