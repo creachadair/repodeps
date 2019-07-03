@@ -50,14 +50,26 @@ type CheckResult struct {
 // NeedsUpdate reports whether c requires an update.
 func (c *CheckResult) NeedsUpdate() bool { return c.old != c.Digest }
 
+// Status returns the status record for the specified URL.  It is an error if
+// the given URl does not have a record in this database.
+func (db *DB) Status(ctx context.Context, url string) (*Status, error) {
+	var stat Status
+	if err := db.st.Load(ctx, url, &stat); err != nil {
+		return nil, err
+	}
+	return &stat, nil
+}
+
 // Check reports whether the specified repository requires an update. If the
 // repository does not exist, it is added and reported as needing update.
 func (db *DB) Check(ctx context.Context, url string) (*CheckResult, error) {
-	var stat Status
-	if err := db.st.Load(ctx, url, &stat); err == graph.ErrKeyNotFound {
+	stat, err := db.Status(ctx, url)
+	if err == graph.ErrKeyNotFound {
 		// This is a new repository; set up the initial state.
-		stat.Repository = url
-		stat.RefName = "refs/heads/*"
+		stat = &Status{
+			Repository: url,
+			RefName:    "refs/heads/*",
+		}
 	} else if err != nil {
 		return nil, err
 	}
@@ -91,7 +103,7 @@ func (db *DB) Check(ctx context.Context, url string) (*CheckResult, error) {
 	stat.LastCheck = ptypes.TimestampNow()
 
 	// Write the new state back to storage.
-	if err := db.st.Store(ctx, url, &stat); err != nil {
+	if err := db.st.Store(ctx, url, stat); err != nil {
 		return nil, err
 	}
 	return st, nil
