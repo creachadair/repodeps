@@ -66,6 +66,11 @@ func (db *DB) Status(ctx context.Context, url string) (*Status, error) {
 	return &stat, nil
 }
 
+// Remove removes the status record for the specified URL.
+func (db *DB) Remove(ctx context.Context, url string) error {
+	return db.st.Delete(ctx, url)
+}
+
 // Scan scans the URLs of the database having the given prefix.
 func (db *DB) Scan(ctx context.Context, prefix string, f func(string) error) error {
 	return db.st.Scan(ctx, prefix, f)
@@ -90,11 +95,12 @@ func (db *DB) Check(ctx context.Context, url string) (*CheckResult, error) {
 		return nil, err
 	}
 	// Build the return value before updating the saved state.
+	old := hex.EncodeToString(stat.Digest)
 	st := &CheckResult{
-		URL:  url,
-		Name: stat.RefName,
-
-		old: hex.EncodeToString(stat.Digest),
+		URL:    url,
+		Name:   stat.RefName,
+		Digest: old,
+		old:    old,
 	}
 
 	// Try to update the repository state. If this fails, report the partial
@@ -107,11 +113,7 @@ func (db *DB) Check(ctx context.Context, url string) (*CheckResult, error) {
 		return st, err
 	}
 	st.Name = name
-	st.Digest = digest
-	dec, err := hex.DecodeString(digest)
-	if err != nil {
-		return nil, fmt.Errorf("invalid digest: %v", err)
-	}
+	st.Digest = hex.EncodeToString(digest)
 
 	// If this isn't the first update, save the current value as history.
 	if len(stat.Digest) != 0 && st.NeedsUpdate() {
@@ -121,8 +123,9 @@ func (db *DB) Check(ctx context.Context, url string) (*CheckResult, error) {
 		})
 	}
 	stat.RefName = name
-	stat.Digest = dec
+	stat.Digest = digest
 	stat.LastCheck = ptypes.TimestampNow()
+	stat.ErrorCount = 0 // success resets the counter
 
 	// Write the new state back to storage.
 	if err := db.st.Store(ctx, url, stat); err != nil {
@@ -131,29 +134,33 @@ func (db *DB) Check(ctx context.Context, url string) (*CheckResult, error) {
 	return st, nil
 }
 
-func bestHead(ctx context.Context, url, ref string) (name, digest string, _ error) {
+func bestHead(ctx context.Context, url, ref string) (name string, digest []byte, _ error) {
 	out, err := git(ctx, "ls-remote", "-q", url, ref).Output()
 	if err != nil {
-		return "", "", runErr(err)
+		return "", nil, runErr(err)
 	}
+	var hexDigest string
 	for _, line := range strings.Split(strings.TrimSpace(string(out)), "\n") {
 		parts := strings.Fields(line)
 		if len(parts) != 2 {
 			continue // wrong form
 		}
 		if parts[1] == "refs/heads/master" {
-			return parts[1], parts[0], nil // master is preferred if present
+			name, hexDigest = parts[1], parts[0] // master is preferred, if present
+			break
 		} else if !strings.HasPrefix(parts[1], "refs/heads/") && parts[1] != "HEAD" {
 			continue // not interesting
 		}
 
 		// Take the first available candidate, falling back to HEAD.
 		if name == "" || name == "HEAD" {
-			name, digest = parts[1], parts[0]
+			name, hexDigest = parts[1], parts[0]
 		}
 	}
 	if name == "" {
-		return "", "", errors.New("no matching remote heads")
+		return "", nil, errors.New("no matching remote heads")
+	} else if digest, err = hex.DecodeString(hexDigest); err != nil {
+		return "", nil, fmt.Errorf("invalid digest: %v", err)
 	}
 	return
 }
