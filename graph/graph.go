@@ -20,6 +20,7 @@ package graph
 import (
 	"context"
 	"errors"
+	"fmt"
 	"sort"
 	"strings"
 
@@ -65,6 +66,16 @@ func (g *Graph) Add(ctx context.Context, repo *deps.Repo, pkg *deps.Package) err
 		SourceFiles: files,
 		Type:        Row_Type(pkg.Type),
 	})
+}
+
+// AddAll calls Add for each package defined in the specified repo.
+func (g *Graph) AddAll(ctx context.Context, repo *deps.Repo) error {
+	for _, pkg := range repo.Packages {
+		if err := g.Add(ctx, repo, pkg); err != nil {
+			return fmt.Errorf("package %q: %v", pkg.ImportPath, err)
+		}
+	}
+	return nil
 }
 
 // Row loads the complete row for the specified import path.
