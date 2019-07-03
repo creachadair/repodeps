@@ -31,7 +31,6 @@ import (
 
 // TODO: Identifiable errors.
 // TODO: Reverse index.
-// TODO: RDF output.
 
 // A Graph is an interface to a package dependency graph.
 type Graph struct {
