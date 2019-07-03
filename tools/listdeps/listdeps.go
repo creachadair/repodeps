@@ -24,7 +24,7 @@ import (
 
 	"github.com/creachadair/repodeps/graph"
 	"github.com/creachadair/repodeps/tools"
-	"github.com/gogo/protobuf/jsonpb"
+	"github.com/golang/protobuf/jsonpb"
 )
 
 var (

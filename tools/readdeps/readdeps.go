@@ -23,7 +23,7 @@ import (
 	"os"
 
 	"github.com/creachadair/repodeps/tools"
-	"github.com/gogo/protobuf/jsonpb"
+	"github.com/golang/protobuf/jsonpb"
 )
 
 var storePath = flag.String("store", os.Getenv("REPODEPS_DB"), "Storage path (required)")

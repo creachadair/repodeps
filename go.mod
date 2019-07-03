@@ -17,7 +17,7 @@ require (
 	github.com/dlclark/regexp2 v1.1.6 // indirect
 	github.com/dop251/goja v0.0.0-20190625200431-3f2f11566cd5 // indirect
 	github.com/go-sourcemap/sourcemap v2.1.2+incompatible // indirect
-	github.com/gogo/protobuf v1.2.1
+	github.com/gogo/protobuf v1.2.1 // indirect
 	github.com/golang/protobuf v1.3.1
 	github.com/remyoudompheng/bigfft v0.0.0-20190512091148-babf20351dd7 // indirect
 	github.com/tylertreat/BoomFilters v0.0.0-20181028192813-611b3dbe80e8 // indirect
