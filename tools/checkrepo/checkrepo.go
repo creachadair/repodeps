@@ -198,9 +198,14 @@ func scanDB(ctx context.Context, db *poll.DB) <-chan string {
 	ch := make(chan string)
 	go func() {
 		defer close(ch)
-		if err := db.ScanURL(ctx, "", func(url string) bool {
-			ch <- url
-			return true
+		if err := db.Scan(ctx, "", func(url string) error {
+			stat, err := db.Status(ctx, url)
+			if err != nil {
+				return err
+			} else if poll.ShouldCheck(stat, 15*time.Minute) {
+				ch <- url
+			}
+			return nil
 		}); err != nil {
 			log.Printf("Warning: scanning failed: %v", err)
 		}
