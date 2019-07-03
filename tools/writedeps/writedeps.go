@@ -28,6 +28,7 @@ import (
 	"github.com/creachadair/fileinput"
 	"github.com/creachadair/repodeps/deps"
 	"github.com/creachadair/repodeps/tools"
+	"github.com/golang/protobuf/jsonpb"
 )
 
 var storePath = flag.String("store", "", "Storage path (required)")
@@ -45,11 +46,19 @@ func main() {
 	defer rc.Close()
 	dec := json.NewDecoder(bufio.NewReader(rc))
 	for dec.More() {
-		var msg []*deps.Repo
-		if err := dec.Decode(&msg); err != nil {
-			log.Fatalf("Decoding failed: %v", err)
+		// The outputs for each repository are an array, which we have to decode
+		// manually because the protobuf decoder doesn't deal with slices.
+		var raw []json.RawMessage
+		if err := dec.Decode(&raw); err != nil {
+			log.Fatalf("Reading message failed: %v", err)
 		}
-		for _, repo := range msg {
+
+		// Each message is a JSON format deps.Repo message.
+		for _, msg := range raw {
+			repo := new(deps.Repo)
+			if err := jsonpb.UnmarshalString(string(msg), repo); err != nil {
+				log.Fatalf("Decoding message: %v", err)
+			}
 			for _, pkg := range repo.Packages {
 				if err := g.Add(ctx, repo, pkg); err != nil {
 					log.Fatalf("Adding package %q: %v", pkg.ImportPath, err)
