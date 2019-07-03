@@ -12,7 +12,7 @@ import (
 
 func TestCheck(t *testing.T) {
 	st := storage.NewBlob(memstore.New())
-	db := poll.New(st)
+	db := poll.NewDB(st)
 
 	const url = "." // this repository
 	ctx := context.Background()

@@ -35,8 +35,8 @@ type DB struct {
 	st graph.Storage
 }
 
-// New constructs a database handle for the given storage.
-func New(st graph.Storage) *DB { return &DB{st: st} }
+// NewDB constructs a database handle for the given storage.
+func NewDB(st graph.Storage) *DB { return &DB{st: st} }
 
 // CheckResult records the update status of a repository.
 type CheckResult struct {
