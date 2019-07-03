@@ -18,6 +18,7 @@ package main
 import (
 	"context"
 	"flag"
+	"fmt"
 	"log"
 	"os"
 
@@ -46,5 +47,6 @@ func main() {
 		if err := enc.Marshal(os.Stdout, row); err != nil {
 			log.Fatalf("Writing output: %v", err)
 		}
+		fmt.Println()
 	}
 }
