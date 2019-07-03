@@ -87,9 +87,9 @@ func (g *Graph) Row(ctx context.Context, pkg string) (*Row, error) {
 	return &row, nil
 }
 
-// List calls f with each key in the graph having the specified prefix.
-// If f reports an error, scanning terminates. If te error is ErrStopScan,
-// List returns nil. Otherwise, List returns the error from f.
+// List calls f with each key in the graph having the specified prefix.  If f
+// reports an error, scanning terminates. If te error is ErrStopScan, List
+// returns nil. Otherwise, List returns the error from f.
 func (g *Graph) List(ctx context.Context, prefix string, f func(string) error) error {
 	err := g.st.Scan(ctx, prefix, f)
 	if err == ErrStopScan {
@@ -148,7 +148,7 @@ func (g *Graph) MatchImporters(ctx context.Context, match func(string) bool, f f
 // Storage represents the interface to persistent storage.
 type Storage interface {
 	// Load reads the data for the specified key and unmarshals it into val.
-	// If key is not present, Load must return ErrKeyNotFound.
+	// If key is not present, Load must return storage.ErrKeyNotFound.
 	Load(ctx context.Context, key string, val proto.Message) error
 
 	// Store marshals the data from value and stores it under key.
@@ -159,11 +159,6 @@ type Storage interface {
 	Scan(ctx context.Context, prefix string, f func(string) error) error
 }
 
-var (
-	// ErrStopScan is returned by the callback to Scan to signal that scanning
-	// should terminate without error.
-	ErrStopScan = errors.New("stop scanning")
-
-	// ErrKeyNotFound is returned by Load when the specified key is not found.
-	ErrKeyNotFound = errors.New("key not found")
-)
+// ErrStopScan is returned by the callback to Scan to signal that scanning
+// should terminate without error.
+var ErrStopScan = errors.New("stop scanning")

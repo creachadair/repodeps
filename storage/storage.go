@@ -12,39 +12,43 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package storage defines implementations of the graph.Storage interface.
+// Package storage defines a persistent storage interface.
 package storage
 
 import (
 	"context"
+	"errors"
 	"strings"
 
 	"github.com/creachadair/ffs/blob"
-	"github.com/creachadair/repodeps/graph"
 	"github.com/golang/protobuf/proto"
 	"golang.org/x/xerrors"
 )
 
-// NewBlob constructs a graph.Storage implementation around a blob.Store.
-func NewBlob(bs blob.Store) graph.Storage { return storage{bs: bs} }
+// ErrKeyNotFound is returned by Load when the specified key is not found.
+var ErrKeyNotFound = errors.New("key not found")
 
-type storage struct {
+// NewBlob constructs a storage implementation around a blob.Store.
+func NewBlob(bs blob.Store) BlobStore { return BlobStore{bs: bs} }
+
+// BlobStore implements the package Storage interfaces.
+type BlobStore struct {
 	bs blob.Store
 }
 
-// Load implements part of the graph.Storage interface.
-func (s storage) Load(ctx context.Context, key string, val proto.Message) error {
+// Load implements part of graph.Storage and poll.Storage
+func (s BlobStore) Load(ctx context.Context, key string, val proto.Message) error {
 	bits, err := s.bs.Get(ctx, key)
 	if xerrors.Is(err, blob.ErrKeyNotFound) {
-		return graph.ErrKeyNotFound
+		return ErrKeyNotFound
 	} else if err != nil {
 		return err
 	}
 	return proto.Unmarshal(bits, val)
 }
 
-// Store implements part of the graph.Storage interface.
-func (s storage) Store(ctx context.Context, key string, val proto.Message) error {
+// Store implements part of graph.Storage and poll.Storage.
+func (s BlobStore) Store(ctx context.Context, key string, val proto.Message) error {
 	bits, err := proto.Marshal(val)
 	if err != nil {
 		return err
@@ -56,8 +60,8 @@ func (s storage) Store(ctx context.Context, key string, val proto.Message) error
 	})
 }
 
-// Scan implements part of the graph.Storage interface.
-func (s storage) Scan(ctx context.Context, prefix string, f func(string) error) error {
+// Scan implements part of graph.Storage and poll.Storage.
+func (s BlobStore) Scan(ctx context.Context, prefix string, f func(string) error) error {
 	return s.bs.List(ctx, prefix, func(key string) error {
 		if !strings.HasPrefix(key, prefix) {
 			return blob.ErrStopListing
@@ -66,4 +70,9 @@ func (s storage) Scan(ctx context.Context, prefix string, f func(string) error) 
 		}
 		return nil
 	})
+}
+
+// Delete implements part of poll.Storage.
+func (s BlobStore) Delete(ctx context.Context, key string) error {
+	return s.bs.Delete(ctx, key)
 }
