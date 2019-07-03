@@ -31,6 +31,7 @@ import (
 	"bitbucket.org/creachadair/stringset"
 	"github.com/creachadair/repodeps/deps"
 	"github.com/creachadair/repodeps/local"
+	"github.com/creachadair/repodeps/poll"
 	"github.com/creachadair/repodeps/tools"
 	"github.com/creachadair/taskgroup"
 )
@@ -40,6 +41,7 @@ var (
 	storePath   = flag.String("store", "", "Storage database path (required with -update)")
 	cloneDir    = flag.String("clone-dir", "", `Location to store clones ("" uses $TMPDIR)`)
 	doReadStdin = flag.Bool("stdin", false, "Read repo URLs from stdin")
+	doScanDB    = flag.Bool("scan", false, "Read repo URLs from the poll database")
 	doClone     = flag.Bool("clone", false, "Clone updated repositories")
 	doUpdate    = flag.Bool("update", false, "Update cloned repositories (implies -clone)")
 	concurrency = flag.Int("concurrency", 16, "Number of concurrent workers")
@@ -69,6 +71,13 @@ func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
+	var urls <-chan string
+	if *doScanDB {
+		urls = scanDB(ctx, db)
+	} else {
+		urls = tools.Inputs(*doReadStdin)
+	}
+
 	// Set up an updater; by default a no-op.
 	update, cleanup := updater(ctx)
 	defer func() {
@@ -85,7 +94,7 @@ func main() {
 	enc := json.NewEncoder(os.Stdout)
 
 	start := time.Now()
-	for url := range tools.Inputs(*doReadStdin) {
+	for url := range urls {
 		url := fixURL(url)
 		if seen.Contains(url) {
 			numDups++
@@ -183,4 +192,18 @@ func updater(ctx context.Context) (func(path string) (int, error), func() error)
 		}
 		return added, nil
 	}, cleanup
+}
+
+func scanDB(ctx context.Context, db *poll.DB) <-chan string {
+	ch := make(chan string)
+	go func() {
+		defer close(ch)
+		if err := db.ScanURL(ctx, "", func(url string) bool {
+			ch <- url
+			return true
+		}); err != nil {
+			log.Printf("Warning: scanning failed: %v", err)
+		}
+	}()
+	return ch
 }

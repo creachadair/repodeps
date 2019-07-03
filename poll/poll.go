@@ -67,6 +67,17 @@ func (c *CheckResult) Clone(ctx context.Context, path string) error {
 	return runErr(err)
 }
 
+// ScanURL calls f with the URL of each repository known by db having the
+// specified prefix.  If f returns false, scanning terminates without error.
+func (db *DB) ScanURL(ctx context.Context, prefix string, f func(string) bool) error {
+	return db.st.Scan(ctx, prefix, func(url string) error {
+		if !f(url) {
+			return graph.ErrStopScan
+		}
+		return nil
+	})
+}
+
 // Status returns the status record for the specified URL.  It is an error if
 // the given URl does not have a record in this database.
 func (db *DB) Status(ctx context.Context, url string) (*Status, error) {
