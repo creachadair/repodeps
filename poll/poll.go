@@ -59,11 +59,11 @@ func (c *CheckResult) Clone(ctx context.Context, path string) error {
 	if err := os.MkdirAll(dir, 0700); err != nil {
 		return err
 	}
-	cmd := exec.CommandContext(ctx, "git", "-C", dir, "clone", "--no-checkout", "--depth=1", c.URL, base)
+	cmd := git(ctx, "-C", dir, "clone", "--no-checkout", "--depth=1", c.URL, base)
 	if _, err := cmd.Output(); err != nil {
 		return runErr(err)
 	}
-	_, err := exec.CommandContext(ctx, "git", "-C", path, "checkout", "--detach", c.Digest).Output()
+	_, err := git(ctx, "-C", path, "checkout", "--detach", c.Digest).Output()
 	return runErr(err)
 }
 
@@ -127,10 +127,9 @@ func (db *DB) Check(ctx context.Context, url string) (*CheckResult, error) {
 }
 
 func bestHead(ctx context.Context, url, ref string) (name, digest string, _ error) {
-	cmd := exec.CommandContext(ctx, "git", "ls-remote", "-q", url, ref)
-	out, err := cmd.Output()
+	out, err := git(ctx, "ls-remote", "-q", url, ref).Output()
 	if err != nil {
-		return "", "", err
+		return "", "", runErr(err)
 	}
 	for _, line := range strings.Split(strings.TrimSpace(string(out)), "\n") {
 		parts := strings.Fields(line)
@@ -154,10 +153,16 @@ func bestHead(ctx context.Context, url, ref string) (name, digest string, _ erro
 	return
 }
 
+func git(ctx context.Context, args ...string) *exec.Cmd {
+	cmd := exec.CommandContext(ctx, "git", args...)
+	cmd.Env = append(cmd.Env, "GIT_TERMINAL_PROMPT=0")
+	return cmd
+}
+
 func runErr(err error) error {
 	if e, ok := err.(*exec.ExitError); ok {
 		line := strings.Join(strings.Split(string(e.Stderr), "\n"), " ")
-		return fmt.Errorf("%v: %s", err, line)
+		return errors.New(line)
 	}
 
 	return err
