@@ -24,7 +24,6 @@ import (
 	"log"
 	"os"
 	"path/filepath"
-	"strings"
 	"sync"
 	"time"
 
@@ -95,7 +94,7 @@ func main() {
 
 	start := time.Now()
 	for url := range urls {
-		url := fixURL(url)
+		url := tools.FixRepoURL(url)
 		if seen.Contains(url) {
 			numDups++
 			continue
@@ -157,13 +156,6 @@ type result struct {
 	Hex   string `json:"digest"`
 	Clone string `json:"clone,omitempty"`
 	Pkgs  int    `json:"numPackages,omitempty"`
-}
-
-func fixURL(s string) string {
-	if !strings.HasPrefix(s, "git@") && !strings.Contains(s, "://") {
-		return "https://" + s
-	}
-	return s
 }
 
 func updater(ctx context.Context) (func(path string) (int, error), func() error) {

@@ -98,3 +98,11 @@ func HasDomain(ip string) (string, bool) {
 	prefix := strings.SplitN(ip, "/", 2)[0]
 	return prefix, strings.Index(prefix, ".") > 0
 }
+
+// FixRepoURL ensures s has a valid protocol prefix for Git.
+func FixRepoURL(s string) string {
+	if !strings.HasPrefix(s, "git@") && !strings.Contains(s, "://") {
+		return "https://" + s
+	}
+	return s
+}
