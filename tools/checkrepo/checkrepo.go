@@ -35,7 +35,7 @@ import (
 )
 
 var (
-	pollDBPath  = flag.String("polldb", "", "Poll database path (required)")
+	pollDBPath  = flag.String("polldb", os.Getenv("REPODEPS_POLLDB"), "Poll database path (required)")
 	storePath   = flag.String("store", "", "Storage database path (required with -update)")
 	cloneDir    = flag.String("clone-dir", "", `Location to store clones ("" uses $TMPDIR)`)
 	doReadStdin = flag.Bool("stdin", false, "Read repo URLs from stdin")
