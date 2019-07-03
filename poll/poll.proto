@@ -1,0 +1,29 @@
+syntax = "proto3";
+
+package poll;
+
+import 'google/protobuf/timestamp.proto';
+
+// A Status records the status of a single repository.
+message Status {
+  string repository = 1; // repository fetch URL
+  string ref_name = 2;   // reference name to fetch
+  bytes digest = 3;      // latest known digest
+
+  // When the last check of this repository was made. If unset, the repository
+  // has never been checked.
+  google.protobuf.Timestamp last_check = 4;
+
+  // The history of updates, oldest to newest.
+  repeated Update updates = 5;
+
+  // next id: 6
+
+  message Update {
+    // When this update was discovered.
+    google.protobuf.Timestamp when = 1;
+
+    // The digest at the time of this update.
+    bytes digest = 2;
+  }
+}
