@@ -85,12 +85,12 @@ func (db *DB) Check(ctx context.Context, url string) (*CheckResult, error) {
 		// This is a new repository; set up the initial state.
 		stat = &Status{
 			Repository: url,
-			RefName:    "refs/heads/master",
+			RefName:    "*", // to be updated
 		}
 	} else if err != nil {
 		return nil, err
 	}
-	name, digest, err := firstHead(ctx, url, stat.RefName)
+	name, digest, err := bestHead(ctx, url, stat.RefName)
 	if err != nil {
 		return nil, err
 	}
@@ -126,7 +126,7 @@ func (db *DB) Check(ctx context.Context, url string) (*CheckResult, error) {
 	return st, nil
 }
 
-func firstHead(ctx context.Context, url, ref string) (name, digest string, _ error) {
+func bestHead(ctx context.Context, url, ref string) (name, digest string, _ error) {
 	cmd := exec.CommandContext(ctx, "git", "ls-remote", "-q", url, ref)
 	out, err := cmd.Output()
 	if err != nil {
@@ -134,11 +134,24 @@ func firstHead(ctx context.Context, url, ref string) (name, digest string, _ err
 	}
 	for _, line := range strings.Split(strings.TrimSpace(string(out)), "\n") {
 		parts := strings.Fields(line)
-		if len(parts) == 2 {
-			return parts[1], parts[0], nil
+		if len(parts) != 2 {
+			continue // wrong form
+		}
+		if parts[1] == "refs/heads/master" {
+			return parts[1], parts[0], nil // master is preferred if present
+		} else if !strings.HasPrefix(parts[1], "refs/heads/") && parts[1] != "HEAD" {
+			continue // not interesting
+		}
+
+		// Take the first available candidate, falling back to HEAD.
+		if name == "" || name == "HEAD" {
+			name, digest = parts[1], parts[0]
 		}
 	}
-	return "", "", errors.New("no remote heads")
+	if name == "" {
+		return "", "", errors.New("no matching remote heads")
+	}
+	return
 }
 
 func runErr(err error) error {

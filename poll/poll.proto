@@ -7,7 +7,7 @@ import 'google/protobuf/timestamp.proto';
 // A Status records the status of a single repository.
 message Status {
   string repository = 1; // repository fetch URL
-  string ref_name = 2;   // reference name to fetch
+  string ref_name = 2;   // reference name to fetch (default is HEAD)
   bytes digest = 3;      // latest known digest
 
   // When the last check of this repository was made. If unset, the repository
