@@ -26,6 +26,7 @@ import (
 
 	"github.com/creachadair/badgerstore"
 	"github.com/creachadair/repodeps/graph"
+	"github.com/creachadair/repodeps/poll"
 	"github.com/creachadair/repodeps/storage"
 )
 
@@ -38,23 +39,34 @@ const (
 	ReadWrite
 )
 
-// OpenGraph opens the graph indicated by the -store flag.
-// The caller must ensure the closer is closed.
+// OpenGraph opens the graph named by path.  The caller must ensure the closer
+// is closed when the graph is no longer in use.
 func OpenGraph(path string, mode OpenMode) (*graph.Graph, io.Closer, error) {
-	if path == "" {
-		return nil, nil, errors.New("no -store path was provided")
-	}
-	var s *badgerstore.Store
-	var err error
-	if mode == ReadWrite {
-		s, err = badgerstore.NewPath(path)
-	} else {
-		s, err = badgerstore.NewPathReadOnly(path)
-	}
+	s, err := openBadger(path, mode)
 	if err != nil {
 		return nil, nil, fmt.Errorf("opening storage: %v", err)
 	}
 	return graph.New(storage.NewBlob(s)), s, nil
+}
+
+// OpenPollDB opens the poll database named by path. The caller must ensure the
+// closer is closed when the graph is no longer in use.
+func OpenPollDB(path string, mode OpenMode) (*poll.DB, io.Closer, error) {
+	s, err := openBadger(path, mode)
+	if err != nil {
+		return nil, nil, fmt.Errorf("opening storage: %v", err)
+	}
+	return poll.NewDB(storage.NewBlob(s)), s, nil
+}
+
+func openBadger(path string, mode OpenMode) (*badgerstore.Store, error) {
+	if path == "" {
+		return nil, errors.New("no path was provided")
+	}
+	if mode == ReadWrite {
+		return badgerstore.NewPath(path)
+	}
+	return badgerstore.NewPathReadOnly(path)
 }
 
 // Inputs returns a channel that delivers the paths of inputs and is closed
