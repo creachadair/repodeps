@@ -76,23 +76,28 @@ func (g *Graph) Row(ctx context.Context, pkg string) (*Row, error) {
 	return &row, nil
 }
 
-// Scan calls f with each row in the graph having the specified prefix.
-// If f reports an error, scanning terminates. If the error is ErrStopScan Scan
-// returns nil; otherwise Scan returns the error from f.
-func (g *Graph) Scan(ctx context.Context, prefix string, f func(*Row) error) error {
-	err := g.st.Scan(ctx, prefix, func(key string) error {
-		row, err := g.Row(ctx, key)
-		if err != nil {
-			return err
-		} else if err := f(row); err != nil {
-			return err
-		}
-		return nil
-	})
+// List calls f with each key in the graph having the specified prefix.
+// If f reports an error, scanning terminates. If te error is ErrStopScan,
+// List returns nil. Otherwise, List returns the error from f.
+func (g *Graph) List(ctx context.Context, prefix string, f func(string) error) error {
+	err := g.st.Scan(ctx, prefix, f)
 	if err == ErrStopScan {
 		return nil
 	}
 	return err
+}
+
+// Scan calls f with each row in the graph having the specified prefix.
+// If f reports an error, scanning terminates. If the error is ErrStopScan Scan
+// returns nil; otherwise Scan returns the error from f.
+func (g *Graph) Scan(ctx context.Context, prefix string, f func(*Row) error) error {
+	return g.List(ctx, prefix, func(key string) error {
+		row, err := g.Row(ctx, key)
+		if err != nil {
+			return err
+		}
+		return f(row)
+	})
 }
 
 // Imports returns the import paths if the direct dependencies of pkg.
