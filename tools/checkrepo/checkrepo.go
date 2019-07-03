@@ -55,6 +55,7 @@ func main() {
 		if err != nil {
 			log.Fatalf("Creating temp directory: %v", err)
 		}
+		defer os.Remove(tmp) // best-effort cleanup if empty at exit
 		*cloneDir = tmp
 	}
 
@@ -101,7 +102,7 @@ func main() {
 				Name: res.Name,
 				Hex:  res.Digest,
 			}
-			if *doClone || *doUpdate {
+			if res.NeedsUpdate() && (*doClone || *doUpdate) {
 				path := filepath.Join(*cloneDir, res.Digest)
 				if err := res.Clone(ctx, path); err != nil {
 					log.Printf("[skipped] cloning %q failed: %v", res.URL, err)

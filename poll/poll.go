@@ -85,7 +85,7 @@ func (db *DB) Check(ctx context.Context, url string) (*CheckResult, error) {
 		// This is a new repository; set up the initial state.
 		stat = &Status{
 			Repository: url,
-			RefName:    "refs/heads/*",
+			RefName:    "refs/heads/master",
 		}
 	} else if err != nil {
 		return nil, err
