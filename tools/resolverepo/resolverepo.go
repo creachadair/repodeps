@@ -38,8 +38,9 @@ import (
 )
 
 var (
-	doReadStdin = flag.Bool("stdin", false, "Read import paths from stdin")
-	concurrency = flag.Int("concurrency", 16, "Number of concurrent workers")
+	doReadStdin  = flag.Bool("stdin", false, "Read import paths from stdin")
+	doDropErrors = flag.Bool("drop-errors", false, "Discard repositories with errors")
+	concurrency  = flag.Int("concurrency", 16, "Number of concurrent workers")
 )
 
 func init() {
@@ -112,6 +113,9 @@ func main() {
 	// Encode the output.
 	enc := json.NewEncoder(os.Stdout)
 	for _, b := range repos.m {
+		if b.Error != "" && *doDropErrors {
+			continue
+		}
 		sort.Strings(b.ImportPaths)
 		if err := enc.Encode(b); err != nil {
 			log.Fatalf("Encoding failed: %v", err)
