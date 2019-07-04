@@ -38,10 +38,17 @@ func (c *CheckResult) Clone(ctx context.Context, path string) error {
 }
 
 // ShouldCheck reports whether the given status message should be checked,
-// based on its history of previous updates. No update will be suggested within
-// min of the most recent check. Otherwise, schedule an update once the current
-// time is at least the average gap between updates.
+// based on its history of previous updates.
+//
+// No update will be suggested within min of the most recent check. Otherwise,
+// schedule an update once the current time is at least the average gap between
+// updates.
+////
+// As a special case if min == 0 the answer is always true.
 func ShouldCheck(stat *Status, min time.Duration) bool {
+	if min == 0 {
+		return true
+	}
 	now := time.Now()
 	then, _ := ptypes.Timestamp(stat.LastCheck)
 
