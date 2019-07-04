@@ -80,7 +80,7 @@ func Load(ctx context.Context, path string, opts *deps.Options) ([]*deps.Repo, e
 			From: path,
 			Remotes: []*deps.Remote{{
 				Name: rem.Name,
-				Url:  tools.CleanRepoURL(rem.URLs[0]),
+				Url:  tools.FixRepoURL(rem.URLs[0]),
 			}},
 		}
 		repos[rem.Name] = r

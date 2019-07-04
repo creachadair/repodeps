@@ -47,7 +47,7 @@ func main() {
 
 	var numRemoved int
 	if *rmRepo != "" {
-		needle := tools.CleanRepoURL(*rmRepo)
+		needle := tools.FixRepoURL(*rmRepo)
 		log.Printf("Removing packages from %q...", needle)
 
 		if err := g.Scan(ctx, "", func(row *graph.Row) error {

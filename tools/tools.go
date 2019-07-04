@@ -104,10 +104,7 @@ func HasDomain(ip string) (string, bool) {
 
 // FixRepoURL ensures s has a valid protocol prefix for Git.
 func FixRepoURL(s string) string {
-	if !strings.HasPrefix(s, "git@") && !strings.Contains(s, "://") {
-		return "https://" + s
-	}
-	return s
+	return "https://" + CleanRepoURL(s)
 }
 
 // CleanRepoURL removes protocol and format tags from a repository URL.

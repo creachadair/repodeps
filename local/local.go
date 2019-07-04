@@ -130,7 +130,7 @@ func gitRemotes(ctx context.Context, dir string) ([]*deps.Remote, error) {
 
 func parseRemote(bits []byte) string {
 	url := strings.TrimSpace(string(bits))
-	return tools.CleanRepoURL(url)
+	return tools.FixRepoURL(url)
 }
 
 func hashFile(path string) ([]byte, error) {

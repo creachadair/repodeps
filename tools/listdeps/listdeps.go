@@ -48,7 +48,7 @@ func main() {
 	}
 	ctx := context.Background()
 	var enc jsonpb.Marshaler
-	repo := tools.CleanRepoURL(*matchRepo)
+	repo := tools.FixRepoURL(*matchRepo)
 	for _, pfx := range pfxs {
 		err := g.Scan(ctx, pfx, func(row *graph.Row) error {
 			if repo != "" && row.Repository != repo {
