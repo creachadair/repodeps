@@ -23,6 +23,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
+	"math/rand"
 	"os"
 	"path/filepath"
 	"sync"
@@ -46,6 +47,7 @@ var (
 	doUpdate     = flag.Bool("update", false, "Update cloned repositories (implies -clone)")
 	errorLimit   = flag.Int("error-limit", 10, "Discard repositories that fail more than this many times")
 	pollInterval = flag.Duration("interval", 1*time.Hour, "Minimum polling interval")
+	sampleRate   = flag.Float64("sample", 1, "Sample this fraction of eligible updates (0..1)")
 	concurrency  = flag.Int("concurrency", 16, "Number of concurrent workers")
 )
 
@@ -55,6 +57,8 @@ func main() {
 	// Check command-line flags.
 	if *storePath == "" && *doUpdate {
 		log.Fatal("You must specify a non-empty -store in order to -update")
+	} else if *sampleRate < 0 || *sampleRate > 1 {
+		log.Fatalf("Sample rate %f is out of range (0..1)", *sampleRate)
 	} else if (*doClone || *doUpdate) && *cloneDir == "" {
 		tmp, err := ioutil.TempDir("", "checkrepo-")
 		if err != nil {
@@ -91,17 +95,21 @@ func main() {
 	g, run := taskgroup.New(taskgroup.Trigger(cancel)).Limit(*concurrency)
 
 	var omu sync.Mutex // guards stdout, numUpdates
-	var numUpdates, numDups int
+	var numURL, numSamples, numUpdates, numDups int
 	seen := stringset.New()
 	enc := json.NewEncoder(os.Stdout)
 
 	start := time.Now()
 	for url := range urls {
+		numURL++
 		url := tools.FixRepoURL(url)
 		if seen.Contains(url) {
 			numDups++
 			continue
+		} else if !pickSample(url) {
+			continue
 		}
+		numSamples++
 		seen.Add(url)
 		run(func() error {
 			res, err := db.Check(ctx, url)
@@ -151,10 +159,14 @@ func main() {
 	if err := c.Close(); err != nil {
 		log.Fatalf("Closing storage: %v", err)
 	}
-	log.Printf("Processing complete (%d duplicates, %v elapsed)", numDups, time.Since(start))
-	if *doUpdate {
-		log.Printf("Updated %d packages total", numUpdates)
-	}
+	log.Printf(`Processing complete:
+%-6d URLs scanned
+%-6d duplicates discarded
+%-6d samples selected
+%-6d packages updated
+
+[%v elapsed]
+`, numURL, numDups, numSamples, numUpdates, time.Since(start))
 }
 
 type result struct {
@@ -194,3 +206,5 @@ func updater(ctx context.Context) (func(path string) (int, error), func() error)
 		return added, nil
 	}, cleanup
 }
+
+func pickSample(_ string) bool { return rand.Float64() < *sampleRate }
