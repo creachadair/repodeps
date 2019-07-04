@@ -27,7 +27,6 @@ macOS you can get `jq` via `brew install jq`.
    You could also start with a listing of import paths from godoc.org:
 
    ```shell
-   # See https://github.com/stedolan/jq
    curl -L https://api.godoc.org/packages | jq -r .results[].path > paths.txt
    cat paths.txt | resolverepo -stdin | jq -r .repository > repos.txt
    ```
