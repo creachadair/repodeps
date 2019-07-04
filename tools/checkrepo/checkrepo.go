@@ -39,6 +39,7 @@ var (
 	pollDBPath   = flag.String("polldb", os.Getenv("REPODEPS_POLLDB"), "Poll database path (required)")
 	storePath    = flag.String("store", "", "Storage database path (required with -update)")
 	cloneDir     = flag.String("clone-dir", "", `Location to store clones ("" uses $TMPDIR)`)
+	doForce      = flag.Bool("force", false, "Force update of matching repositories")
 	doReadStdin  = flag.Bool("stdin", false, "Read repo URLs from stdin")
 	doScanDB     = flag.Bool("scan", false, "Read repo URLs from the poll database")
 	doClone      = flag.Bool("clone", false, "Clone updated repositories")
@@ -119,7 +120,7 @@ func main() {
 				Hex:  res.Digest,
 				Errs: res.Errors,
 			}
-			if res.NeedsUpdate() && (*doClone || *doUpdate) {
+			if (res.NeedsUpdate() || *doForce) && (*doClone || *doUpdate) {
 				path := filepath.Join(*cloneDir, fmt.Sprintf("%s.%p", res.Digest, res))
 				if err := res.Clone(ctx, path); err != nil {
 					log.Printf("[skipped] cloning %q failed: %v", res.URL, err)
