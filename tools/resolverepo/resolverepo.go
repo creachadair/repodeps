@@ -40,7 +40,7 @@ import (
 var (
 	doReadStdin  = flag.Bool("stdin", false, "Read import paths from stdin")
 	doKeepErrors = flag.Bool("keep-errors", false, "Keep repositories with errors")
-	doKeepEmpty  = flag.Bool("keep-empty", false, "Keep repositories with no import paths")
+	doDropEmpty  = flag.Bool("drop-empty", false, "Discard repositories with no import paths")
 	concurrency  = flag.Int("concurrency", 16, "Number of concurrent workers")
 )
 
@@ -114,7 +114,7 @@ func main() {
 	// Encode the output.
 	enc := json.NewEncoder(os.Stdout)
 	for _, b := range repos.m {
-		if b.Error != "" && !*doKeepErrors || len(b.ImportPaths) == 0 && !*doKeepEmpty {
+		if b.Error != "" && !*doKeepErrors || len(b.ImportPaths) == 0 && *doDropEmpty {
 			continue
 		}
 		sort.Strings(b.ImportPaths)
