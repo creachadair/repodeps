@@ -35,9 +35,6 @@ var (
 
 func main() {
 	flag.Parse()
-	if *doKeysOnly && *matchRepo != "" {
-		log.Fatal("You may not combine the -keys and -repo flags")
-	}
 
 	g, c, err := tools.OpenGraph(*storePath, tools.ReadOnly)
 	if err != nil {
@@ -53,20 +50,16 @@ func main() {
 	var enc jsonpb.Marshaler
 	repo := tools.CleanRepoURL(*matchRepo)
 	for _, pfx := range pfxs {
-		if *doKeysOnly {
-			err = g.List(ctx, pfx, func(key string) error {
-				fmt.Println(key)
+		err := g.Scan(ctx, pfx, func(row *graph.Row) error {
+			if repo != "" && row.Repository != repo {
+				return nil // skip non-matching repositories
+			} else if *doKeysOnly {
+				fmt.Println(row.ImportPath)
 				return nil
-			})
-		} else {
-			err = g.Scan(ctx, pfx, func(row *graph.Row) error {
-				if repo != "" && row.Repository != repo {
-					return nil // skip non-matching repositories
-				}
-				defer fmt.Println()
-				return enc.Marshal(os.Stdout, row)
-			})
-		}
+			}
+			defer fmt.Println()
+			return enc.Marshal(os.Stdout, row)
+		})
 		if err != nil {
 			log.Fatalf("Scan failed: %v", err)
 		}
