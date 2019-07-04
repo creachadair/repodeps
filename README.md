@@ -79,7 +79,7 @@ macOS you can get `jq` via `brew install jq`.
    in the graph. Resolve each of these to a repository URL:
 
    ```shell
-   missingdeps -domain-only | resolverepo -stdin -drop-errors \
+   missingdeps -domain-only | resolverepo -stdin \
    | jq -r .repository > missing.txt
    ```
 
