@@ -28,6 +28,23 @@ import (
 // ErrKeyNotFound is returned by Load when the specified key is not found.
 var ErrKeyNotFound = errors.New("key not found")
 
+// Interface represents the interface to persistent storage.
+type Interface interface {
+	// Load reads the data for the specified key and unmarshals it into val.
+	// If key is not present, Load must return storage.ErrKeyNotFound.
+	Load(ctx context.Context, key string, val proto.Message) error
+
+	// Store marshals the data from value and stores it under key.
+	Store(ctx context.Context, key string, val proto.Message) error
+
+	// Scan calls f with each key having the specified prefix. If f reports an
+	// error that error is propagated to the caller of Scan.
+	Scan(ctx context.Context, prefix string, f func(string) error) error
+
+	// Delete removes the specified key from the database.
+	Delete(ctx context.Context, key string) error
+}
+
 // NewBlob constructs a storage implementation around a blob.Store.
 func NewBlob(bs blob.Store) BlobStore { return BlobStore{bs: bs} }
 

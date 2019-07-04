@@ -25,36 +25,18 @@ import (
 	"strings"
 
 	"github.com/creachadair/repodeps/storage"
-	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/ptypes"
 )
 
 //go:generate protoc --go_out=. poll.proto
 
-// Storage represents the interface to persistent storage.
-type Storage interface {
-	// Load reads the data for the specified key and unmarshals it into val.
-	// If key is not present, Load must return storage.ErrKeyNotFound.
-	Load(ctx context.Context, key string, val proto.Message) error
-
-	// Store marshals the data from value and stores it under key.
-	Store(ctx context.Context, key string, val proto.Message) error
-
-	// Scan calls f with each key having the specified prefix. If f reports an
-	// error that error is propagated to the caller of Scan.
-	Scan(ctx context.Context, prefix string, f func(string) error) error
-
-	// Delete removes the specified key from the database.
-	Delete(ctx context.Context, key string) error
-}
-
 // A DB represents a cache of update statuses for repositories.
 type DB struct {
-	st Storage
+	st storage.Interface
 }
 
 // NewDB constructs a database handle for the given storage.
-func NewDB(st Storage) *DB { return &DB{st: st} }
+func NewDB(st storage.Interface) *DB { return &DB{st: st} }
 
 // Status returns the status record for the specified URL.  It is an error if
 // the given URL does not have a record in this database.

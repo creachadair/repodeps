@@ -25,7 +25,7 @@ import (
 	"strings"
 
 	"github.com/creachadair/repodeps/deps"
-	"github.com/golang/protobuf/proto"
+	"github.com/creachadair/repodeps/storage"
 )
 
 //go:generate protoc --go_out=. graph.proto
@@ -35,11 +35,11 @@ import (
 
 // A Graph is an interface to a package dependency graph.
 type Graph struct {
-	st Storage
+	st storage.Interface
 }
 
 // New constructs a graph handle for the given storage.
-func New(st Storage) *Graph { return &Graph{st: st} }
+func New(st storage.Interface) *Graph { return &Graph{st: st} }
 
 // Add adds the specified package to the graph. If an entry already exists for
 // the specified package, it is replaced.
@@ -111,13 +111,9 @@ func (g *Graph) Scan(ctx context.Context, prefix string, f func(*Row) error) err
 	})
 }
 
-// Imports returns the import paths if the direct dependencies of pkg.
-func (g *Graph) Imports(ctx context.Context, pkg string) ([]string, error) {
-	row, err := g.Row(ctx, pkg)
-	if err != nil {
-		return nil, err
-	}
-	return row.Directs, nil
+// Remove removes the row for pkg from g.
+func (g *Graph) Remove(ctx context.Context, pkg string) error {
+	return g.st.Delete(ctx, pkg)
 }
 
 // Importers calls f for each package that directly depends on pkg.
@@ -143,20 +139,6 @@ func (g *Graph) MatchImporters(ctx context.Context, match func(string) bool, f f
 		}
 		return nil
 	})
-}
-
-// Storage represents the interface to persistent storage.
-type Storage interface {
-	// Load reads the data for the specified key and unmarshals it into val.
-	// If key is not present, Load must return storage.ErrKeyNotFound.
-	Load(ctx context.Context, key string, val proto.Message) error
-
-	// Store marshals the data from value and stores it under key.
-	Store(ctx context.Context, key string, val proto.Message) error
-
-	// Scan calls f with each key having the specified prefix. If f reports an
-	// error that error is propagated to the caller of Scan.
-	Scan(ctx context.Context, prefix string, f func(string) error) error
 }
 
 // ErrStopScan is returned by the callback to Scan to signal that scanning
