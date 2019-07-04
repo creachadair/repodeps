@@ -118,6 +118,8 @@ func CleanRepoURL(url string) string {
 		if len(parts) == 2 {
 			url += "/" + parts[1]
 		}
+	} else if parts := strings.SplitN(url, "://", 2); len(parts) == 2 {
+		url = parts[1] // discard http:// or https://
 	}
 	return strings.TrimSuffix(url, ".git")
 }
