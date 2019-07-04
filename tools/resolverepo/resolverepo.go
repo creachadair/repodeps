@@ -75,7 +75,7 @@ func main() {
 	repos := newRepoMap()
 
 	ctx, cancel := context.WithCancel(context.Background())
-	results := make(chan metaImport, *concurrency)
+	results := make(chan *metaImport, *concurrency)
 	start := time.Now()
 
 	// Collect lookup results and update the repository map.
@@ -93,14 +93,7 @@ func main() {
 			if repos.find(ip) {
 				return nil // already handled
 			}
-			imps, err := resolveImportRepo(ip)
-			if err != nil {
-				log.Printf("[skipped] resolving %q: %v", ip, err)
-			} else if len(imps) == 0 {
-				log.Printf("[skipped] resolving %q: not found", ip)
-			} else {
-				results <- imps[0]
-			}
+			results <- resolveImportRepo(ip)
 			return nil
 		})
 	}
@@ -130,40 +123,45 @@ type bundle struct {
 	Repo        string   `json:"repository"`
 	Prefix      string   `json:"prefix"`
 	ImportPaths []string `json:"importPaths,omitempty"`
+	Error       string   `json:"error,omitempty"`
 }
 
 // resolveImportRepo attempts to resolve the URL of the specified import path
 // using the HTTP metadata protocol used by "go get". Unlike "go get", this
 // resolver only considers Git targets.
-func resolveImportRepo(ipath string) ([]metaImport, error) {
+func resolveImportRepo(ipath string) *metaImport {
 	// Shortcut well-known Git hosting providers, to save network traffic.
 	if wk := checkWellKnown(ipath); wk != nil {
-		return wk, nil
+		return wk
 	}
 
 	// Request package resolution. If the site supports it, we will receive a
 	// <meta name="go-import" content="<prefix> <vcs> <url>"> tag.
-	url := "https://" + ipath + "?go-get=1"
+	base := "https://" + ipath
+	url := base + "?go-get=1"
+	fail := func(err error) *metaImport {
+		return &metaImport{Repo: base, Prefix: ipath, Err: err}
+	}
+
 	rsp, err := http.Get(url)
 	if err != nil {
-		return nil, err
+		return fail(err)
 	}
 	defer rsp.Body.Close()
 	if rsp.StatusCode != http.StatusOK && rsp.StatusCode != http.StatusNotFound {
-		return nil, errors.New(rsp.Status)
+		return fail(errors.New(rsp.Status))
 	}
-
-	var imp []metaImport
 
 	// Logic cribbed with modificdations from parseMetaGoImports in
 	// src/cmd/go/internal/get/discovery.go
+	var imps []*metaImport
 	dec := xml.NewDecoder(rsp.Body)
 	dec.Strict = false
 	var t xml.Token
 	for {
 		t, err = dec.RawToken()
 		if err != nil {
-			if err == io.EOF || len(imp) > 0 {
+			if err == io.EOF || len(imps) > 0 {
 				err = nil
 			}
 			break
@@ -183,33 +181,37 @@ func resolveImportRepo(ipath string) ([]metaImport, error) {
 
 		fields := strings.Fields(attrValue(st.Attr, "content"))
 		if len(fields) == 3 && fields[1] == "git" {
-			imp = append(imp, metaImport{
+			imps = append(imps, &metaImport{
 				Prefix:     fields[0],
 				Repo:       fields[2],
 				ImportPath: ipath,
 			})
 		}
 	}
-	if rsp.StatusCode != http.StatusOK && len(imp) == 0 {
-		return nil, errors.New(rsp.Status)
+	if rsp.StatusCode != http.StatusOK && len(imps) == 0 {
+		return fail(errors.New(rsp.Status))
+	} else if len(imps) == 0 {
+		return fail(errors.New("no targets"))
 	}
-	return imp, nil
+	return imps[0]
 }
 
 // checkWellKnown checks whether ip is lexically associated with a well-known
 // git host. If so, it synthesizes an import location; otherwise returns nil.
-func checkWellKnown(ip string) []metaImport {
+func checkWellKnown(ip string) *metaImport {
 	pfx, _ := tools.HasDomain(ip)
 	switch pfx {
 	case "github.com", "bitbucket.org":
+		// TODO: Because we didn't actually try to resolve these, we don't know
+		// whether the predicted repo actually exists.
 		parts := strings.Split(ip, "/")
 		if len(parts) >= 3 {
 			prefix := strings.Join(parts[:3], "/")
-			return []metaImport{{
+			return &metaImport{
 				Prefix:     prefix,
 				Repo:       "https://" + prefix,
 				ImportPath: ip,
-			}}
+			}
 		}
 
 	case "gopkg.in":
@@ -235,11 +237,11 @@ func checkWellKnown(ip string) []metaImport {
 		url := strings.Join([]string{
 			"https://github.com", user, repo,
 		}, "/")
-		return []metaImport{{
+		return &metaImport{
 			Prefix:     prefix,
 			Repo:       url,
 			ImportPath: ip,
-		}}
+		}
 	}
 	return nil
 }
@@ -247,6 +249,7 @@ func checkWellKnown(ip string) []metaImport {
 type metaImport struct {
 	Prefix, Repo string
 	ImportPath   string
+	Err          error
 }
 
 // attrValue returns the value for the named attribute, or "" if the name is
@@ -290,7 +293,7 @@ func (r *repoMap) find(ip string) bool {
 	return false
 }
 
-func (r *repoMap) set(imp metaImport) {
+func (r *repoMap) set(imp *metaImport) {
 	r.μ.Lock()
 	defer r.μ.Unlock()
 	b := r.m[imp.Prefix]
@@ -300,8 +303,11 @@ func (r *repoMap) set(imp metaImport) {
 			Prefix:      imp.Prefix,
 			ImportPaths: []string{imp.ImportPath},
 		}
+		if imp.Err != nil {
+			b.Error = imp.Err.Error()
+		}
 		r.m[imp.Prefix] = b
-	} else {
+	} else if b.Error == "" && imp.ImportPath != "" {
 		b.ImportPaths = append(b.ImportPaths, imp.ImportPath)
 	}
 }
