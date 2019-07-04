@@ -121,6 +121,10 @@ func (db *DB) Check(ctx context.Context, url string) (*CheckResult, error) {
 			When:   stat.LastCheck,
 			Digest: stat.Digest,
 		})
+
+		if n := len(stat.Updates); n > 20 {
+			stat.Updates = stat.Updates[n-20:]
+		}
 	}
 	stat.RefName = name
 	stat.Digest = digest
