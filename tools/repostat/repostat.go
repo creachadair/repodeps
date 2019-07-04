@@ -30,6 +30,7 @@ import (
 var (
 	pollDBPath  = flag.String("polldb", os.Getenv("REPODEPS_POLLDB"), "Poll database path (required)")
 	doReadStdin = flag.Bool("stdin", false, "Read repo URLs from stdin")
+	doScanDB    = flag.Bool("scan", false, "Read repo URLs from the poll database")
 )
 
 func main() {
@@ -44,7 +45,12 @@ func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	urls := tools.Inputs(*doReadStdin)
+	var urls <-chan string
+	if *doScanDB {
+		urls = tools.ScanDB(ctx, db)
+	} else {
+		urls = tools.Inputs(*doReadStdin)
+	}
 	var enc jsonpb.Marshaler
 
 	for url := range urls {

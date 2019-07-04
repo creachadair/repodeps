@@ -31,7 +31,6 @@ import (
 	"bitbucket.org/creachadair/stringset"
 	"github.com/creachadair/repodeps/deps"
 	"github.com/creachadair/repodeps/local"
-	"github.com/creachadair/repodeps/poll"
 	"github.com/creachadair/repodeps/tools"
 	"github.com/creachadair/taskgroup"
 )
@@ -74,7 +73,7 @@ func main() {
 
 	var urls <-chan string
 	if *doScanDB {
-		urls = scanDB(ctx, db)
+		urls = tools.ScanDB(ctx, db)
 	} else {
 		urls = tools.Inputs(*doReadStdin)
 	}
@@ -192,23 +191,4 @@ func updater(ctx context.Context) (func(path string) (int, error), func() error)
 		}
 		return added, nil
 	}, cleanup
-}
-
-func scanDB(ctx context.Context, db *poll.DB) <-chan string {
-	ch := make(chan string)
-	go func() {
-		defer close(ch)
-		if err := db.Scan(ctx, "", func(url string) error {
-			stat, err := db.Status(ctx, url)
-			if err != nil {
-				return err
-			} else if poll.ShouldCheck(stat, 15*time.Minute) {
-				ch <- url
-			}
-			return nil
-		}); err != nil {
-			log.Printf("Warning: scanning failed: %v", err)
-		}
-	}()
-	return ch
 }
