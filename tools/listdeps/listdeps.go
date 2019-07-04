@@ -30,10 +30,15 @@ import (
 var (
 	storePath  = flag.String("store", os.Getenv("REPODEPS_DB"), "Storage path (required)")
 	doKeysOnly = flag.Bool("keys", false, "Print only keys, not values")
+	matchRepo  = flag.String("repo", "", "List only rows matching this repository")
 )
 
 func main() {
 	flag.Parse()
+	if *doKeysOnly && *matchRepo != "" {
+		log.Fatal("You may not combine the -keys and -repo flags")
+	}
+
 	g, c, err := tools.OpenGraph(*storePath, tools.ReadOnly)
 	if err != nil {
 		log.Fatalf("Opening graph: %v", err)
@@ -46,6 +51,7 @@ func main() {
 	}
 	ctx := context.Background()
 	var enc jsonpb.Marshaler
+	repo := tools.CleanRepoURL(*matchRepo)
 	for _, pfx := range pfxs {
 		if *doKeysOnly {
 			err = g.List(ctx, pfx, func(key string) error {
@@ -54,6 +60,9 @@ func main() {
 			})
 		} else {
 			err = g.Scan(ctx, pfx, func(row *graph.Row) error {
+				if repo != "" && row.Repository != repo {
+					return nil // skip non-matching repositories
+				}
 				defer fmt.Println()
 				return enc.Marshal(os.Stdout, row)
 			})
