@@ -27,6 +27,7 @@ import (
 	"time"
 
 	"github.com/creachadair/repodeps/deps"
+	"github.com/creachadair/repodeps/tools"
 
 	sivafs "gopkg.in/src-d/go-billy-siva.v4"
 	"gopkg.in/src-d/go-billy.v4/osfs"
@@ -79,7 +80,7 @@ func Load(ctx context.Context, path string, opts *deps.Options) ([]*deps.Repo, e
 			From: path,
 			Remotes: []*deps.Remote{{
 				Name: rem.Name,
-				Url:  fixURL(rem.URLs[0]),
+				Url:  tools.CleanRepoURL(rem.URLs[0]),
 			}},
 		}
 		repos[rem.Name] = r
@@ -268,14 +269,4 @@ func (v *vfs) readDir(path string) ([]os.FileInfo, error) {
 func (v *vfs) isDir(path string) bool {
 	_, ok := v.dirs[path]
 	return ok
-}
-
-func fixURL(s string) string {
-	const urlKey = "://"
-
-	s = strings.TrimSuffix(s, ".git")
-	if i := strings.Index(s, urlKey); i >= 0 {
-		s = s[i+len(urlKey):]
-	}
-	return s
 }

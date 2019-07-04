@@ -110,6 +110,18 @@ func FixRepoURL(s string) string {
 	return s
 }
 
+// CleanRepoURL removes protocol and format tags from a repository URL.
+func CleanRepoURL(url string) string {
+	if trim := strings.TrimPrefix(url, "git@"); trim != url {
+		parts := strings.SplitN(trim, ":", 2)
+		url = parts[0]
+		if len(parts) == 2 {
+			url += "/" + parts[1]
+		}
+	}
+	return strings.TrimSuffix(url, ".git")
+}
+
 // ScanDB returns a channel that delivers all the keys of db and is then
 // closed. The caller must ensure the channel is fully drained. If ctx
 // completes the channel will be closed automatically.

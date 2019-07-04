@@ -29,6 +29,7 @@ import (
 	"strings"
 
 	"github.com/creachadair/repodeps/deps"
+	"github.com/creachadair/repodeps/tools"
 )
 
 // Load reads the repository structure of a local directory. This will return
@@ -129,14 +130,7 @@ func gitRemotes(ctx context.Context, dir string) ([]*deps.Remote, error) {
 
 func parseRemote(bits []byte) string {
 	url := strings.TrimSpace(string(bits))
-	if trim := strings.TrimPrefix(url, "git@"); trim != url {
-		parts := strings.SplitN(trim, ":", 2)
-		url = parts[0]
-		if len(parts) == 2 {
-			url += "/" + parts[1]
-		}
-	}
-	return strings.TrimSuffix(url, ".git")
+	return tools.CleanRepoURL(url)
 }
 
 func hashFile(path string) ([]byte, error) {
