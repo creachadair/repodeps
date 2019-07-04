@@ -33,6 +33,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/creachadair/repodeps/poll"
 	"github.com/creachadair/repodeps/tools"
 	"github.com/creachadair/taskgroup"
 )
@@ -95,7 +96,7 @@ func main() {
 			if repos.find(ip) {
 				return nil // already handled
 			}
-			results <- resolveImportRepo(ip)
+			results <- resolveImportRepo(ctx, ip)
 			return nil
 		})
 	}
@@ -134,9 +135,9 @@ type bundle struct {
 // resolveImportRepo attempts to resolve the URL of the specified import path
 // using the HTTP metadata protocol used by "go get". Unlike "go get", this
 // resolver only considers Git targets.
-func resolveImportRepo(ipath string) *metaImport {
+func resolveImportRepo(ctx context.Context, ipath string) *metaImport {
 	// Shortcut well-known Git hosting providers, to save network traffic.
-	if wk := checkWellKnown(ipath); wk != nil {
+	if wk := checkWellKnown(ctx, ipath); wk != nil {
 		return wk
 	}
 
@@ -203,7 +204,12 @@ func resolveImportRepo(ipath string) *metaImport {
 
 // checkWellKnown checks whether ip is lexically associated with a well-known
 // git host. If so, it synthesizes an import location; otherwise returns nil.
-func checkWellKnown(ip string) *metaImport {
+func checkWellKnown(ctx context.Context, ip string) (wk *metaImport) {
+	defer func() {
+		if wk != nil && !poll.RepoExists(ctx, wk.Repo) {
+			wk.Err = errors.New("repository does not exist")
+		}
+	}()
 	pfx, _ := tools.HasDomain(ip)
 	switch pfx {
 	case "github.com", "bitbucket.org":
