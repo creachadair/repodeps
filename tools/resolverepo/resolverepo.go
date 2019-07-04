@@ -299,9 +299,8 @@ func (r *repoMap) set(imp *metaImport) {
 	b := r.m[imp.Prefix]
 	if b == nil {
 		b = &bundle{
-			Repo:        imp.Repo,
-			Prefix:      imp.Prefix,
-			ImportPaths: []string{imp.ImportPath},
+			Repo:   imp.Repo,
+			Prefix: imp.Prefix,
 		}
 		if imp.Err != nil {
 			b.Error = imp.Err.Error()
