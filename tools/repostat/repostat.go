@@ -47,7 +47,7 @@ func main() {
 
 	var urls <-chan string
 	if *doScanDB {
-		urls = tools.ScanDB(ctx, db)
+		urls = tools.ScanDB(ctx, db, 0) // list all entries
 	} else {
 		urls = tools.Inputs(*doReadStdin)
 	}

@@ -36,15 +36,16 @@ import (
 )
 
 var (
-	pollDBPath  = flag.String("polldb", os.Getenv("REPODEPS_POLLDB"), "Poll database path (required)")
-	storePath   = flag.String("store", "", "Storage database path (required with -update)")
-	cloneDir    = flag.String("clone-dir", "", `Location to store clones ("" uses $TMPDIR)`)
-	doReadStdin = flag.Bool("stdin", false, "Read repo URLs from stdin")
-	doScanDB    = flag.Bool("scan", false, "Read repo URLs from the poll database")
-	doClone     = flag.Bool("clone", false, "Clone updated repositories")
-	doUpdate    = flag.Bool("update", false, "Update cloned repositories (implies -clone)")
-	errorLimit  = flag.Int("error-limit", 10, "Discard repositories that fail more than this many times")
-	concurrency = flag.Int("concurrency", 16, "Number of concurrent workers")
+	pollDBPath   = flag.String("polldb", os.Getenv("REPODEPS_POLLDB"), "Poll database path (required)")
+	storePath    = flag.String("store", "", "Storage database path (required with -update)")
+	cloneDir     = flag.String("clone-dir", "", `Location to store clones ("" uses $TMPDIR)`)
+	doReadStdin  = flag.Bool("stdin", false, "Read repo URLs from stdin")
+	doScanDB     = flag.Bool("scan", false, "Read repo URLs from the poll database")
+	doClone      = flag.Bool("clone", false, "Clone updated repositories")
+	doUpdate     = flag.Bool("update", false, "Update cloned repositories (implies -clone)")
+	errorLimit   = flag.Int("error-limit", 10, "Discard repositories that fail more than this many times")
+	pollInterval = flag.Duration("interval", 1*time.Hour, "Minimum polling interval")
+	concurrency  = flag.Int("concurrency", 16, "Number of concurrent workers")
 )
 
 func main() {
@@ -73,7 +74,7 @@ func main() {
 
 	var urls <-chan string
 	if *doScanDB {
-		urls = tools.ScanDB(ctx, db)
+		urls = tools.ScanDB(ctx, db, *pollInterval)
 	} else {
 		urls = tools.Inputs(*doReadStdin)
 	}

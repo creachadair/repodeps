@@ -113,7 +113,7 @@ func FixRepoURL(s string) string {
 // ScanDB returns a channel that delivers all the keys of db and is then
 // closed. The caller must ensure the channel is fully drained. If ctx
 // completes the channel will be closed automatically.
-func ScanDB(ctx context.Context, db *poll.DB) <-chan string {
+func ScanDB(ctx context.Context, db *poll.DB, min time.Duration) <-chan string {
 	ch := make(chan string)
 	go func() {
 		defer close(ch)
@@ -121,7 +121,7 @@ func ScanDB(ctx context.Context, db *poll.DB) <-chan string {
 			stat, err := db.Status(ctx, url)
 			if err != nil {
 				return err
-			} else if poll.ShouldCheck(stat, 15*time.Minute) {
+			} else if poll.ShouldCheck(stat, min) {
 				ch <- url
 			}
 			return nil
