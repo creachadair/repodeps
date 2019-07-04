@@ -138,6 +138,23 @@ func (db *DB) Check(ctx context.Context, url string) (*CheckResult, error) {
 	return st, nil
 }
 
+// RepoExists reports whether there is a repository at the specified URL.
+//
+// A true result means the repository is definitely present, though it may
+// require authentication. A false result may be incorrect, for example if the
+// caller's network filters outbound git requests.
+func RepoExists(ctx context.Context, url string) bool {
+	_, err := git(ctx, "ls-remote", "-q", url, "").Output()
+	if err == nil {
+		return true
+	} else if e, ok := err.(*exec.ExitError); ok {
+		line := strings.Split(strings.TrimSpace(string(e.Stderr)), ":")
+		msg := strings.TrimSpace(strings.ToLower(line[len(line)-1]))
+		return msg == "terminal prompts disabled" // exists, but wants authentication
+	}
+	return false
+}
+
 func bestHead(ctx context.Context, url, ref string) (name string, digest []byte, _ error) {
 	out, err := git(ctx, "ls-remote", "-q", url, ref).Output()
 	if err != nil {
