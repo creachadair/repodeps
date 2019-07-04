@@ -53,9 +53,11 @@ HTTP query to the hosting site to request import information.
 For each resolved repository, the tool prints a JSON text to stdout having the
 fields:
 
-   "repo":        repository fetch URL (string)
-   "prefix":      import path prefix covered by this repository (string)
-   "importPaths": import paths (array of strings)
+  {
+    "repository":  "repository fetch URL (string)",
+    "prefix":      "import path prefix covered by this repository (string)",
+    "importPaths": ["import paths (array of strings)"]
+  }
 
 The non-flag arguments name the import paths to resolve. With -stdin, each line
 of stdin will be read as an additional import path to resolve.
@@ -69,83 +71,54 @@ Options:
 func main() {
 	flag.Parse()
 
-	// Input paths described on the command line and/or read from stdin.
-	inputs := tools.Inputs(*doReadStdin)
-
 	// Accumulated repository mappings, becomes output.
-	var rmu sync.RWMutex // protects repos
-	repos := make(map[string]*bundle)
+	repos := newRepoMap()
 
-	// Receive results from concurrent resolver tasks.
+	ctx, cancel := context.WithCancel(context.Background())
 	results := make(chan metaImport, *concurrency)
-	find := func(ip string) bool {
-		rmu.RLock()
-		defer rmu.RUnlock()
-		for pfx, b := range repos {
-			if strings.HasPrefix(ip, pfx) {
-				b.ImportPaths = append(b.ImportPaths, ip)
-				return true
-			}
-		}
-		return false
-	}
-
 	start := time.Now()
 
 	// Collect lookup results and update the repository map.
-	ctx, cancel := context.WithCancel(context.Background())
 	go func() {
 		defer cancel()
 		for imp := range results {
-			rmu.Lock()
-			b := repos[imp.Prefix]
-			if b == nil {
-				b = &bundle{
-					Repo:        imp.Repo,
-					Prefix:      imp.Prefix,
-					ImportPaths: []string{imp.ImportPath},
-				}
-				repos[imp.Prefix] = b
-			} else {
-				b.ImportPaths = append(b.ImportPaths, imp.ImportPath)
-			}
-			rmu.Unlock()
+			repos.set(imp)
 		}
 	}()
 
 	// Process inputs and send results to the collector.
-	g := taskgroup.New(nil)
-	for i := 0; i < *concurrency; i++ {
-		g.Go(func() error {
-			for ip := range inputs {
-				if find(ip) {
-					continue // already handled
-				}
-				imps, err := resolveImportRepo(ip)
-				if err != nil {
-					log.Printf("[skipped] resolving %q: %v", ip, err)
-				} else if len(imps) == 0 {
-					log.Printf("[skipped] resolving %q: not found", ip)
-				} else {
-					results <- imps[0]
-				}
+	g, run := taskgroup.New(nil).Limit(*concurrency)
+	for ip := range tools.Inputs(*doReadStdin) {
+		run(func() error {
+			if repos.find(ip) {
+				return nil // already handled
+			}
+			imps, err := resolveImportRepo(ip)
+			if err != nil {
+				log.Printf("[skipped] resolving %q: %v", ip, err)
+			} else if len(imps) == 0 {
+				log.Printf("[skipped] resolving %q: not found", ip)
+			} else {
+				results <- imps[0]
 			}
 			return nil
 		})
 	}
 
-	// Wait for all the workers to complete.
-	if err := g.Wait(); err != nil {
+	// Wait for all the workers to complete, then signal the collector.
+	err := g.Wait()
+	close(results)
+	if err != nil {
 		log.Fatalf("Processing failed: %v", err)
 	}
-	close(results)
+
 	<-ctx.Done() // wait for the collector to complete
 
-	log.Printf("[done] %d repositories found [%v elapsed]", len(repos), time.Since(start))
+	log.Printf("[done] %d repositories found [%v elapsed]", repos.len(), time.Since(start))
 
 	// Encode the output.
 	enc := json.NewEncoder(os.Stdout)
-	for _, b := range repos {
+	for _, b := range repos.m {
 		sort.Strings(b.ImportPaths)
 		if err := enc.Encode(b); err != nil {
 			log.Fatalf("Encoding failed: %v", err)
@@ -154,7 +127,7 @@ func main() {
 }
 
 type bundle struct {
-	Repo        string   `json:"repo"`
+	Repo        string   `json:"repository"`
 	Prefix      string   `json:"prefix"`
 	ImportPaths []string `json:"importPaths,omitempty"`
 }
@@ -249,7 +222,7 @@ func checkWellKnown(ip string) []metaImport {
 
 		var user, repo, prefix string
 		if len(parts) == 2 {
-			// Rule 1: gopkg.in/pkg.vN      ⇒ github.com/go-pkg/pkg
+			// Rule 1: gopkg.in/pkg.vN ⇒ github.com/go-pkg/pkg
 			repo = trimExt(parts[1])
 			user = "go-" + repo
 			prefix = strings.Join(parts[:2], "/")
@@ -289,3 +262,46 @@ func attrValue(attrs []xml.Attr, name string) string {
 
 // trimExt returns a copy of s with a trailing extension removed.
 func trimExt(s string) string { return strings.TrimSuffix(s, filepath.Ext(s)) }
+
+type repoMap struct {
+	μ sync.RWMutex
+	m map[string]*bundle
+}
+
+func newRepoMap() *repoMap {
+	return &repoMap{m: make(map[string]*bundle)}
+}
+
+func (r *repoMap) len() int {
+	r.μ.RLock()
+	defer r.μ.RUnlock()
+	return len(r.m)
+}
+
+func (r *repoMap) find(ip string) bool {
+	r.μ.RLock()
+	defer r.μ.RUnlock()
+	for pfx, b := range r.m {
+		if strings.HasPrefix(ip, pfx) {
+			b.ImportPaths = append(b.ImportPaths, ip)
+			return true
+		}
+	}
+	return false
+}
+
+func (r *repoMap) set(imp metaImport) {
+	r.μ.Lock()
+	defer r.μ.Unlock()
+	b := r.m[imp.Prefix]
+	if b == nil {
+		b = &bundle{
+			Repo:        imp.Repo,
+			Prefix:      imp.Prefix,
+			ImportPaths: []string{imp.ImportPath},
+		}
+		r.m[imp.Prefix] = b
+	} else {
+		b.ImportPaths = append(b.ImportPaths, imp.ImportPath)
+	}
+}
