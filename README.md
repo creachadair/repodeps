@@ -6,6 +6,20 @@ only for Go, but we plan to try adding support for other languages.
 
 Be warned that this code is not production ready and may change without notice.
 
+
+## Installation
+
+```shell
+git clone github.com/creachadair/repodeps
+cd repodeps
+./install.sh  # copies binaries to $GOBIN or $GOPATH/bin
+```
+
+The rest of these instructions assume the installed binaries are somewhere in
+your `$PATH`. You will also need [`jq`](https://stedolan.github.io/jq/).  On
+macOS you can get `jq` via `brew install jq`.
+
+
 ## Generating a Database
 
 1. Generate an initial list of repositories. For our experiment, we did this
@@ -15,12 +29,13 @@ Be warned that this code is not production ready and may change without notice.
    ```shell
    # See https://github.com/stedolan/jq
    curl -L https://api.godoc.org/packages | jq -r .results[].path > paths.txt
-   cat paths.txt | go run ./tools/resolverepo -stdin | jq -r .repo > repos.txt
+   cat paths.txt | resolverepo -stdin | jq -r .repository > repos.txt
    ```
 
    Note if you do this, however, that the results will contain a lot of noise,
-   as the godoc.org corpus includes vendored packages, internal packages, code
-   that doesn't build, and so forth.
+   as the `godoc.org` corpus includes vendored packages, internal packages,
+   code that doesn't build, and so forth. For our experiment we had better
+   results from the search query.
 
 
 2. Fetch the repositories using [Borges](https://github.com/src-d/borges).
@@ -46,7 +61,7 @@ Be warned that this code is not production ready and may change without notice.
 
    ```shell
    find ~/crawl/siva -type f -name '*.siva' -print \
-   | go run repodeps.go -stdin -sourcehash -import-comments \
+   | repodeps -stdin -sourcehash -import-comments \
    | xz -cz > deps.json.xz
    ```
 
@@ -55,7 +70,7 @@ Be warned that this code is not production ready and may change without notice.
 
    ```shell
    export REPODEPS_DB="$HOME/crawl/godeps-db"
-   xz -cd deps.json.xz | go run ./tools/writedeps -store "$REPODEPS_DB"
+   xz -cd deps.json.xz | writedeps -store "$REPODEPS_DB"
    ```
 
 ## Finding Missing Dependencies
@@ -64,8 +79,7 @@ Be warned that this code is not production ready and may change without notice.
    in the graph. Resolve each of these to a repository URL:
 
    ```shell
-   go run ./tools/missingdeps -domain-only \
-   | go run ./tools/resolverepo -stdin \
+   missingdeps -domain-only | resolverepo -stdin \
    | jq -r .repository > missing.txt
    ```
 
@@ -75,7 +89,7 @@ Be warned that this code is not production ready and may change without notice.
 
    ```shell
    export REPODEPS_POLLDB="$HOME/crawl/poll-db"
-   go run ./tools/checkrepo -update -store "$REPODEPS_DB" -stdin < missing.txt \
+   checkrepo -update -store "$REPODEPS_DB" -stdin < missing.txt \
    | tee capture.json | jq 'select(.needsUpdate or .errors > 1)'
    ```
 
@@ -87,7 +101,7 @@ To scan all the repositories currently mentioned by the graph to check for
 updates:
 
 ```shell
-go run ./tools/checkrepo -scan -update -store $REPODEPS_DB \
+checkrepo -scan -update -store $REPODEPS_DB \
 | tee capture.json \
 | jq 'select(.needsUpdate or .errors > 1)'
 ```
