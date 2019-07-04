@@ -73,6 +73,7 @@ macOS you can get `jq` via `brew install jq`.
    xz -cd deps.json.xz | writedeps -store "$REPODEPS_DB"
    ```
 
+
 ## Finding Missing Dependencies
 
 1. Find import paths mentioned as dependencies, but not having their own nodes
@@ -94,6 +95,7 @@ macOS you can get `jq` via `brew install jq`.
    ```
 
 This process may be iterated to convergence.
+
 
 ## Updating the Graph
 
