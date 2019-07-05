@@ -230,6 +230,9 @@ func (v *vfs) add(f *object.File) {
 	if i := strings.LastIndex(name, "/"); i >= 0 {
 		dir, name = filepath.Join(v.prefix, name[:i]), name[i+1:]
 	}
+	if deps.IsNonPackage(dir) {
+		return // don't bother with this one
+	}
 	v.files[filepath.Join(v.prefix, f.Name)] = vfile{f}
 	v.dirs[dir] = append(v.dirs[dir], name)
 }

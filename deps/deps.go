@@ -20,6 +20,7 @@ import (
 	"crypto/sha256"
 	"go/build"
 	"io"
+	"path/filepath"
 	"strings"
 )
 
@@ -42,6 +43,16 @@ func Hash(r io.Reader) []byte {
 // IsVendor reports whether the specified path is in a vendor/ directory.
 func IsVendor(path string) bool {
 	return strings.HasPrefix(path, "vendor/") || strings.Contains(path, "/vendor/")
+}
+
+// IsNonPackage reports whether path is a special directory that should not be
+// considered as a package. This is specific to Go.
+func IsNonPackage(path string) bool {
+	switch filepath.Base(path) {
+	case ".git", "vendor", "testdata":
+		return true
+	}
+	return false
 }
 
 // PackageType classifies pkg based on its build metadata.

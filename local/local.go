@@ -65,7 +65,7 @@ func Load(ctx context.Context, dir string, opts *deps.Options) ([]*deps.Repo, er
 			return err
 		} else if !fi.IsDir() {
 			return nil // nothing to do here
-		} else if base := filepath.Base(path); base == ".git" || base == "vendor" {
+		} else if deps.IsNonPackage(path) {
 			return filepath.SkipDir
 		}
 		select {
