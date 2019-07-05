@@ -223,7 +223,7 @@ func main() {
 %-6d packages updated
 
 [%v elapsed]
-`, numURL, numDups, numSamples, numUpdates, time.Since(start))
+`, numURL, numDups, numSamples, numUpdates, time.Since(start).Truncate(time.Millisecond))
 }
 
 type result struct {
