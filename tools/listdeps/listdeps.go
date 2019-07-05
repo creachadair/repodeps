@@ -48,15 +48,19 @@ func main() {
 	}
 	ctx := context.Background()
 	var enc jsonpb.Marshaler
-	repo := tools.FixRepoURL(*matchRepo)
+	if *matchRepo != "" {
+		*matchRepo = tools.FixRepoURL(*matchRepo)
+	}
+
 	for _, pfx := range pfxs {
 		err := g.Scan(ctx, pfx, func(row *graph.Row) error {
-			if repo != "" && row.Repository != repo {
+			if *matchRepo != "" && row.Repository != *matchRepo {
 				return nil // skip non-matching repositories
 			} else if *doKeysOnly {
 				fmt.Println(row.ImportPath)
 				return nil
 			}
+
 			defer fmt.Println()
 			return enc.Marshal(os.Stdout, row)
 		})
