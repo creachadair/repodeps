@@ -28,7 +28,10 @@ import (
 	"github.com/creachadair/repodeps/tools"
 )
 
-var storePath = flag.String("store", os.Getenv("REPODEPS_DB"), "Storage path (required)")
+var (
+	storePath   = flag.String("store", os.Getenv("REPODEPS_DB"), "Storage path (required)")
+	doFilterDom = flag.Bool("domain-only", false, "Print only import paths that begin with a domain")
+)
 
 func init() {
 	flag.Usage = func() {
@@ -59,6 +62,14 @@ func main() {
 
 	ctx := context.Background()
 	if err := g.MatchImporters(ctx, newMatcher(flag.Args()), func(tpath, ipath string) {
+		if *doFilterDom {
+			if _, ok := tools.HasDomain(tpath); !ok {
+				return
+			}
+			if _, ok := tools.HasDomain(ipath); !ok {
+				return
+			}
+		}
 		fmt.Print(tpath, "\t", ipath, "\n")
 	}); err != nil {
 		log.Fatalf("Importers failed: %v", err)
