@@ -26,6 +26,7 @@ import (
 	"math/rand"
 	"os"
 	"path/filepath"
+	"strings"
 	"sync"
 	"time"
 
@@ -48,6 +49,7 @@ var (
 	errorLimit   = flag.Int("error-limit", 10, "Discard repositories that fail more than this many times")
 	pollInterval = flag.Duration("interval", 1*time.Hour, "Minimum polling interval")
 	sampleRate   = flag.Float64("sample", 1, "Sample this fraction of eligible updates (0..1)")
+	logFilter    = flag.String("log-filter", "", `Message types to filter: [E]rrors, [N]on-updates, [U]pdates`)
 	concurrency  = flag.Int("concurrency", 16, "Number of concurrent workers")
 )
 
@@ -107,6 +109,7 @@ func main() {
 	flag.Parse()
 
 	// Check command-line flags.
+	*logFilter = strings.ToUpper(*logFilter)
 	if *storePath == "" && *doUpdate {
 		log.Fatal("You must specify a non-empty -store in order to -update")
 	} else if *sampleRate < 0 || *sampleRate > 1 {
@@ -198,10 +201,12 @@ func main() {
 				}
 				out.Pkgs = n
 			}
-			omu.Lock()
 			numUpdates += out.Pkgs
-			enc.Encode(out)
-			omu.Unlock()
+			if pickLog(out) {
+				omu.Lock()
+				enc.Encode(out)
+				omu.Unlock()
+			}
 			return nil
 		})
 	}
@@ -260,3 +265,12 @@ func updater(ctx context.Context) (func(path string) (int, error), func() error)
 }
 
 func pickSample(_ string) bool { return rand.Float64() < *sampleRate }
+
+func pickLog(msg *result) bool {
+	if msg.Errs != 0 {
+		return strings.IndexByte(*logFilter, 'E') < 0
+	} else if msg.Need {
+		return strings.IndexByte(*logFilter, 'U') < 0
+	}
+	return strings.IndexByte(*logFilter, 'N') < 0
+}
