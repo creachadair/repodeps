@@ -21,7 +21,6 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"sort"
 	"time"
 
 	"github.com/creachadair/repodeps/graph"
@@ -33,11 +32,16 @@ var (
 	numIter     = flag.Int("iterations", 10, "Number of iterations")
 	dampFactor  = flag.Float64("damping", 0.85, "Damping factor (0..1)")
 	scaleFactor = flag.Float64("scale", 100, "Scaling factor for rank values")
+	doUpdate    = flag.Bool("update", false, "Write ranks back into the graph")
 )
 
 func main() {
 	flag.Parse()
-	g, c, err := tools.OpenGraph(*storePath, tools.ReadOnly)
+	mode := tools.ReadOnly
+	if *doUpdate {
+		mode = tools.ReadWrite
+	}
+	g, c, err := tools.OpenGraph(*storePath, mode)
 	if err != nil {
 		log.Fatalf("Opening graph: %v", err)
 	}
@@ -69,28 +73,48 @@ func main() {
 	fmt.Fprintln(os.Stderr)
 	log.Printf("Rank computation complete [%v elapsed]", time.Since(start))
 
-	// Order and scale the rankings.
-	nodes := make([]*node, len(m))
-	i := 0
-	for key, node := range m {
-		node.key = key
-		nodes[i] = node
-		i++
+	// Find the maximum ranking to use as the apex of the scale, then scale all
+	// the rankings by that value.
+	//
+	// Precondition: cur is the ranking value for each node.
+	// Postcondition: next is the scaled ranking value for each node.
+	max := 0.0
+	for _, elt := range m {
+		if elt.cur > max {
+			max = elt.cur
+		}
 	}
-	sort.Slice(nodes, func(i, j int) bool {
-		return nodes[i].cur > nodes[j].cur
-	})
-	sf := float64(*scaleFactor) / nodes[0].cur
-	for _, node := range nodes {
-		v := node.cur * sf
-		fmt.Printf("%s\t%.2f\n", node.key, v)
+	sf := float64(*scaleFactor) / max
+	for _, elt := range m {
+		elt.next = elt.cur * sf
+	}
+
+	if *doUpdate {
+		var numRows, numRanks int64
+		if err := g.ScanUpdate(ctx, "", func(row *graph.Row) bool {
+			numRows++
+			if elt, ok := m[row.ImportPath]; ok {
+				row.Ranking = elt.next
+				numRanks++
+				return true
+			}
+			return false
+		}); err != nil {
+			log.Fatalf("Update failed: %v", err)
+		}
+		log.Printf("Updated %d ranks in %d rows", numRanks, numRows)
+		return
+	}
+
+	// Otherwise, write the results to stdout.
+	for key, node := range m {
+		fmt.Printf("%s\t%.2f\n", key, node.next)
 	}
 }
 
 type node struct {
 	cur, next float64
 	links     []string
-	key       string
 }
 
 type linkMap map[string]*node

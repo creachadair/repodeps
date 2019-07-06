@@ -99,7 +99,7 @@ func (g *Graph) List(ctx context.Context, prefix string, f func(string) error) e
 }
 
 // Scan calls f with each row in the graph having the specified prefix.
-// If f reports an error, scanning terminates. If the error is ErrStopScan Scan
+// If f reports an error, scanning terminates. If the error is ErrStopScan, Scan
 // returns nil; otherwise Scan returns the error from f.
 func (g *Graph) Scan(ctx context.Context, prefix string, f func(*Row) error) error {
 	return g.List(ctx, prefix, func(key string) error {
@@ -108,6 +108,19 @@ func (g *Graph) Scan(ctx context.Context, prefix string, f func(*Row) error) err
 			return err
 		}
 		return f(row)
+	})
+}
+
+// ScanUpdate calls f with each row in the graph having the specified prefix.
+// If f reports true, the modified value of the row is updated; otherwise no
+// action is taken for the row.
+func (g *Graph) ScanUpdate(ctx context.Context, prefix string, f func(*Row) bool) error {
+	return g.Scan(ctx, prefix, func(row *Row) error {
+		key := row.ImportPath
+		if f(row) {
+			return g.st.Store(ctx, key, row)
+		}
+		return nil
 	})
 }
 
