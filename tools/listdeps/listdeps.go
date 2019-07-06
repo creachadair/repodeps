@@ -28,9 +28,10 @@ import (
 )
 
 var (
-	storePath  = flag.String("store", os.Getenv("REPODEPS_DB"), "Storage path (required)")
-	doKeysOnly = flag.Bool("keys", false, "Print only keys, not values")
-	matchRepo  = flag.String("repo", "", "List only rows matching this repository")
+	storePath   = flag.String("store", os.Getenv("REPODEPS_DB"), "Storage path (required)")
+	doKeysOnly  = flag.Bool("keys", false, "Print only keys, not values")
+	doFilterDom = flag.Bool("domain-only", false, "Print only import paths that begin with a domain")
+	matchRepo   = flag.String("repo", "", "List only rows matching this repository")
 )
 
 func main() {
@@ -56,6 +57,8 @@ func main() {
 		err := g.Scan(ctx, pfx, func(row *graph.Row) error {
 			if *matchRepo != "" && row.Repository != *matchRepo {
 				return nil // skip non-matching repositories
+			} else if _, ok := tools.HasDomain(row.ImportPath); !ok && *doFilterDom {
+				return nil // skip non-domain paths
 			} else if *doKeysOnly {
 				fmt.Println(row.ImportPath)
 				return nil
