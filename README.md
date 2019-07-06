@@ -129,3 +129,26 @@ rankdeps -iterations 40 -store "$REPODEPS_DB" -update -scale 6
 ```
 
 Omit the `-update` flag to dump the rank values to stdout.
+
+
+## Converting to Other Formats
+
+- To convert to CSV for [Gephi](https://gephi.org):
+
+    ```shell
+	# With everything inline.
+	csvdeps -store "$REPODEPS_DB" > output.csv
+
+	# With a separate vocabulary file.
+	csvdeps -store "$REPODEPS_DB" -ids vocab.txt > output.csv
+	```
+
+- To convert to RDF N-quads for a graph database like [Cayley](https://cayley.io/):
+
+	```shell
+	# To write RDF quads to stdout.
+	quaddeps -store "$REPODEPS_DB"
+
+	# To write to a Bolt database for Cayley.
+	quaddeps -store "$REPODEPS_DB" -output cayley.bolt
+	```
