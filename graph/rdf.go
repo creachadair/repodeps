@@ -22,6 +22,7 @@ const (
 	relRepoPath  = quad.IRI("dep:RepoPath")
 	relDigest    = quad.IRI("dep:Digest")
 	relHasFile   = quad.IRI("dep:HasFile")
+	relRanking   = quad.IRI("dep:Ranking")
 )
 
 // WriteQuads converts g to RDF 1.1 N-quads and writes them to w.
@@ -61,6 +62,7 @@ func (g *Graph) EncodeToQuads(ctx context.Context, f func(quad.Quad) error) (err
 		send(P(row.ImportPath), relDefinedIn, R(row.Repository))
 		if !pkgs.Contains(row.ImportPath) {
 			send(P(row.ImportPath), relType, typePackage)
+			send(P(row.ImportPath), relRanking, quad.Float(row.Ranking))
 			pkgs.Add(row.ImportPath)
 		}
 		for _, pkg := range row.Directs {
