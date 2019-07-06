@@ -16,13 +16,16 @@ const (
 	typeRepo    = quad.IRI("dep:Repo")
 	typeFile    = quad.IRI("dep:File")
 
-	relType      = quad.IRI(rdf.Type)
-	relImports   = quad.IRI("dep:Imports")
-	relDefinedIn = quad.IRI("dep:DefinedIn")
-	relRepoPath  = quad.IRI("dep:RepoPath")
-	relDigest    = quad.IRI("dep:Digest")
-	relHasFile   = quad.IRI("dep:HasFile")
-	relRanking   = quad.IRI("dep:Ranking")
+	relType       = quad.IRI(rdf.Type)
+	relDefinedIn  = quad.IRI("dep:defined-in")  // package DefinedIn repo
+	relDigest     = quad.IRI("dep:digest")      // file Digest <string>
+	relHasFile    = quad.IRI("dep:has-file")    // package HasFile file
+	relImports    = quad.IRI("dep:imports")     // package Imports package
+	relRanking    = quad.IRI("dep:ranking")     // package Ranking <float>
+	relRepoPath   = quad.IRI("dep:repo-path")   // file RepoPath <string>
+	relImportPath = quad.IRI("dep:import-path") // package ImportPath <string>
+	relRepoURL    = quad.IRI("dep:repo-url")    // repo RepoURL <string>
+	relMissing    = quad.IRI("dep:is-missing")  // package Missing <bool>
 )
 
 // WriteQuads converts g to RDF 1.1 N-quads and writes them to w.
@@ -53,34 +56,57 @@ func (g *Graph) EncodeToQuads(ctx context.Context, f func(quad.Quad) error) (err
 			panic(err)
 		}
 	}
-	P := func(pkg string) quad.IRI { return quad.IRI("pkg:" + pkg) }
-	R := func(url string) quad.IRI { return quad.IRI("repo:" + url) }
+	var seq quad.Sequence
+	assign := func(m map[string]quad.BNode, key string) quad.BNode {
+		b, ok := m[key]
+		if !ok {
+			b = seq.Next()
+			m[key] = b
+		}
+		return b
+	}
+	pkgs := make(map[string]quad.BNode) // :: import path → BNode
+	shas := make(map[string]quad.BNode) // :: digest → BNode
+	need := stringset.New()
+	P := func(pkg string) quad.BNode { return assign(pkgs, pkg) }
+	F := func(sha string) quad.BNode { return assign(shas, sha) }
+	R := func(url string) quad.IRI { return quad.IRI(url) }
 
-	pkgs := stringset.New()
-	return g.Scan(ctx, "", func(row *Row) error {
+	if err := g.Scan(ctx, "", func(row *Row) error {
+		if _, seen := pkgs[row.ImportPath]; !seen {
+			pid := P(row.ImportPath)
+			send(pid, relType, typePackage)
+			send(pid, relRanking, quad.Float(row.Ranking))
+			send(pid, relImportPath, quad.String(row.ImportPath))
+			need.Discard(row.ImportPath)
+		}
 		send(R(row.Repository), relType, typeRepo)
 		send(P(row.ImportPath), relDefinedIn, R(row.Repository))
-		if !pkgs.Contains(row.ImportPath) {
-			send(P(row.ImportPath), relType, typePackage)
-			send(P(row.ImportPath), relRanking, quad.Float(row.Ranking))
-			pkgs.Add(row.ImportPath)
-		}
+
 		for _, pkg := range row.Directs {
-			if !pkgs.Contains(pkg) {
-				send(P(pkg), relType, typePackage)
-				pkgs.Add(pkg)
-			}
 			send(P(row.ImportPath), relImports, P(pkg))
+			need.Add(pkg)
 		}
 
 		for _, src := range row.SourceFiles {
 			hd := hex.EncodeToString(src.Digest)
-			fid := quad.IRI("sha256:" + hd)
-			send(P(row.ImportPath), relHasFile, fid)
-			send(fid, relType, typeFile)
-			send(fid, relDigest, quad.String(hd))
-			send(fid, relRepoPath, quad.String(src.RepoPath))
+			send(F(hd), relType, typeFile)
+			send(F(hd), relDigest, quad.String(hd))
+			send(F(hd), relRepoPath, quad.String(src.RepoPath))
+			send(P(row.ImportPath), relHasFile, F(hd))
 		}
 		return nil
-	})
+	}); err != nil {
+		return err
+	}
+
+	// If any packages were depended upon but not mentioned in the graph, emit
+	// dummy rows for them.
+	for pkg := range need {
+		if _, ok := pkgs[pkg]; !ok {
+			send(P(pkg), relType, typePackage)
+			send(P(pkg), relMissing, quad.Bool(true))
+		}
+	}
+	return nil
 }
