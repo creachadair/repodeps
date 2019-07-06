@@ -25,6 +25,7 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/creachadair/repodeps/deps"
 	"github.com/creachadair/repodeps/tools"
 )
 
@@ -63,10 +64,10 @@ func main() {
 	ctx := context.Background()
 	if err := g.MatchImporters(ctx, newMatcher(flag.Args()), func(tpath, ipath string) {
 		if *doFilterDom {
-			if _, ok := tools.HasDomain(tpath); !ok {
+			if _, ok := deps.HasDomain(tpath); !ok {
 				return
 			}
-			if _, ok := tools.HasDomain(ipath); !ok {
+			if _, ok := deps.HasDomain(ipath); !ok {
 				return
 			}
 		}

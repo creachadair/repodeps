@@ -26,6 +26,7 @@ import (
 	"text/tabwriter"
 
 	"bitbucket.org/creachadair/stringset"
+	"github.com/creachadair/repodeps/deps"
 	"github.com/creachadair/repodeps/graph"
 	"github.com/creachadair/repodeps/tools"
 )
@@ -52,7 +53,7 @@ func main() {
 		numDeps += int64(len(row.Directs))
 		seen := stringset.New()
 		for _, ip := range row.Directs {
-			prefix, hasDom := tools.HasDomain(ip)
+			prefix, hasDom := deps.HasDomain(ip)
 			if !hasDom {
 				numNonDom++
 				continue // skip non-domain imports

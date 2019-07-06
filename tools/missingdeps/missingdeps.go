@@ -25,6 +25,7 @@ import (
 	"path/filepath"
 
 	"bitbucket.org/creachadair/stringset"
+	"github.com/creachadair/repodeps/deps"
 	"github.com/creachadair/repodeps/graph"
 	"github.com/creachadair/repodeps/tools"
 )
@@ -72,7 +73,7 @@ func main() {
 	}
 
 	for pkg := range want.Diff(have) {
-		_, ok := tools.HasDomain(pkg)
+		_, ok := deps.HasDomain(pkg)
 		if ok || !*doFilterDom {
 			fmt.Println(pkg)
 		}

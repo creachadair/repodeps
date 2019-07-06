@@ -27,6 +27,7 @@ import (
 	"log"
 	"os"
 
+	"github.com/creachadair/repodeps/deps"
 	"github.com/creachadair/repodeps/graph"
 	"github.com/creachadair/repodeps/tools"
 )
@@ -68,13 +69,13 @@ func main() {
 	w.Comma = ';'
 
 	if err := g.Scan(ctx, "", func(row *graph.Row) error {
-		if _, ok := tools.HasDomain(row.ImportPath); !ok && *domainOnly {
+		if _, ok := deps.HasDomain(row.ImportPath); !ok && *domainOnly {
 			return nil
 		}
 
 		record := []string{assign(row.ImportPath)}
 		for _, dep := range row.Directs {
-			if _, ok := tools.HasDomain(dep); !ok && *domainOnly {
+			if _, ok := deps.HasDomain(dep); !ok && *domainOnly {
 				continue
 			}
 			record = append(record, assign(dep))

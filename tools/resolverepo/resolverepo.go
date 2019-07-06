@@ -33,6 +33,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/creachadair/repodeps/deps"
 	"github.com/creachadair/repodeps/poll"
 	"github.com/creachadair/repodeps/tools"
 	"github.com/creachadair/taskgroup"
@@ -210,7 +211,7 @@ func checkWellKnown(ctx context.Context, ip string) (wk *metaImport) {
 			wk.Err = errors.New("repository does not exist")
 		}
 	}()
-	pfx, _ := tools.HasDomain(ip)
+	pfx, _ := deps.HasDomain(ip)
 	switch pfx {
 	case "github.com", "bitbucket.org":
 		// TODO: Because we didn't actually try to resolve these, we don't know

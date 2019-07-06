@@ -22,6 +22,7 @@ import (
 	"log"
 	"os"
 
+	"github.com/creachadair/repodeps/deps"
 	"github.com/creachadair/repodeps/graph"
 	"github.com/creachadair/repodeps/tools"
 	"github.com/golang/protobuf/jsonpb"
@@ -57,7 +58,7 @@ func main() {
 		err := g.Scan(ctx, pfx, func(row *graph.Row) error {
 			if *matchRepo != "" && row.Repository != *matchRepo {
 				return nil // skip non-matching repositories
-			} else if _, ok := tools.HasDomain(row.ImportPath); !ok && *doFilterDom {
+			} else if _, ok := deps.HasDomain(row.ImportPath); !ok && *doFilterDom {
 				return nil // skip non-domain paths
 			} else if *doKeysOnly {
 				fmt.Println(row.ImportPath)

@@ -66,3 +66,10 @@ func PackageType(pkg *build.Package) Package_Type {
 		return Package_LIBRARY
 	}
 }
+
+// HasDomain returns the first path component of the specified import path, and
+// reports whether that prefix is a domain name.
+func HasDomain(ip string) (string, bool) {
+	prefix := strings.SplitN(ip, "/", 2)[0]
+	return prefix, strings.Index(prefix, ".") > 0
+}
