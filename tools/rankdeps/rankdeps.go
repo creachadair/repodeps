@@ -95,7 +95,7 @@ func main() {
 		var numRows, numRanks int64
 		if err := g.ScanUpdate(ctx, "", func(row *graph.Row) bool {
 			numRows++
-			if elt, ok := m[row.ImportPath]; ok {
+			if elt, ok := m[row.ImportPath]; ok && elt.next != row.Ranking {
 				row.Ranking = elt.next
 				numRanks++
 				return true
