@@ -159,8 +159,10 @@ func Load(ctx context.Context, path string, opts *deps.Options) ([]*deps.Repo, e
 				Imports:    pkg.Imports,
 				Type:       deps.PackageType(pkg),
 			}
-			if opts.UseImportComments && pkg.ImportComment != "" {
-				rec.ImportPath = pkg.ImportComment
+			if opts.UseImportComments {
+				if _, ok := deps.HasDomain(pkg.ImportComment); ok {
+					rec.ImportPath = pkg.ImportComment
+				}
 			}
 			if opts.HashSourceFiles {
 				for _, name := range pkg.GoFiles {
