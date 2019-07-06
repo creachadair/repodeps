@@ -108,3 +108,24 @@ which repository digests it has seen most recently, and will only update those
 that change. Use the `-interval` flag to control how often this may occur.  It
 doesn't make sense to choose an interval shorter than the time it takes to
 fully run the update (which depends on the current database size).
+
+
+## Indexing the Standard Library
+
+The standard library packages follow different rules. To index them:
+
+```shell
+git clone https://github.com/golang/go
+repodeps -store "$REPODEPS_DB" -stdlib -trim-repo -import-comments=0 -sourcehash=0 ./go/src
+```
+
+Generally these only need to be reindexed when there is a new release.
+
+
+## Computing PageRank
+
+```shell
+rankdeps -iterations 40 -store "$REPODEPS_DB" -update -scale 6
+```
+
+Omit the `-update` flag to dump the rank values to stdout.
