@@ -128,7 +128,7 @@ func Load(ctx context.Context, path string, opts *deps.Options) ([]*deps.Repo, e
 		}
 
 		// Record the directory structure to support the build.Context VFS.
-		vfs := newVFS(here.Remotes[0].Url)
+		vfs := newVFS(tools.CleanRepoURL(here.Remotes[0].Url))
 		if err := tree.Files().ForEach(func(f *object.File) error {
 			if err := check("scanning files"); err != nil {
 				return err
