@@ -56,20 +56,13 @@ macOS you can get `jq` via `brew install jq`.
    that require authentication will be skipped.
 
 
-3. Extract dependency information:
-
-   ```shell
-   find ~/crawl/siva -type f -name '*.siva' -print \
-   | repodeps -stdin -sourcehash -import-comments \
-   | xz -cz > deps.json.xz
-   ```
-
-
-4. Load the results into a database:
+3. Extract dependency information into a database:
 
    ```shell
    export REPODEPS_DB="$HOME/crawl/godeps-db"
-   xz -cd deps.json.xz | writedeps -store "$REPODEPS_DB"
+
+   find ~/crawl/siva -type f -name '*.siva' -print \
+   | repodeps -stdin -sourcehash -import-comments -store "$REPODEPS_DB"
    ```
 
 
