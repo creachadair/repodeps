@@ -22,7 +22,10 @@ message Row {
   // Classify the package type according to its role, if known.
   Type type = 6;
 
-  // next id: 7
+  // Ranking weight; 0 represents an unranked value.
+  double ranking = 7;
+
+  // next id: 8
 
   message File {
     string repo_path = 1; // file path relative to the repository root
