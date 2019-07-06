@@ -67,25 +67,29 @@ func (g *Graph) EncodeToQuads(ctx context.Context, f func(quad.Quad) error) (err
 	}
 	pkgs := make(map[string]quad.BNode) // :: import path → BNode
 	shas := make(map[string]quad.BNode) // :: digest → BNode
+	defn := stringset.New()
 	need := stringset.New()
+
 	P := func(pkg string) quad.BNode { return assign(pkgs, pkg) }
 	F := func(sha string) quad.BNode { return assign(shas, sha) }
 	R := func(url string) quad.IRI { return quad.IRI(url) }
 
 	if err := g.Scan(ctx, "", func(row *Row) error {
-		if _, seen := pkgs[row.ImportPath]; !seen {
-			pid := P(row.ImportPath)
-			send(pid, relType, typePackage)
-			send(pid, relRanking, quad.Float(row.Ranking))
-			send(pid, relImportPath, quad.String(row.ImportPath))
-			need.Discard(row.ImportPath)
-		}
+		pid := P(row.ImportPath)
+		send(pid, relType, typePackage)
+		send(pid, relRanking, quad.Float(row.Ranking))
+		send(pid, relImportPath, quad.String(row.ImportPath))
+		defn.Add(row.ImportPath)
+		need.Discard(row.ImportPath)
+
 		send(R(row.Repository), relType, typeRepo)
 		send(P(row.ImportPath), relDefinedIn, R(row.Repository))
 
 		for _, pkg := range row.Directs {
 			send(P(row.ImportPath), relImports, P(pkg))
-			need.Add(pkg)
+			if !defn.Contains(pkg) {
+				need.Add(pkg)
+			}
 		}
 
 		for _, src := range row.SourceFiles {
@@ -102,7 +106,7 @@ func (g *Graph) EncodeToQuads(ctx context.Context, f func(quad.Quad) error) (err
 
 	// If any packages were depended upon but not mentioned in the graph, emit
 	// dummy rows for them.
-	for pkg := range need {
+	for pkg := range need.Diff(defn) {
 		if _, ok := pkgs[pkg]; !ok {
 			send(P(pkg), relType, typePackage)
 			send(P(pkg), relMissing, quad.Bool(true))
