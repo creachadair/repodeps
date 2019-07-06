@@ -128,7 +128,8 @@ func Load(ctx context.Context, path string, opts *deps.Options) ([]*deps.Repo, e
 		}
 
 		// Record the directory structure to support the build.Context VFS.
-		vfs := newVFS(tools.CleanRepoURL(here.Remotes[0].Url))
+		repoPrefix := tools.CleanRepoURL(here.Remotes[0].Url)
+		vfs := newVFS(repoPrefix)
 		if err := tree.Files().ForEach(func(f *object.File) error {
 			if err := check("scanning files"); err != nil {
 				return err
@@ -163,6 +164,9 @@ func Load(ctx context.Context, path string, opts *deps.Options) ([]*deps.Repo, e
 				if _, ok := deps.HasDomain(pkg.ImportComment); ok {
 					rec.ImportPath = pkg.ImportComment
 				}
+			}
+			if opts.TrimRepoPrefix {
+				rec.ImportPath = strings.TrimPrefix(rec.ImportPath, repoPrefix+"/")
 			}
 			if opts.HashSourceFiles {
 				for _, name := range pkg.GoFiles {
