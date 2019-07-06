@@ -20,9 +20,12 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"math"
 	"os"
+	"sort"
 	"time"
 
+	"bitbucket.org/creachadair/stringset"
 	"github.com/creachadair/repodeps/graph"
 	"github.com/creachadair/repodeps/tools"
 )
@@ -31,7 +34,7 @@ var (
 	storePath   = flag.String("store", os.Getenv("REPODEPS_DB"), "Storage path (required)")
 	numIter     = flag.Int("iterations", 10, "Number of iterations")
 	dampFactor  = flag.Float64("damping", 0.85, "Damping factor (0..1)")
-	scaleFactor = flag.Float64("scale", 100, "Scaling factor for rank values")
+	scaleFactor = flag.Int("scale", 4, "Scale values to this number of significant figures")
 	doUpdate    = flag.Bool("update", false, "Write ranks back into the graph")
 )
 
@@ -84,9 +87,9 @@ func main() {
 			max = elt.cur
 		}
 	}
-	sf := float64(*scaleFactor) / max
+	mul := math.Pow(10, float64(*scaleFactor))
 	for _, elt := range m {
-		elt.next = elt.cur * sf
+		elt.next = math.Trunc(mul * (elt.cur / (max + 1)))
 	}
 
 	if *doUpdate {
@@ -109,8 +112,16 @@ func main() {
 	}
 
 	// Otherwise, write the results to stdout.
-	for key, node := range m {
-		fmt.Printf("%s\t%.2f\n", key, node.next)
+	keys := stringset.FromKeys(m).Unordered()
+	sort.Slice(keys, func(i, j int) bool {
+		a, b := m[keys[i]].next, m[keys[j]].next
+		if a == b {
+			return keys[i] < keys[j]
+		}
+		return a > b
+	})
+	for _, key := range keys {
+		fmt.Printf("%s\t%g\n", key, m[key].next)
 	}
 }
 
