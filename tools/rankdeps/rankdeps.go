@@ -90,6 +90,8 @@ func main() {
 	}
 
 	if *doUpdate {
+		log.Print("Updating database...")
+		start := time.Now()
 		var numRows, numRanks int64
 		if err := g.ScanUpdate(ctx, "", func(row *graph.Row) bool {
 			numRows++
@@ -102,7 +104,7 @@ func main() {
 		}); err != nil {
 			log.Fatalf("Update failed: %v", err)
 		}
-		log.Printf("Updated %d ranks in %d rows", numRanks, numRows)
+		log.Printf("Updated %d ranks in %d rows [%v elapsed]", numRanks, numRows, time.Since(start))
 		return
 	}
 
