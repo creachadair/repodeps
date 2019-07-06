@@ -78,11 +78,8 @@ func Load(ctx context.Context, dir string, opts *deps.Options) ([]*deps.Repo, er
 		if err != nil {
 			return nil // no importable go package here; skip it
 		}
-		if opts.TrimRepoPrefix {
-			if t := strings.TrimPrefix(pkg.ImportPath, repoPrefix+"/"); t != pkg.ImportPath {
-				pkg.ImportPath = t
-				pkg.Goroot = true
-			}
+		if opts.StandardLibrary {
+			pkg.Goroot = true
 		}
 		rec := &deps.Package{
 			Name:       pkg.Name,
@@ -94,6 +91,9 @@ func Load(ctx context.Context, dir string, opts *deps.Options) ([]*deps.Repo, er
 			if _, ok := deps.HasDomain(pkg.ImportComment); ok {
 				rec.ImportPath = pkg.ImportComment
 			}
+		}
+		if opts.TrimRepoPrefix {
+			rec.ImportPath = strings.TrimPrefix(rec.ImportPath, repoPrefix+"/")
 		}
 		if opts.HashSourceFiles {
 			for _, name := range pkg.GoFiles {

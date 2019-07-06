@@ -32,6 +32,7 @@ type Options struct {
 	HashSourceFiles   bool // record source file digests
 	UseImportComments bool // use import comments to name packages
 	TrimRepoPrefix    bool // trim the repository prefix from each package
+	StandardLibrary   bool // treat the input repositories as standard libraries
 }
 
 // Hash produces a SHA-256 digest of the contents of r.
