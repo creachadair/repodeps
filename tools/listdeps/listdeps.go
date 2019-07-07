@@ -30,7 +30,7 @@ import (
 
 var (
 	storePath   = flag.String("store", os.Getenv("REPODEPS_DB"), "Storage path (required)")
-	doKeysOnly  = flag.Bool("keys", false, "Print only keys, not values")
+	doKeysOnly  = flag.Bool("keys", false, "Print only import paths, not full rows")
 	doFilterDom = flag.Bool("domain-only", false, "Print only import paths that begin with a domain")
 	matchRepo   = flag.String("repo", "", "List only rows matching this repository")
 )

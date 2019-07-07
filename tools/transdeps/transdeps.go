@@ -30,6 +30,7 @@ import (
 
 var (
 	storePath     = flag.String("store", os.Getenv("REPODEPS_DB"), "Storage path (required)")
+	doKeysOnly    = flag.Bool("keys", false, "Print only import paths, not full rows")
 	noStandardLib = flag.Bool("no-stdlib", false, "Do not visit standard library packages")
 )
 
@@ -50,7 +51,11 @@ func main() {
 		}
 		if *noStandardLib && row.Type == graph.Row_STDLIB {
 			return nil
+		} else if *doKeysOnly {
+			fmt.Println(row.ImportPath)
+			return nil
 		}
+
 		defer fmt.Println()
 		return enc.Marshal(os.Stdout, row)
 	}); err != nil {
