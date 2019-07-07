@@ -75,3 +75,28 @@ func HasDomain(ip string) (string, bool) {
 	prefix := strings.SplitN(ip, "/", 2)[0]
 	return prefix, strings.Index(prefix, ".") > 0
 }
+
+// A PathLabelMap maintains an association between paths and labels, and
+// assigns subpaths that do not have their own labels a label based on the
+// nearest enclosing parent.
+type PathLabelMap map[string]string
+
+// Add adds path to the map with the specified label.
+func (p PathLabelMap) Add(path, label string) { p[path] = label }
+
+// Find looks up the label for path, returning either the path's own label if
+// one is defined, or an extension of the nearest enclosing parent path with a
+// label. Find returns "", false if no matching label is found.
+func (p PathLabelMap) Find(path string) (string, bool) {
+	for cur := path; cur != ""; {
+		if pkg, ok := p[cur]; ok {
+			return pkg + strings.TrimPrefix(path, cur), true
+		}
+		i := strings.LastIndex(cur, "/")
+		if i < 0 {
+			break
+		}
+		cur = cur[:i]
+	}
+	return "", false
+}

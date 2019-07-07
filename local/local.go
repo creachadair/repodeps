@@ -61,6 +61,7 @@ func Load(ctx context.Context, dir string, opts *deps.Options) ([]*deps.Repo, er
 
 	// Find the import paths of the packages defined by this repository, and the
 	// import paths of their dependencies. This is basically "go list".
+	cmap := make(deps.PathLabelMap)
 	err = filepath.Walk(dir, func(path string, fi os.FileInfo, err error) error {
 		if err != nil {
 			return err
@@ -90,6 +91,9 @@ func Load(ctx context.Context, dir string, opts *deps.Options) ([]*deps.Repo, er
 		if opts.UseImportComments {
 			if _, ok := deps.HasDomain(pkg.ImportComment); ok {
 				rec.ImportPath = pkg.ImportComment
+				cmap.Add(path, pkg.ImportComment)
+			} else if pc, ok := cmap.Find(path); ok {
+				rec.ImportPath = pc
 			}
 		}
 		if opts.TrimRepoPrefix {

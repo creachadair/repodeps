@@ -146,6 +146,7 @@ func Load(ctx context.Context, path string, opts *deps.Options) ([]*deps.Repo, e
 			importMode |= build.ImportComment
 		}
 		bc := vfs.buildContext()
+		cmap := make(deps.PathLabelMap)
 		for dir := range vfs.dirs {
 			if err := check("importing packages"); err != nil {
 				return err
@@ -166,6 +167,9 @@ func Load(ctx context.Context, path string, opts *deps.Options) ([]*deps.Repo, e
 			if opts.UseImportComments {
 				if _, ok := deps.HasDomain(pkg.ImportComment); ok {
 					rec.ImportPath = pkg.ImportComment
+					cmap.Add(dir, pkg.ImportComment)
+				} else if pc, ok := cmap.Find(dir); ok {
+					rec.ImportPath = pc
 				}
 			}
 			if opts.TrimRepoPrefix {
