@@ -113,10 +113,13 @@ func (g *Graph) Scan(ctx context.Context, prefix string, f func(*Row) error) err
 }
 
 // DFS performs a depth-first traversal of the forward dependency graph in g
-// starting from the specified import paths. It calls f for each row. If f
-// reports an error, traversal stops. If the error is ErrStopScan, DFS returns
-// nil; otherwise DFS returns the error from f.
-func (g *Graph) DFS(ctx context.Context, pkgs []string, f func(*Row) error) error {
+// starting from the specified import paths. It calls f for each package in the
+// traversal. If f reports an error, traversal stops. If the error is
+// ErrStopScan, DFS returns nil; otherwise DFS returns the error from f.
+//
+// The first argument to f is the import path. If the path is in the graph, the
+// second argument is its row; otherwise the second argument is nil.
+func (g *Graph) DFS(ctx context.Context, pkgs []string, f func(string, *Row) error) error {
 	seen := stringset.New()
 	q := stringset.New(pkgs...).Elements()
 	for len(q) != 0 {
@@ -127,12 +130,15 @@ func (g *Graph) DFS(ctx context.Context, pkgs []string, f func(*Row) error) erro
 		}
 		seen.Add(next)
 		row, err := g.Row(ctx, next)
-		if err != nil {
+		if err == storage.ErrKeyNotFound {
+			// this package is not indexed
+		} else if err != nil {
 			return err
+		} else {
+			q = append(q, row.Directs...)
 		}
-		q = append(q, row.Directs...)
 
-		if err := f(row); err == ErrStopScan {
+		if err := f(next, row); err == ErrStopScan {
 			return nil
 		} else if err != nil {
 			return err

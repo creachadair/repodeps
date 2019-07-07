@@ -43,7 +43,11 @@ func main() {
 
 	ctx := context.Background()
 	var enc jsonpb.Marshaler
-	if err := g.DFS(ctx, flag.Args(), func(row *graph.Row) error {
+	if err := g.DFS(ctx, flag.Args(), func(pkg string, row *graph.Row) error {
+		if row == nil {
+			log.Printf("[skipping] unindexed dependency %q", pkg)
+			return nil
+		}
 		if *noStandardLib && row.Type == graph.Row_STDLIB {
 			return nil
 		}
