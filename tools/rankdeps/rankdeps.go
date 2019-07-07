@@ -121,7 +121,7 @@ func main() {
 		return a > b
 	})
 	for _, key := range keys {
-		fmt.Printf("%s\t%g\n", key, m[key].next)
+		fmt.Printf("%s\t%.*g\n", key, *scaleFactor, m[key].next)
 	}
 }
 
