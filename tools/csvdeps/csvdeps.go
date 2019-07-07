@@ -67,9 +67,12 @@ func main() {
 	ctx := context.Background()
 	w := csv.NewWriter(os.Stdout)
 	w.Comma = ';'
+	defer w.Flush()
 
-	if err := g.Scan(ctx, "", func(row *graph.Row) error {
-		if _, ok := deps.HasDomain(row.ImportPath); !ok && *domainOnly {
+	process := func(_ string, row *graph.Row) error {
+		if row == nil {
+			return nil
+		} else if _, ok := deps.HasDomain(row.ImportPath); !ok && *domainOnly {
 			return nil
 		}
 
@@ -84,7 +87,16 @@ func main() {
 			return nil
 		}
 		return w.Write(record)
-	}); err != nil {
+	}
+
+	if flag.NArg() == 0 {
+		err = g.Scan(ctx, "", func(row *graph.Row) error {
+			return process(row.ImportPath, row)
+		})
+	} else {
+		err = g.DFS(ctx, flag.Args(), process)
+	}
+	if err != nil {
 		log.Fatalf("Scan failed: %v", err)
 	}
 
