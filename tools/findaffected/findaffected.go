@@ -19,13 +19,13 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"flag"
 	"fmt"
 	"log"
 	"os"
 	"os/exec"
 	"sort"
-	"strings"
 
 	"bitbucket.org/creachadair/stringset"
 	"github.com/creachadair/repodeps/graph"
@@ -111,16 +111,30 @@ func main() {
 	}
 
 	// Write output.
+	enc := json.NewEncoder(os.Stdout)
 	for pkg, deps := range revDeps {
 		rmap := make(map[string][]string)
 		for _, dep := range deps {
 			rmap[pkgRepo[dep]] = append(rmap[pkgRepo[dep]], dep)
 		}
-		fmt.Println(pkg)
+		out := output{Pkg: pkg}
 		for repo, deps := range rmap {
-			fmt.Println("  " + repo)
 			sort.Strings(deps)
-			fmt.Print("   - ", strings.Join(deps, "\n   - "), "\n")
+			out.Deps = append(out.Deps, oneRepo{
+				Repo: repo,
+				Pkgs: deps,
+			})
 		}
+		enc.Encode(out)
 	}
+}
+
+type output struct {
+	Pkg  string    `json:"package"`
+	Deps []oneRepo `json:"affected"`
+}
+
+type oneRepo struct {
+	Repo string   `json:"repository"`
+	Pkgs []string `json:"packages"`
 }
