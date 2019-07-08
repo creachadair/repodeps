@@ -65,17 +65,27 @@ func (db *DB) Scan(ctx context.Context, prefix string, f func(string) error) err
 // non-nil and the caller can check the Errors field to see how often an update
 // has been attempted without success. Repositories that fail too often may be
 // pruned from the database.
+//
+// If url has the form <base>@@<tag>, the specified tag is applied.
 func (db *DB) Check(ctx context.Context, url string) (*CheckResult, error) {
+	url, tag := url, "*"
+	if i := strings.LastIndex(url, "@@"); i >= 0 {
+		url, tag = url[:i], url[i+2:]
+	}
 	stat, err := db.Status(ctx, url)
 	if err == storage.ErrKeyNotFound {
 		// This is a new repository; set up the initial state.
 		stat = &Status{
 			Repository: url,
-			RefName:    "*", // to be updated
+			RefName:    tag, // to be updated
 		}
 	} else if err != nil {
 		return nil, err
+	} else if tag != "*" && tag != stat.RefName {
+		stat.RefName = tag
+		stat.Digest = nil
 	}
+
 	// Build the return value before updating the saved state.
 	old := hex.EncodeToString(stat.Digest)
 	st := &CheckResult{
