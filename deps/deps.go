@@ -82,7 +82,7 @@ func ModuleName(path string) (string, bool) {
 	}
 	m := modRE.FindSubmatch(data)
 	if m != nil {
-		return string(m[1]), true
+		return strings.Trim(string(m[1]), `"`), true
 	}
 	return "", false
 }
