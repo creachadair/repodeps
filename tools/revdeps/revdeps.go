@@ -22,8 +22,6 @@ import (
 	"log"
 	"os"
 	"path/filepath"
-	"regexp"
-	"strings"
 
 	"github.com/creachadair/repodeps/deps"
 	"github.com/creachadair/repodeps/tools"
@@ -62,7 +60,7 @@ func main() {
 	defer c.Close()
 
 	ctx := context.Background()
-	if err := g.MatchImporters(ctx, newMatcher(flag.Args()), func(tpath, ipath string) {
+	if err := g.MatchImporters(ctx, tools.NewMatcher(flag.Args()), func(tpath, ipath string) {
 		if *doFilterDom {
 			if _, ok := deps.HasDomain(tpath); !ok {
 				return
@@ -75,17 +73,4 @@ func main() {
 	}); err != nil {
 		log.Fatalf("Importers failed: %v", err)
 	}
-}
-
-func newMatcher(args []string) func(string) bool {
-	var ps []string
-	for _, arg := range args {
-		if t := strings.TrimSuffix(arg, "/..."); t != arg {
-			ps = append(ps, regexp.QuoteMeta(t))
-		} else {
-			ps = append(ps, regexp.QuoteMeta(arg)+"$")
-		}
-	}
-	re := regexp.MustCompile("^(?:" + strings.Join(ps, "|") + ")")
-	return re.MatchString
 }

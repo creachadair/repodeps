@@ -53,7 +53,7 @@ func main() {
 	defer cancel()
 
 	// Find the packages to analyze.
-	pkgs := stringset.New(flag.Args()...)
+	paths := flag.Args()
 	if *repoPath != "" {
 		repos, err := local.Load(ctx, *repoPath, nil)
 		if err != nil {
@@ -61,19 +61,18 @@ func main() {
 		}
 		for _, repo := range repos {
 			for _, pkg := range repo.Packages {
-				pkgs.Add(pkg.ImportPath)
+				paths = append(paths, pkg.ImportPath)
 			}
 		}
 	}
+	pkgs := tools.NewMatcher(paths)
 
 	// Compute reverse dependencies for the named packages.
-	missing := pkgs.Clone()
 	revDeps := make(map[string][]string)
 	pkgRepo := make(map[string]string)
 	if err := g.Scan(ctx, "", func(row *graph.Row) error {
-		missing.Discard(row.ImportPath)
 		for _, pkg := range row.Directs {
-			if pkgs.Contains(pkg) {
+			if pkgs(pkg) {
 				revDeps[pkg] = append(revDeps[pkg], row.ImportPath)
 				pkgRepo[row.ImportPath] = row.Repository
 			}
@@ -81,10 +80,6 @@ func main() {
 		return nil
 	}); err != nil {
 		log.Fatalf("Scan failed: %v", err)
-	}
-
-	if len(missing) != 0 {
-		log.Printf("Missing packages: %v", missing)
 	}
 
 	// If requested, clone the repositories.
