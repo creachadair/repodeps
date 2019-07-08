@@ -24,6 +24,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/creachadair/repodeps/deps"
 	"github.com/creachadair/repodeps/graph"
 	"github.com/creachadair/repodeps/tools"
 )
@@ -74,9 +75,13 @@ func main() {
 	start := time.Now()
 	ctx := context.Background()
 	if err := g.Scan(ctx, "", func(row *graph.Row) error {
+		if _, ok := deps.HasDomain(row.ImportPath); !ok && *doFilterDom {
+			return nil
+		}
 		src := A(row.ImportPath)
+		set(src, src, 0)
 		for _, pkg := range row.Directs {
-			set(src, A(pkg), 1)
+			set(A(pkg), src, 1)
 		}
 		return nil
 	}); err != nil {
@@ -90,7 +95,9 @@ func main() {
 		for j := int32(0); j < int32(len(ids)); j++ {
 			for k := int32(0); k < int32(len(ids)); k++ {
 				dij, dik, dkj := get(i, j), get(i, k), get(k, j)
-				if v := dik + dkj; dij > v {
+				if dik == inf || dkj == inf {
+					continue // no path
+				} else if v := dik + dkj; dij > v {
 					set(i, j, v)
 				}
 			}
@@ -108,7 +115,7 @@ func main() {
 	// Output: from <tab> to <tab> distance <eol>
 	for i := int32(0); i < int32(len(ids)); i++ {
 		for j := int32(0); j < int32(len(ids)); j++ {
-			if v := get(i, j); v != inf {
+			if v := get(i, j); v != inf && v > 0 {
 				fmt.Printf("%s\t%s\t%d\n", rid[i], rid[j], v)
 			}
 		}
