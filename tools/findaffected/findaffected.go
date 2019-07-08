@@ -80,6 +80,13 @@ func main() {
 		log.Fatalf("Scan failed: %v", err)
 	}
 
+	// Verify that we found everything.
+	for pkg := range pkgs {
+		if _, ok := revDeps[pkg]; !ok {
+			log.Printf("Package %q not found", pkg)
+		}
+	}
+
 	// If requested, clone the repositories.
 	if *clonePath != "" {
 		if err := os.MkdirAll(*clonePath, 0700); err != nil {
