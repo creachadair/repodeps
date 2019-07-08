@@ -29,8 +29,14 @@ func (c *CheckResult) Clone(ctx context.Context, path string) error {
 	if err := os.MkdirAll(dir, 0700); err != nil {
 		return err
 	}
+
+	// Clone at depth 1 to save bandwidth. However, it may turn out that the
+	// desired digest is deeper, so do an explicit fetch to make sure we have it
+	// even if that pulls in more business.
 	cmd := git(ctx, "-C", dir, "clone", "--no-checkout", "--depth=1", c.URL, base)
 	if _, err := cmd.Output(); err != nil {
+		return runErr(err)
+	} else if _, err := git(ctx, "-C", path, "fetch", "origin", c.Digest).Output(); err != nil {
 		return runErr(err)
 	}
 	_, err := git(ctx, "-C", path, "checkout", "--detach", c.Digest).Output()
