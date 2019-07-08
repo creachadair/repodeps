@@ -30,13 +30,21 @@ import (
 var (
 	pollDBPath  = flag.String("polldb", os.Getenv("REPODEPS_POLLDB"), "Poll database path (required)")
 	doReadStdin = flag.Bool("stdin", false, "Read repo URLs from stdin")
+	doRemove    = flag.Bool("remove", false, "Remove the specified URLs from the poll database")
 	doScanDB    = flag.Bool("scan", false, "Read repo URLs from the poll database")
 )
 
 func main() {
 	flag.Parse()
 
-	db, c, err := tools.OpenPollDB(*pollDBPath, tools.ReadOnly)
+	opts := tools.ReadOnly
+	if *doRemove {
+		if *doScanDB {
+			log.Fatal("You may not combine -scan and -remove; just delete the database")
+		}
+		opts = tools.ReadWrite
+	}
+	db, c, err := tools.OpenPollDB(*pollDBPath, opts)
 	if err != nil {
 		log.Fatalf("Opening poll database: %v", err)
 	}
@@ -59,6 +67,12 @@ func main() {
 		if err != nil {
 			log.Printf("[skipped] status for %q: %v", url, err)
 			continue
+		} else if *doRemove {
+			if err := db.Remove(ctx, url); err != nil {
+				log.Printf("Removing %q failed: %v", url, err)
+			} else {
+				log.Printf("[removed] %q", url)
+			}
 		}
 		enc.Marshal(os.Stdout, stat)
 		fmt.Println()
