@@ -67,9 +67,11 @@ func main() {
 	}
 
 	// Compute reverse dependencies for the named packages.
+	missing := pkgs.Clone()
 	revDeps := make(map[string][]string)
 	pkgRepo := make(map[string]string)
 	if err := g.Scan(ctx, "", func(row *graph.Row) error {
+		missing.Discard(row.ImportPath)
 		for _, pkg := range row.Directs {
 			if pkgs.Contains(pkg) {
 				revDeps[pkg] = append(revDeps[pkg], row.ImportPath)
@@ -81,11 +83,8 @@ func main() {
 		log.Fatalf("Scan failed: %v", err)
 	}
 
-	// Verify that we found everything.
-	for pkg := range pkgs {
-		if _, ok := revDeps[pkg]; !ok {
-			log.Printf("Package %q not found", pkg)
-		}
+	if len(missing) != 0 {
+		log.Printf("Missing packages: %v", missing)
 	}
 
 	// If requested, clone the repositories.
