@@ -20,7 +20,9 @@ import (
 	"crypto/sha256"
 	"go/build"
 	"io"
+	"io/ioutil"
 	"path/filepath"
+	"regexp"
 	"strings"
 )
 
@@ -67,6 +69,22 @@ func PackageType(pkg *build.Package) Package_Type {
 	default:
 		return Package_LIBRARY
 	}
+}
+
+var modRE = regexp.MustCompile(`(?m)^ *module\s+(\S+)\s*$`)
+
+// ModuleName reports whether the specified directory contains a go.mod file,
+// and if so reports the module name declared therein.
+func ModuleName(path string) (string, bool) {
+	data, err := ioutil.ReadFile(filepath.Join(path, "go.mod"))
+	if err != nil {
+		return "", false
+	}
+	m := modRE.FindSubmatch(data)
+	if m != nil {
+		return string(m[1]), true
+	}
+	return "", false
 }
 
 // HasDomain returns the first path component of the specified import path, and
