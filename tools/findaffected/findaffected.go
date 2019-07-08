@@ -23,15 +23,15 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"path/filepath"
+	"os/exec"
 	"sort"
 	"strings"
 
 	"bitbucket.org/creachadair/stringset"
 	"github.com/creachadair/repodeps/graph"
 	"github.com/creachadair/repodeps/local"
-	"github.com/creachadair/repodeps/poll"
 	"github.com/creachadair/repodeps/tools"
+	"github.com/creachadair/taskgroup"
 )
 
 var (
@@ -49,7 +49,8 @@ func main() {
 	}
 	defer c.Close()
 
-	ctx := context.Background()
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 
 	// Find the packages to analyze.
 	pkgs := stringset.New(flag.Args()...)
@@ -92,13 +93,20 @@ func main() {
 		if err := os.MkdirAll(*clonePath, 0700); err != nil {
 			log.Fatalf("Creating fork directory: %v", err)
 		}
+		grp, run := taskgroup.New(taskgroup.Trigger(cancel)).Limit(8)
 		for _, url := range stringset.FromValues(pkgRepo).Elements() {
-			path := filepath.Join(*clonePath, filepath.Base(url))
-			res := &poll.CheckResult{URL: url, Digest: "refs/heads/master"}
-			if err := res.Clone(ctx, path); err != nil {
-				log.Fatalf("Cloning %q failed: %v", url, err)
-			}
-			log.Printf("Cloned %q", url)
+			url := tools.FixRepoURL(url)
+			run(func() error {
+				cmd := exec.CommandContext(ctx, "git", "-C", *clonePath, "clone", url)
+				if err := cmd.Run(); err != nil {
+					return fmt.Errorf("fetching %q: %v", url, err)
+				}
+				log.Printf("Cloned %q", url)
+				return nil
+			})
+		}
+		if err := grp.Wait(); err != nil {
+			log.Fatalf("Cloning failed: %v", err)
 		}
 	}
 
