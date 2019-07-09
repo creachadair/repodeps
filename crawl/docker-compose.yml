@@ -1,0 +1,17 @@
+version: '3.7'
+services:
+  crawler:
+    image: creachadair/repodeps-crawler
+    build:
+      context: ..
+      dockerfile: crawl/Dockerfile
+    volumes:
+      - type: bind
+        source: "$HOME/software/sourced/data"
+        target: "/data"
+      - type: bind
+        source: "$HOME/software/sourced/data"
+        target: "/logs"
+    environment:
+      DB: '/data/godeps-db'
+      POLLDB: '/data/poll-db'
