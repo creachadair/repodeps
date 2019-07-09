@@ -87,6 +87,12 @@ func ModuleName(path string) (string, bool) {
 	return "", false
 }
 
+// IsLocalPackage reports whether the specified import path is local.
+func IsLocalPackage(pkg string) bool {
+	pfx, ok := HasDomain(pkg)
+	return !ok || pfx == pkg
+}
+
 // HasDomain returns the first path component of the specified import path, and
 // reports whether that prefix is a domain name.
 func HasDomain(ip string) (string, bool) {

@@ -69,7 +69,7 @@ func Load(ctx context.Context, dir string, opts *deps.Options) ([]*deps.Repo, er
 			return nil // nothing to do here
 		} else if deps.IsNonPackage(path) {
 			return filepath.SkipDir
-		} else if mod, ok := deps.ModuleName(path); ok {
+		} else if mod, ok := deps.ModuleName(path); ok && !deps.IsLocalPackage(mod) {
 			cmap.Add(path, mod) // module or submodule
 		}
 		select {
