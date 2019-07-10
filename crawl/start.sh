@@ -6,6 +6,13 @@ readonly datadir=/mnt/data/repodeps
 # The image tag to use for the container.
 readonly image=creachadair/repodeps-crawl:latest
 
+set -e
+
+if [[ "$1" = "update" ]] ; then
+    docker pull "$image"
+    docker stop repo-crawler || true
+    docker rm repo-crawler || true
+fi
 docker run \
        --detach \
        --name repo-crawler \
