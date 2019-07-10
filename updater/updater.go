@@ -5,7 +5,6 @@ package updater
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -13,6 +12,7 @@ import (
 	"log"
 	"math/rand"
 	"os"
+	"sync"
 	"sync/atomic"
 	"time"
 
@@ -49,6 +49,11 @@ type Options struct {
 	// A value less that or equal to zero means 1.
 	Concurrency int
 
+	// If set, this callback is invoked to deliver streaming logs from scan
+	// operations. The updater ensures that at most one goroutine is active in
+	// this callback at once.
+	StreamLog func(ctx context.Context, key string, value interface{}) error
+
 	// Default package loader options.
 	deps.Options
 }
@@ -70,6 +75,11 @@ func New(opts Options) (*Updater, error) {
 		opts.Concurrency = 1
 	}
 	u := &Updater{opts: opts}
+	if f := opts.StreamLog; f != nil {
+		u.log.m = f
+	} else {
+		u.log.m = jrpc2.ServerPush
+	}
 
 	if s, err := badgerstore.NewPath(opts.RepoDB); err == nil {
 		u.repoDB = poll.NewDB(storage.NewBlob(s))
@@ -97,6 +107,11 @@ type Updater struct {
 
 	scanning int32
 	opts     Options
+
+	log struct {
+		sync.Mutex
+		m func(ctx context.Context, key string, arg interface{}) error
+	}
 }
 
 func (u *Updater) tryScanning() bool {
@@ -124,7 +139,7 @@ func (u *Updater) Update(ctx context.Context, req *UpdateReq) (*UpdateRsp, error
 	}
 	res, err := u.repoDB.Check(ctx, tools.FixRepoURL(req.Repository))
 	if err != nil {
-		return nil, jrpc2.Errorf(code.SystemError, "checking %q: %v", req.Repository, err)
+		return nil, jrpc2.Errorf(code.SystemError, "checking %s: %v", req.Repository, err)
 	}
 
 	out := &UpdateRsp{
@@ -160,9 +175,7 @@ func (u *Updater) Update(ctx context.Context, req *UpdateReq) (*UpdateRsp, error
 		np, err := u.cloneAndUpdate(ctx, res, &u.opts.Options)
 		out.NumPackages = np
 		if err != nil {
-			e := jrpc2.DataErrorf(code.SystemError, out, "update %q: %v", res.URL, err)
-			log.Printf("MJF :: e=%#v", e)
-			return nil, e
+			return nil, jrpc2.DataErrorf(code.SystemError, out, "update %s: %v", res.URL, err)
 		}
 	}
 	return out, nil
@@ -363,12 +376,16 @@ func (u *Updater) cloneAndUpdate(ctx context.Context, res *poll.CheckResult, opt
 func (u *Updater) pushLog(ctx context.Context, sel bool, key string, arg interface{}) {
 	if !sel {
 		return
-	} else if e, ok := arg.(*jrpc2.Error); ok {
-		var data json.RawMessage
-		e.UnmarshalData(&data)
-		arg = []interface{}{e.Message(), data}
-	} else if e, ok := arg.(error); ok {
-		arg = e.Error()
 	}
-	jrpc2.ServerPush(ctx, key, arg)
+	switch t := arg.(type) {
+	case *jrpc2.Error:
+		// nothing special
+	case error:
+		arg = struct {
+			E string `json:"message"`
+		}{t.Error()}
+	}
+	u.log.Lock()
+	defer u.log.Unlock()
+	u.log.m(ctx, key, arg)
 }
