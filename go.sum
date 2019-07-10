@@ -20,8 +20,6 @@ github.com/creachadair/badgerstore v0.0.3/go.mod h1:gE/0n5aidyp1GhbiwD97TA1EdaxR
 github.com/creachadair/ffs v0.0.0-20190621064303-85e63f3de2b0/go.mod h1:8PQeiBWUu/EbSFGLj2LOEolp5TEjQNcEGmZG5ls7RmM=
 github.com/creachadair/ffs v0.0.0-20190622160218-fd16ac7ed292 h1:UprIbniL1mSq5tVgNBq4cG6Ad4PGkqjmiXtC/UPfQDQ=
 github.com/creachadair/ffs v0.0.0-20190622160218-fd16ac7ed292/go.mod h1:XHWmBqkuEfU/xnIqVdo2KiLKj1dhYksw7c5z9lf3NDM=
-github.com/creachadair/fileinput v0.0.2 h1:VJH3tAfaI7WPH+phQUS/7DlGGmjh6TUNiNgt+wvV668=
-github.com/creachadair/fileinput v0.0.2/go.mod h1:p0gRgcsdi/KSB7Ulhw4c7PgbNNLE9gCIkyP32AqCBmk=
 github.com/creachadair/staticfile v0.0.3/go.mod h1:a3qySzCIXEprDGxk6tSxSI+dBBdLzqeBOMhZ+o2d3pM=
 github.com/creachadair/taskgroup v0.2.0 h1:ekz6LTCIK5IiC+MBTy1XGqIvXLq18Hpw5S3/PLFKW8s=
 github.com/creachadair/taskgroup v0.2.0/go.mod h1:Sm24mgZhn5FscwtrzVkci2Lzi3uu4TshjR+T3hTtvaI=
@@ -57,6 +55,8 @@ github.com/gogo/protobuf v1.2.1/go.mod h1:hp+jE20tsWTFYpLwKvXlhS1hjn+gTNwPg2I6zV
 github.com/golang/protobuf v1.2.0/go.mod h1:6lQm79b+lXiMfvg/cZm0SGofjICqVBUtrP5yJMmIC1U=
 github.com/golang/protobuf v1.3.1 h1:YF8+flBXS5eO826T4nzqPrxfhQThhXl0YzfuUPu4SBg=
 github.com/golang/protobuf v1.3.1/go.mod h1:6lQm79b+lXiMfvg/cZm0SGofjICqVBUtrP5yJMmIC1U=
+github.com/golang/protobuf v1.3.2 h1:6nsPYzhq5kReh6QImI3k5qWzO4PEbvbIW2cwSfR/6xs=
+github.com/golang/protobuf v1.3.2/go.mod h1:6lQm79b+lXiMfvg/cZm0SGofjICqVBUtrP5yJMmIC1U=
 github.com/golang/snappy v0.0.1/go.mod h1:/XxbfmMg8lxefKM7IXC3fBNl/7bRcc72aCRzEWrmP2Q=
 github.com/google/go-cmp v0.2.0/go.mod h1:oXzfMopK8JAjlY9xF4vHSVASa0yLyX7SntLO5aqRK0M=
 github.com/google/go-cmp v0.3.0 h1:crn/baboCvb5fXaQ0IJ1SGTsTVrWpDsCWC8EGETZijY=
@@ -127,6 +127,8 @@ gopkg.in/src-d/go-billy-siva.v4 v4.5.1 h1:+UdpGGmJjANhXwg6TCcTVbACUqsbtX19QvJ9Ad
 gopkg.in/src-d/go-billy-siva.v4 v4.5.1/go.mod h1:4wKeCzOCSsdyFeM5+58M6ObU6FM+lZT12p7zm7A+9n0=
 gopkg.in/src-d/go-billy.v4 v4.3.0 h1:KtlZ4c1OWbIs4jCv5ZXrTqG8EQocr0g/d4DjNg70aek=
 gopkg.in/src-d/go-billy.v4 v4.3.0/go.mod h1:tm33zBoOwxjYHZIE+OV8bxTWFMJLrconzFMd38aARFk=
+gopkg.in/src-d/go-billy.v4 v4.3.1 h1:OkK1DmefDy1Z6Veu82wdNj/cLpYORhdX4qdaYCPwc7s=
+gopkg.in/src-d/go-billy.v4 v4.3.1/go.mod h1:tm33zBoOwxjYHZIE+OV8bxTWFMJLrconzFMd38aARFk=
 gopkg.in/src-d/go-git-fixtures.v3 v3.5.0 h1:ivZFOIltbce2Mo8IjzUHAFoq/IylO9WHhNOAJK+LsJg=
 gopkg.in/src-d/go-git-fixtures.v3 v3.5.0/go.mod h1:dLBcvytrw/TYZsNTWCnkNF2DSIlzWYqTe3rJR56Ac7g=
 gopkg.in/src-d/go-git.v4 v4.12.0 h1:CKgvBCJCcdfNnyXPYI4Cp8PaDDAmAPEN0CtfEdEAbd8=
