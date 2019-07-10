@@ -95,8 +95,15 @@ type Updater struct {
 	graph  *graph.Graph
 	graphC io.Closer
 
-	opts Options
+	scanning int32
+	opts     Options
 }
+
+func (u *Updater) tryScanning() bool {
+	return atomic.AddInt32(&u.scanning, 1) == 1
+}
+
+func (u *Updater) doneScanning() { atomic.StoreInt32(&u.scanning, 0) }
 
 // Close shuts down the updater and closes its underlying data stores.
 func (u *Updater) Close() error {
@@ -190,8 +197,14 @@ type UpdateRsp struct {
 }
 
 // Scan performs a scan over all the repositories known to the repo database
-// updating each one.
+// updating each one. Only one scanner is allowed at a time; concurrent calls
+// to scan will report an error.
 func (u *Updater) Scan(ctx context.Context, req *ScanReq) (*ScanRsp, error) {
+	if !u.tryScanning() {
+		return nil, jrpc2.Errorf(code.SystemError, "scan already in progress")
+	}
+	defer u.doneScanning()
+
 	rate := req.SampleRate
 	if rate == 0 {
 		rate = u.opts.SampleRate
