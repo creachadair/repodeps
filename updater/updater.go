@@ -136,6 +136,8 @@ func (u *Updater) Close() error {
 func (u *Updater) Update(ctx context.Context, req *UpdateReq) (*UpdateRsp, error) {
 	if req.Repository == "" {
 		return nil, jrpc2.Errorf(code.InvalidParams, "missing repository URL")
+	} else if req.CheckOnly && req.Force {
+		return nil, jrpc2.Errorf(code.InvalidParams, "checkOnly and force are mutually exclusive")
 	}
 	res, err := u.repoDB.Check(ctx, tools.FixRepoURL(req.Repository))
 	if err != nil {
@@ -153,6 +155,8 @@ func (u *Updater) Update(ctx context.Context, req *UpdateReq) (*UpdateRsp, error
 		u.repoDB.Remove(ctx, out.Repository)
 		out.Removed = true
 		return nil, jrpc2.DataErrorf(code.SystemError, out, "removed after %d failures", out.Errors)
+	} else if req.CheckOnly {
+		return out, nil
 	}
 
 	if out.NeedsUpdate || req.Force {
@@ -188,6 +192,9 @@ type UpdateReq struct {
 
 	// The reference name to update (optional).
 	Reference string `json:"reference"`
+
+	// If true, only check the repository state, do not update.
+	CheckOnly bool `json:"checkOnly"`
 
 	// If true, remove any packages currently attributed to this repository
 	// before updating.
