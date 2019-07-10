@@ -8,11 +8,19 @@ readonly image=creachadair/repodeps-crawl:latest
 
 set -e
 
-if [[ "$1" = "update" ]] ; then
-    docker pull "$image"
-    docker stop repo-crawler || true
-    docker rm repo-crawler || true
-fi
+case "$1" in
+    (update)
+	docker pull "$image"
+	docker stop repo-crawler || true
+	docker rm repo-crawler || true
+	;;
+    ("")
+	;;
+    (*)
+	echo "Unknown argument '$1'; usage is '$(basename $0) [update]'" 1>&2
+	exit 1
+	;;
+esac
 docker run \
        --detach \
        --name repo-crawler \
