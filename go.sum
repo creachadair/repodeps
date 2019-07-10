@@ -1,3 +1,4 @@
+bitbucket.org/creachadair/shell v0.0.6/go.mod h1:8Qqi/cYk7vPnsOePHroKXDJYmb5x7ENhtiFtfZq8K+M=
 bitbucket.org/creachadair/stringset v0.0.7 h1:0BcF5uWBXLPdXIeYE5YVWX5ciCYWV5qePGGnKGpkdxU=
 bitbucket.org/creachadair/stringset v0.0.7/go.mod h1:GqOef/L3LzxUUGnQobbltX6Us45D0gTEg9B4tYoOSG4=
 github.com/AndreasBriese/bbloom v0.0.0-20180913140656-343706a395b7/go.mod h1:bOvUY6CB00SOBii9/FifXqc0awNKxLFCL/+pkDPuyl8=
@@ -20,6 +21,8 @@ github.com/creachadair/badgerstore v0.0.3/go.mod h1:gE/0n5aidyp1GhbiwD97TA1EdaxR
 github.com/creachadair/ffs v0.0.0-20190621064303-85e63f3de2b0/go.mod h1:8PQeiBWUu/EbSFGLj2LOEolp5TEjQNcEGmZG5ls7RmM=
 github.com/creachadair/ffs v0.0.0-20190622160218-fd16ac7ed292 h1:UprIbniL1mSq5tVgNBq4cG6Ad4PGkqjmiXtC/UPfQDQ=
 github.com/creachadair/ffs v0.0.0-20190622160218-fd16ac7ed292/go.mod h1:XHWmBqkuEfU/xnIqVdo2KiLKj1dhYksw7c5z9lf3NDM=
+github.com/creachadair/jrpc2 v0.2.3 h1:QGbuZbPKdSwOoTDMC58QwVRW/6g5US3G64dwLwKa2T8=
+github.com/creachadair/jrpc2 v0.2.3/go.mod h1:Ry3h5pW9/c9PN6LcdAQAEYqVHZ+Yi6nl2cyamfxAfP4=
 github.com/creachadair/staticfile v0.0.3/go.mod h1:a3qySzCIXEprDGxk6tSxSI+dBBdLzqeBOMhZ+o2d3pM=
 github.com/creachadair/taskgroup v0.2.0 h1:ekz6LTCIK5IiC+MBTy1XGqIvXLq18Hpw5S3/PLFKW8s=
 github.com/creachadair/taskgroup v0.2.0/go.mod h1:Sm24mgZhn5FscwtrzVkci2Lzi3uu4TshjR+T3hTtvaI=
@@ -107,6 +110,7 @@ golang.org/x/net v0.0.0-20181217023233-e147a9138326/go.mod h1:mL1N/T3taQHkDXs73r
 golang.org/x/net v0.0.0-20190404232315-eb5bcb51f2a3/go.mod h1:t9HGtf8HONx5eT2rtn7q6eTqICYqUVnKs3thJo3Qplg=
 golang.org/x/net v0.0.0-20190502183928-7f726cade0ab h1:9RfW3ktsOZxgo9YNbBAjq1FWzc/igwEcUzZz8IXgSbk=
 golang.org/x/net v0.0.0-20190502183928-7f726cade0ab/go.mod h1:t9HGtf8HONx5eT2rtn7q6eTqICYqUVnKs3thJo3Qplg=
+golang.org/x/sync v0.0.0-20190423024810-112230192c58 h1:8gQV6CLnAEikrhgkHFbMAEhagSSnXWGV915qUMm9mrU=
 golang.org/x/sync v0.0.0-20190423024810-112230192c58/go.mod h1:RxMgew5VJxzue5/jJTE5uejpjVlOe/izrB70Jof72aM=
 golang.org/x/sys v0.0.0-20180903190138-2b024373dcd9/go.mod h1:STP8DvDyc/dI5b8T5hshtkjS+E42TnysNCUPdjciGhY=
 golang.org/x/sys v0.0.0-20181218192612-074acd46bca6/go.mod h1:STP8DvDyc/dI5b8T5hshtkjS+E42TnysNCUPdjciGhY=
