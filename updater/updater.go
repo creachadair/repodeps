@@ -13,6 +13,7 @@ import (
 	"log"
 	"math/rand"
 	"os"
+	"sync/atomic"
 	"time"
 
 	"bitbucket.org/creachadair/stringset"
@@ -25,6 +26,7 @@ import (
 	"github.com/creachadair/repodeps/poll"
 	"github.com/creachadair/repodeps/storage"
 	"github.com/creachadair/repodeps/tools"
+	"github.com/creachadair/taskgroup"
 )
 
 // Options control the behaviour of an Updater.
@@ -64,7 +66,11 @@ func New(opts Options) (*Updater, error) {
 	if opts.SampleRate == 0 {
 		opts.SampleRate = 1
 	}
+	if opts.Concurrency <= 0 {
+		opts.Concurrency = 1
+	}
 	u := &Updater{opts: opts}
+
 	if s, err := badgerstore.NewPath(opts.RepoDB); err == nil {
 		u.repoDB = poll.NewDB(storage.NewBlob(s))
 		u.repoC = s
@@ -94,12 +100,12 @@ type Updater struct {
 
 // Close shuts down the updater and closes its underlying data stores.
 func (u *Updater) Close() error {
-	rerr := u.repoC.Close()
 	gerr := u.graphC.Close()
-	if rerr != nil {
-		return rerr
+	rerr := u.repoC.Close()
+	if gerr != nil {
+		return gerr
 	}
-	return gerr
+	return rerr
 }
 
 // Update processes a single update request. An error has concrete type
@@ -195,6 +201,9 @@ func (u *Updater) Scan(ctx context.Context, req *ScanReq) (*ScanRsp, error) {
 	start := time.Now() // for elapsed time
 	seen := stringset.New()
 	rsp := new(ScanRsp)
+
+	grp, run := taskgroup.New(nil).Limit(u.opts.Concurrency)
+	var numPkgs int64
 	err := u.repoDB.Scan(ctx, "", func(url string) error {
 		rsp.NumScanned++
 
@@ -217,22 +226,30 @@ func (u *Updater) Scan(ctx context.Context, req *ScanReq) (*ScanRsp, error) {
 		}
 		rsp.NumSamples++
 
-		// Note that update errors do not fail the scan, but may push back
-		// notifications to the client if that is enabled.
-		repo, err := u.Update(ctx, &UpdateReq{
-			Repository: stat.Repository,
-			Reference:  stat.RefName,
+		run(func() error {
+			// Note that update errors do not fail the scan, but may push back
+			// notifications to the client if that is enabled.
+			repo, err := u.Update(ctx, &UpdateReq{
+				Repository: stat.Repository,
+				Reference:  stat.RefName,
+			})
+			if err == nil {
+				atomic.AddInt64(&numPkgs, int64(repo.NumPackages))
+			}
+			if err != nil {
+				u.pushLog(ctx, req.LogErrors, "log.updateError", err)
+			} else if repo.NeedsUpdate {
+				u.pushLog(ctx, req.LogUpdates, "log.updated", repo)
+			} else {
+				u.pushLog(ctx, req.LogNonUpdates, "log.skipped", repo)
+			}
+			return nil
 		})
-		if err != nil {
-			u.pushLog(ctx, req.LogErrors, "log.updateError", err)
-		} else if repo.NeedsUpdate {
-			u.pushLog(ctx, req.LogUpdates, "log.updated", repo)
-		} else {
-			u.pushLog(ctx, req.LogNonUpdates, "log.skipped", repo)
-		}
 		return nil
 	})
+	grp.Wait()
 	rsp.Elapsed = time.Since(start)
+	rsp.NumPackages = int(numPkgs)
 	return rsp, err
 }
 
