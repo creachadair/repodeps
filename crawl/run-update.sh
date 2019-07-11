@@ -26,7 +26,7 @@ now() { echo "$(date +'%F %T %z')" ; }
 while true ; do
     echo "-- CHECK $(now)" 1>&2  # for the text log
     echo "\"-- CHECK $(now)\""   # for the JSON log
-    ./checkrepo -polldb "$POLLDB" -store "$DB" -clone-dir "$CLONEDIR" \
+    ./checkrepo -repo-db "$POLLDB" -graph-db "$DB" -clone-dir "$CLONEDIR" \
 		-log-filter EN -scan -sample 0.1 \
  		-update -interval 1h \
 		-concurrency 4 \
