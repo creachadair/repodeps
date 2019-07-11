@@ -234,7 +234,6 @@ func (u *Updater) Scan(ctx context.Context, req *ScanReq) (*ScanRsp, error) {
 		rsp.NumScanned++
 
 		// Filter duplicates.
-		url = tools.FixRepoURL(url)
 		if seen.Contains(url) {
 			rsp.NumDups++
 			return nil // skip duplicate
