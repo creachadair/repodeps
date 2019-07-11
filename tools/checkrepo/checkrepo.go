@@ -135,6 +135,7 @@ func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	if *doScanDB {
+		start := time.Now()
 		rsp, err := u.Scan(ctx, &updater.ScanReq{
 			LogUpdates:    strings.IndexByte(*logFilter, 'U') < 0,
 			LogErrors:     strings.IndexByte(*logFilter, 'E') < 0,
@@ -145,6 +146,14 @@ func main() {
 		} else {
 			enc.Encode(rsp)
 		}
+		log.Printf(`Processing complete:
+%-6d URLs scanned
+%-6d duplicates discarded
+%-6d samples selected
+%-6d packages updated in %d repositories
+
+[%v elapsed]`, rsp.NumScanned, rsp.NumDups, rsp.NumSamples,
+			rsp.NumPackages, rsp.NumUpdates, time.Since(start))
 		return
 	}
 	for url := range tools.Inputs(*doReadStdin) {
