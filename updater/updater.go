@@ -229,7 +229,7 @@ func (u *Updater) Scan(ctx context.Context, req *ScanReq) (*ScanRsp, error) {
 	rsp := new(ScanRsp)
 
 	grp, run := taskgroup.New(nil).Limit(u.opts.Concurrency)
-	var numPkgs int64
+	var numPkgs, numRepos int64
 	err := u.repoDB.Scan(ctx, "", func(url string) error {
 		rsp.NumScanned++
 
@@ -264,6 +264,7 @@ func (u *Updater) Scan(ctx context.Context, req *ScanReq) (*ScanRsp, error) {
 			if err != nil {
 				u.pushLog(ctx, req.LogErrors, "log.updateError", err)
 			} else if repo.NeedsUpdate {
+				atomic.AddInt64(&numRepos, 1)
 				u.pushLog(ctx, req.LogUpdates, "log.updated", repo)
 			} else {
 				u.pushLog(ctx, req.LogNonUpdates, "log.skipped", repo)
@@ -274,6 +275,7 @@ func (u *Updater) Scan(ctx context.Context, req *ScanReq) (*ScanRsp, error) {
 	})
 	grp.Wait()
 	rsp.Elapsed = time.Since(start)
+	rsp.NumUpdates = int(numRepos)
 	rsp.NumPackages = int(numPkgs)
 	return rsp, err
 }
@@ -291,6 +293,7 @@ type ScanRsp struct {
 	NumScanned  int `json:"numScanned"`        // number of repositories scanned
 	NumDups     int `json:"numDups,omitempty"` // number of duplicates discarded
 	NumSamples  int `json:"numSamples"`        // number of samples selected
+	NumUpdates  int `json:"numUpdates"`        // number of repositories updated
 	NumPackages int `json:"numPackages"`       // number of packages updated
 
 	Elapsed time.Duration `json:"elapsed"` // time elapsed during the scan
