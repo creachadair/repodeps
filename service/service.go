@@ -12,6 +12,7 @@ import (
 	"log"
 	"math/rand"
 	"os"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -130,6 +131,87 @@ func (u *Server) Close() error {
 		return gerr
 	}
 	return rerr
+}
+
+// Match enumerates the rows of the graph matching the specified query.  If
+// more rows are available than the limit requested, the response will indicate
+// the next offset of a matching row.
+func (u *Server) Match(ctx context.Context, req *MatchReq) (*MatchRsp, error) {
+	repo := req.Repository
+	if repo != "" {
+		repo = tools.FixRepoURL(repo)
+	}
+	cap := req.Limit
+	if cap <= 0 {
+		cap = 50 // default limit
+	}
+
+	// If a package or package prefix was specified, use that to constrain the
+	// scan for an appreciable performance improvement.
+	pkg, pfx := req.Package, req.Package
+	if t := strings.TrimSuffix(pkg, "/..."); t != pkg {
+		pkg, pfx = "", t
+	}
+
+	rsp := new(MatchRsp)
+	var skipped int
+	err := u.graph.Scan(ctx, pfx, func(row *graph.Row) error {
+		if (pkg != "" && pkg != row.ImportPath) || (repo != "" && row.Repository != repo) {
+			return nil // row does not match
+		}
+		rsp.NumRows++
+		if req.CountOnly {
+			// do nothing
+		} else if skipped < req.Offset {
+			skipped++ // skip prior to the requested offset
+		} else if len(rsp.Rows) < cap {
+			rsp.Rows = append(rsp.Rows, row)
+			rsp.NextOffset = rsp.NumRows
+			if !req.IncludeSource {
+				row.SourceFiles = nil
+			}
+			if req.ExcludeDirects {
+				row.Directs = nil
+			}
+		}
+		return nil
+	})
+	if rsp.NumRows == rsp.NextOffset {
+		rsp.NextOffset = 0 // we're done here
+	}
+	return rsp, err
+}
+
+// MatchReq is the request parameter to the Match method.
+type MatchReq struct {
+	// Match rows for this package. If package ends with "/...", any row with
+	// that prefix is matched.
+	Package string `json:"package"`
+
+	// Match rows with this repository URL.
+	Repository string `json:"repository"`
+
+	// Only count the number of matching rows; do not emit them.
+	CountOnly bool `json:"countOnly"`
+
+	// Whether to include source file paths.
+	IncludeSource bool `json:"includeSource"`
+
+	// Whether to exclude direct dependencies.
+	ExcludeDirects bool `json:"excludeDirects"`
+
+	// Return at most this many rows (0 uses a reasonable default).
+	Limit int `json:"limit"`
+
+	// Return results starting from the specified offset (0 based).
+	Offset int `json:"offset"`
+}
+
+// MatchRsp is the response from a successful Match query.
+type MatchRsp struct {
+	NumRows    int          `json:"numRows"`
+	Rows       []*graph.Row `json:"rows,omitempty"`
+	NextOffset int          `json:"nextOffset,omitempty"`
 }
 
 // Update processes a single update request. An error has concrete type
