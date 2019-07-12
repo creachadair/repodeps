@@ -221,6 +221,28 @@ type MatchRsp struct {
 	NextOffset int          `json:"nextOffset,omitempty"`
 }
 
+// RepoStatus reports the current status of the specified repository.
+func (u *Server) RepoStatus(ctx context.Context, req *RepoStatusReq) (*RepoStatusRsp, error) {
+	if req.Repository == "" {
+		return nil, jrpc2.Errorf(code.InvalidParams, "empty repository URL")
+	}
+	stat, err := u.repoDB.Status(ctx, tools.FixRepoURL(req.Repository))
+	if err != nil {
+		return nil, err
+	}
+	return &RepoStatusRsp{Status: stat}, nil
+}
+
+// RepoStatusReq is the request parameter to the RepoStatus method.
+type RepoStatusReq struct {
+	Repository string `json:"repository"`
+}
+
+// RepoStatusRsp is the response message from a successful RepoStatus call.
+type RepoStatusRsp struct {
+	Status *poll.Status `json:"status"`
+}
+
 // Update processes a single update request. An error has concrete type
 // *jrpc2.Error and errors during the update phase have a partial response
 // attached as a data value.
