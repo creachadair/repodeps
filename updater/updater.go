@@ -315,7 +315,7 @@ func (u *Updater) Remove(ctx context.Context, req *RemoveReq) (*RemoveRsp, error
 		if err := u.graph.Remove(ctx, pkg); err == storage.ErrKeyNotFound {
 			continue
 		} else if err != nil {
-			u.pushLog(ctx, req.LogErrors, "log.removeError", struct {
+			u.pushLog(ctx, req.LogErrors, "log.removePackage", struct {
 				P string `json:"package"`
 				M string `json:"message"`
 			}{P: pkg, M: err.Error()})
@@ -327,11 +327,16 @@ func (u *Updater) Remove(ctx context.Context, req *RemoveReq) (*RemoveRsp, error
 		return tools.FixRepoURL(req.Repositories[i])
 	})
 	if len(repos) != 0 {
+		for repo := range repos {
+			if err := u.repoDB.Remove(ctx, repo); err != nil {
+				u.pushLog(ctx, req.LogErrors, "log.removeRepo", err)
+			}
+		}
 		if err := u.graph.Scan(ctx, "", func(row *graph.Row) error {
 			if repos.Contains(row.Repository) {
 				err := u.graph.Remove(ctx, row.ImportPath)
 				if err != nil {
-					u.pushLog(ctx, req.LogErrors, "log.removeError", err)
+					u.pushLog(ctx, req.LogErrors, "log.removePackage", err)
 				} else {
 					pkgs.Add(row.ImportPath)
 				}
