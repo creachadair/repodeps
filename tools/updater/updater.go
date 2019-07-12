@@ -47,6 +47,12 @@ func main() {
 	if err != nil {
 		log.Fatalf("Listen %q: %v", *serviceAddr, err)
 	}
+	log.Printf(`Updater service starting:
+- Listening at:        %s
+- Repository database: %s
+- Graph database:      %s
+`, *serviceAddr, opts.RepoDB, opts.GraphDB)
+
 	sig := make(chan os.Signal, 1)
 	signal.Notify(sig, os.Interrupt)
 	go func() {
@@ -67,6 +73,7 @@ func main() {
 	}); err != nil {
 		log.Printf("Server loop failed: %v", err)
 	}
+	log.Printf("Server loop ended, shutting down")
 	if err := u.Close(); err != nil {
 		log.Fatalf("Closing updater: %v", err)
 	}
