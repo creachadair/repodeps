@@ -28,11 +28,11 @@ import (
 	"github.com/creachadair/jrpc2/handler"
 	"github.com/creachadair/jrpc2/jctx"
 	"github.com/creachadair/jrpc2/server"
-	"github.com/creachadair/repodeps/updater"
+	"github.com/creachadair/repodeps/service"
 )
 
 var (
-	opts updater.Options
+	opts service.Options
 
 	serviceAddr = flag.String("address", "", "Service address (required)")
 	repoDB      = os.Getenv("UPDATER_REPO_DB")
@@ -78,7 +78,7 @@ func main() {
 		signal.Stop(sig)
 	}()
 
-	u, err := updater.New(opts)
+	u, err := service.New(opts)
 	if err != nil {
 		log.Fatalf("Creating updater: %v", err)
 	}

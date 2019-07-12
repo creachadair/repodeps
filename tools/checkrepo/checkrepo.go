@@ -28,8 +28,8 @@ import (
 	"time"
 
 	"github.com/creachadair/repodeps/deps"
+	"github.com/creachadair/repodeps/service"
 	"github.com/creachadair/repodeps/tools"
-	"github.com/creachadair/repodeps/updater"
 )
 
 var (
@@ -98,7 +98,7 @@ func main() {
 	flag.Parse()
 
 	enc := json.NewEncoder(os.Stdout) // log writer
-	opts := updater.Options{
+	opts := service.Options{
 		RepoDB:  *repoDBPath,
 		GraphDB: *graphDBPath,
 		WorkDir: *cloneDir,
@@ -122,13 +122,13 @@ func main() {
 	}
 	*logFilter = strings.ToUpper(*logFilter)
 
-	u, err := updater.New(opts)
+	u, err := service.New(opts)
 	if err != nil {
-		log.Fatalf("Creating updater: %v", err)
+		log.Fatalf("Creating service: %v", err)
 	}
 	defer func() {
 		if err := u.Close(); err != nil {
-			log.Fatalf("Closing updater: %v", err)
+			log.Fatalf("Closing service: %v", err)
 		}
 	}()
 
@@ -137,7 +137,7 @@ func main() {
 	if *doScanDB {
 		log.Printf("--- BEGIN update scan (sample fraction %f)", *sampleRate)
 		start := time.Now()
-		rsp, err := u.Scan(ctx, &updater.ScanReq{
+		rsp, err := u.Scan(ctx, &service.ScanReq{
 			LogUpdates:    strings.IndexByte(*logFilter, 'U') < 0,
 			LogErrors:     strings.IndexByte(*logFilter, 'E') < 0,
 			LogNonUpdates: strings.IndexByte(*logFilter, 'N') < 0,
@@ -158,7 +158,7 @@ func main() {
 		return
 	}
 	for url := range tools.Inputs(*doReadStdin) {
-		rsp, err := u.Update(ctx, &updater.UpdateReq{
+		rsp, err := u.Update(ctx, &service.UpdateReq{
 			Repository: url,
 			CheckOnly:  !*doUpdate,
 			Force:      *doForce,

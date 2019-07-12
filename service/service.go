@@ -1,7 +1,7 @@
-// Package updater defines a service that maintains the state of a dependency
+// Package service defines a service that maintains the state of a dependency
 // graph. It is compatible with the github.com/creachadair/jrpc2 package, but
 // can also be used independently.
-package updater
+package service
 
 import (
 	"context"
@@ -29,7 +29,7 @@ import (
 	"github.com/creachadair/taskgroup"
 )
 
-// Options control the behaviour of an Updater.
+// Options control the behaviour of a Server.
 type Options struct {
 	RepoDB  string // path of repository state database (required)
 	GraphDB string // path of graph database (required)
@@ -50,7 +50,7 @@ type Options struct {
 	Concurrency int
 
 	// If set, this callback is invoked to deliver streaming logs from scan
-	// operations. The updater ensures that at most one goroutine is active in
+	// operations. The server ensures that at most one goroutine is active in
 	// this callback at once.
 	StreamLog func(ctx context.Context, key string, value interface{}) error
 
@@ -58,10 +58,10 @@ type Options struct {
 	deps.Options
 }
 
-// New constructs a new Updater from the specified options.  As long as the
-// updater is open, it holds a lock on the databases assigned to it.  The
-// caller must call Close when the updater is no longer in use.
-func New(opts Options) (*Updater, error) {
+// New constructs a new Server from the specified options.  As long as the
+// server is open, it holds a lock on the databases assigned to it.
+// The caller must call Close when the server is no longer in use.
+func New(opts Options) (*Server, error) {
 	if opts.RepoDB == "" {
 		return nil, errors.New("no repository database")
 	}
@@ -74,7 +74,7 @@ func New(opts Options) (*Updater, error) {
 	if opts.Concurrency <= 0 {
 		opts.Concurrency = 1
 	}
-	u := &Updater{opts: opts}
+	u := &Server{opts: opts}
 	if f := opts.StreamLog; f != nil {
 		mu := new(sync.Mutex)
 		u.log = func(ctx context.Context, key string, arg interface{}) error {
@@ -103,8 +103,8 @@ func New(opts Options) (*Updater, error) {
 	return u, nil
 }
 
-// An Updater manages updates to a database of dependencies.
-type Updater struct {
+// A Server manages reads and updates to a database of dependencies.
+type Server struct {
 	repoDB *poll.DB
 	repoC  io.Closer
 	graph  *graph.Graph
@@ -116,14 +116,14 @@ type Updater struct {
 	log func(context.Context, string, interface{}) error
 }
 
-func (u *Updater) tryScanning() bool {
+func (u *Server) tryScanning() bool {
 	return atomic.AddInt32(&u.scanning, 1) == 1
 }
 
-func (u *Updater) doneScanning() { atomic.StoreInt32(&u.scanning, 0) }
+func (u *Server) doneScanning() { atomic.StoreInt32(&u.scanning, 0) }
 
-// Close shuts down the updater and closes its underlying data stores.
-func (u *Updater) Close() error {
+// Close shuts down the server and closes its underlying data stores.
+func (u *Server) Close() error {
 	gerr := u.graphC.Close()
 	rerr := u.repoC.Close()
 	if gerr != nil {
@@ -135,7 +135,7 @@ func (u *Updater) Close() error {
 // Update processes a single update request. An error has concrete type
 // *jrpc2.Error and errors during the update phase have a partial response
 // attached as a data value.
-func (u *Updater) Update(ctx context.Context, req *UpdateReq) (*UpdateRsp, error) {
+func (u *Server) Update(ctx context.Context, req *UpdateReq) (*UpdateRsp, error) {
 	if req.Repository == "" {
 		return nil, jrpc2.Errorf(code.InvalidParams, "missing repository URL")
 	} else if req.CheckOnly && req.Force {
@@ -221,7 +221,7 @@ type UpdateRsp struct {
 // Scan performs a scan over all the repositories known to the repo database
 // updating each one. Only one scanner is allowed at a time; concurrent calls
 // to scan will report an error.
-func (u *Updater) Scan(ctx context.Context, req *ScanReq) (*ScanRsp, error) {
+func (u *Server) Scan(ctx context.Context, req *ScanReq) (*ScanRsp, error) {
 	if !u.tryScanning() {
 		return nil, jrpc2.Errorf(code.SystemError, "scan already in progress")
 	}
@@ -309,7 +309,7 @@ type ScanRsp struct {
 }
 
 // Remove removes package and repositories from the database.
-func (u *Updater) Remove(ctx context.Context, req *RemoveReq) (*RemoveRsp, error) {
+func (u *Server) Remove(ctx context.Context, req *RemoveReq) (*RemoveRsp, error) {
 	pkgs := stringset.New()
 	for _, pkg := range req.Packages {
 		if err := u.graph.Remove(ctx, pkg); err == storage.ErrKeyNotFound {
@@ -366,7 +366,7 @@ type RemoveRsp struct {
 	Packages     []string `json:"packages,omitempty"`     // packages removed
 }
 
-func (u *Updater) cloneAndUpdate(ctx context.Context, res *poll.CheckResult, opts *deps.Options) (int, error) {
+func (u *Server) cloneAndUpdate(ctx context.Context, res *poll.CheckResult, opts *deps.Options) (int, error) {
 	path, err := ioutil.TempDir(u.opts.WorkDir, res.Digest)
 	if err != nil {
 		return 0, fmt.Errorf("creating clone directory: %v", err)
@@ -389,7 +389,7 @@ func (u *Updater) cloneAndUpdate(ctx context.Context, res *poll.CheckResult, opt
 	return added, nil
 }
 
-func (u *Updater) pushLog(ctx context.Context, sel bool, key string, arg interface{}) {
+func (u *Server) pushLog(ctx context.Context, sel bool, key string, arg interface{}) {
 	if !sel {
 		return
 	}
