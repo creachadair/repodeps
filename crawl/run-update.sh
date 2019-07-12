@@ -24,7 +24,6 @@ backup() {
 now() { echo "$(date +'%F %T %z')" ; }
 
 while true ; do
-    echo "-- CHECK $(now)" 1>&2  # for the text log
     echo "\"-- CHECK $(now)\""   # for the JSON log
     ./checkrepo -repo-db "$POLLDB" -graph-db "$DB" -clone-dir "$CLONEDIR" \
 		-log-filter EN -scan -sample 0.1 \

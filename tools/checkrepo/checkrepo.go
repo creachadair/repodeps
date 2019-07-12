@@ -135,6 +135,7 @@ func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	if *doScanDB {
+		log.Printf("--- BEGIN update scan (sample fraction %f)", *sampleRate)
 		start := time.Now()
 		rsp, err := u.Scan(ctx, &updater.ScanReq{
 			LogUpdates:    strings.IndexByte(*logFilter, 'U') < 0,
@@ -152,7 +153,7 @@ func main() {
 %-6d samples selected
 %-6d packages updated in %d repositories
 
-[%v elapsed]`, rsp.NumScanned, rsp.NumDups, rsp.NumSamples,
+--- DONE [%v elapsed]`, rsp.NumScanned, rsp.NumDups, rsp.NumSamples,
 			rsp.NumPackages, rsp.NumUpdates, time.Since(start))
 		return
 	}
