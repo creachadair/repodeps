@@ -55,6 +55,9 @@ type Options struct {
 	// this callback at once.
 	StreamLog func(ctx context.Context, key string, value interface{}) error
 
+	// Open read-only, disallow updates.
+	ReadOnly bool
+
 	// Default package loader options.
 	deps.Options
 }
@@ -86,14 +89,18 @@ func New(opts Options) (*Server, error) {
 	} else {
 		u.log = jrpc2.ServerPush
 	}
+	openBadger := badgerstore.NewPath
+	if opts.ReadOnly {
+		openBadger = badgerstore.NewPathReadOnly
+	}
 
-	if s, err := badgerstore.NewPath(opts.RepoDB); err == nil {
+	if s, err := openBadger(opts.RepoDB); err == nil {
 		u.repoDB = poll.NewDB(storage.NewBlob(s))
 		u.repoC = s
 	} else {
 		return nil, fmt.Errorf("opening repository database: %v", err)
 	}
-	if s, err := badgerstore.NewPath(opts.GraphDB); err == nil {
+	if s, err := openBadger(opts.GraphDB); err == nil {
 		u.graph = graph.New(storage.NewBlob(s))
 		u.graphC = s
 	} else {
@@ -218,7 +225,9 @@ type MatchRsp struct {
 // *jrpc2.Error and errors during the update phase have a partial response
 // attached as a data value.
 func (u *Server) Update(ctx context.Context, req *UpdateReq) (*UpdateRsp, error) {
-	if req.Repository == "" {
+	if u.opts.ReadOnly {
+		return nil, errors.New("database is read-only")
+	} else if req.Repository == "" {
 		return nil, jrpc2.Errorf(code.InvalidParams, "missing repository URL")
 	} else if req.CheckOnly && req.Force {
 		return nil, jrpc2.Errorf(code.InvalidParams, "checkOnly and force are mutually exclusive")
@@ -304,7 +313,9 @@ type UpdateRsp struct {
 // updating each one. Only one scanner is allowed at a time; concurrent calls
 // to scan will report an error.
 func (u *Server) Scan(ctx context.Context, req *ScanReq) (*ScanRsp, error) {
-	if !u.tryScanning() {
+	if u.opts.ReadOnly {
+		return nil, errors.New("database is read-only")
+	} else if !u.tryScanning() {
 		return nil, jrpc2.Errorf(code.SystemError, "scan already in progress")
 	}
 	defer u.doneScanning()
