@@ -38,6 +38,7 @@ var (
 	storePath = flag.String("store", os.Getenv("REPODEPS_DB"), "Storage path (required)")
 	repoPath  = flag.String("repo", "", "Path to local repository to analyze")
 	clonePath = flag.String("clone", "", "Clone repositories in this directory")
+	skipSame  = flag.Bool("skip-same", false, "Skip packages in the same repository")
 )
 
 func main() {
@@ -71,10 +72,10 @@ func main() {
 	revDeps := make(map[string][]string)
 	pkgRepo := make(map[string]string)
 	if err := g.Scan(ctx, "", func(row *graph.Row) error {
+		pkgRepo[row.ImportPath] = row.Repository
 		for _, pkg := range row.Directs {
 			if pkgs(pkg) {
 				revDeps[pkg] = append(revDeps[pkg], row.ImportPath)
-				pkgRepo[row.ImportPath] = row.Repository
 			}
 		}
 		return nil
@@ -113,13 +114,18 @@ func main() {
 		}
 		out := output{Pkg: pkg}
 		for repo, deps := range rmap {
+			if *skipSame && repo == pkgRepo[pkg] {
+				continue
+			}
 			sort.Strings(deps)
 			out.Deps = append(out.Deps, oneRepo{
 				Repo: repo,
 				Pkgs: deps,
 			})
 		}
-		enc.Encode(out)
+		if len(out.Deps) != 0 {
+			enc.Encode(out)
+		}
 	}
 }
 
