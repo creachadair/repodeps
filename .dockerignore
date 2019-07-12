@@ -1,3 +1,5 @@
 .git
 crawl/Dockerfile
+crawl/build.sh
 crawl/docker-compose.yml
+
