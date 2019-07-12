@@ -26,8 +26,8 @@ docker run \
        --name repo-crawler \
        -v ${datadir}:/data \
        -v ${datadir}:/logs \
-       --env DB=/data/godeps-db \
-       --env POLLDB=/data/poll-db \
+       --env GRAPH_DB=/data/graph-db \
+       --env REPO_DB=/data/repo-db \
        ${image}
 
 
