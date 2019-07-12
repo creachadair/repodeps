@@ -48,6 +48,7 @@ func init() {
 	flag.IntVar(&opts.ErrorLimit, "error-limit", 10, "Maximum repository update failures")
 	flag.Float64Var(&opts.SampleRate, "sample-rate", 1, "Sample fraction of eligible updates (0..1)")
 	flag.IntVar(&opts.Concurrency, "concurrency", 16, "Maximum concurrent updates")
+	flag.BoolVar(&opts.ReadOnly, "read-only", false, "Open database read-only, disallowing updates")
 
 	flag.BoolVar(&opts.Options.HashSourceFiles, "hash-source-files", true,
 		"Record source file digests")
