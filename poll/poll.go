@@ -17,6 +17,7 @@
 package poll
 
 import (
+	"bytes"
 	"context"
 	"encoding/hex"
 	"errors"
@@ -25,6 +26,7 @@ import (
 	"strings"
 
 	"github.com/creachadair/repodeps/storage"
+	"github.com/golang/protobuf/jsonpb"
 	"github.com/golang/protobuf/ptypes"
 )
 
@@ -191,4 +193,22 @@ func runErr(err error) error {
 	}
 
 	return err
+}
+
+// MarshalJSON implements json.Marshaler for a Status by delegating to jsonpb.
+func (s *Status) MarshalJSON() ([]byte, error) {
+	// It is manifestly ridiculous that we have to do this.
+
+	var enc jsonpb.Marshaler
+	t, err := enc.MarshalToString(s)
+	if err != nil {
+		return nil, err
+	}
+	return []byte(t), nil
+}
+
+// UnmarshalJSON implements json.Unmarshaler for a Status by delegating to jsonpb.
+func (s *Status) UnmarshalJSON(data []byte) error {
+	var dec jsonpb.Unmarshaler
+	return dec.Unmarshal(bytes.NewReader(data), s)
 }
