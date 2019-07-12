@@ -18,6 +18,7 @@
 package graph
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
@@ -27,6 +28,7 @@ import (
 	"bitbucket.org/creachadair/stringset"
 	"github.com/creachadair/repodeps/deps"
 	"github.com/creachadair/repodeps/storage"
+	"github.com/golang/protobuf/jsonpb"
 )
 
 //go:generate protoc --go_out=. graph.proto
@@ -193,3 +195,21 @@ func (g *Graph) MatchImporters(ctx context.Context, match func(string) bool, f f
 // ErrStopScan is returned by the callback to Scan to signal that scanning
 // should terminate without error.
 var ErrStopScan = errors.New("stop scanning")
+
+// MarshalJSON implements json.Marshaler for a Row by delegating to jsonpb.
+func (r *Row) MarshalJSON() ([]byte, error) {
+	// It is manifestly ridiculous that we have to do this.
+
+	var enc jsonpb.Marshaler
+	s, err := enc.MarshalToString(r)
+	if err != nil {
+		return nil, err
+	}
+	return []byte(s), nil
+}
+
+// UnmarshalJSON implements json.Unmarshaler for a Row by delegating to jsonpb.
+func (r *Row) UnmarshalJSON(data []byte) error {
+	var dec jsonpb.Unmarshaler
+	return dec.Unmarshal(bytes.NewReader(data), r)
+}
