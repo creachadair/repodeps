@@ -76,9 +76,14 @@ func New(opts Options) (*Updater, error) {
 	}
 	u := &Updater{opts: opts}
 	if f := opts.StreamLog; f != nil {
-		u.log.m = f
+		mu := new(sync.Mutex)
+		u.log = func(ctx context.Context, key string, arg interface{}) error {
+			mu.Lock()
+			defer mu.Unlock()
+			return f(ctx, key, arg)
+		}
 	} else {
-		u.log.m = jrpc2.ServerPush
+		u.log = jrpc2.ServerPush
 	}
 
 	if s, err := badgerstore.NewPath(opts.RepoDB); err == nil {
@@ -108,10 +113,7 @@ type Updater struct {
 	scanning int32
 	opts     Options
 
-	log struct {
-		sync.Mutex
-		m func(ctx context.Context, key string, arg interface{}) error
-	}
+	log func(context.Context, string, interface{}) error
 }
 
 func (u *Updater) tryScanning() bool {
@@ -394,7 +396,5 @@ func (u *Updater) pushLog(ctx context.Context, sel bool, key string, arg interfa
 			E string `json:"message"`
 		}{t.Error()}
 	}
-	u.log.Lock()
-	defer u.log.Unlock()
-	u.log.m(ctx, key, arg)
+	u.log(ctx, key, arg)
 }
