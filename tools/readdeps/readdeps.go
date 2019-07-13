@@ -17,36 +17,44 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"flag"
-	"fmt"
 	"log"
 	"os"
 
+	"github.com/creachadair/repodeps/service"
 	"github.com/creachadair/repodeps/tools"
-	"github.com/golang/protobuf/jsonpb"
 )
 
-var storePath = flag.String("store", os.Getenv("REPODEPS_DB"), "Storage path (required)")
+var (
+	graphDB = flag.String("graph-db", os.Getenv("REPODEPS_DB"), "Graph database")
+	repoDB  = flag.String("repo-db", os.Getenv("REPODEPS_POLLDB"), "Repository database")
+)
 
 func main() {
 	flag.Parse()
-	g, c, err := tools.OpenGraph(*storePath, tools.ReadOnly)
+
+	s, err := tools.OpenService(*graphDB, *repoDB)
 	if err != nil {
-		log.Fatalf("Opening graph: %v", err)
+		log.Fatalf("Opening service: %v", err)
 	}
-	defer c.Close()
+	defer s.Close()
 
 	ctx := context.Background()
-	var enc jsonpb.Marshaler
+	enc := json.NewEncoder(os.Stdout)
 	for _, ipath := range flag.Args() {
-		row, err := g.Row(ctx, ipath)
+		rsp, err := s.Match(ctx, &service.MatchReq{
+			Package:       ipath,
+			IncludeSource: true,
+		})
 		if err != nil {
 			log.Printf("Reading %q: %v", ipath, err)
-			continue
+		} else if rsp.NumRows == 0 {
+			log.Printf("Package %q not found", ipath)
+		} else {
+			for _, row := range rsp.Rows {
+				enc.Encode(row)
+			}
 		}
-		if err := enc.Marshal(os.Stdout, row); err != nil {
-			log.Fatalf("Writing output: %v", err)
-		}
-		fmt.Println()
 	}
 }
