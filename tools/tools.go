@@ -17,16 +17,13 @@ package tools
 
 import (
 	"bufio"
-	"context"
 	"errors"
 	"flag"
 	"fmt"
 	"io"
-	"log"
 	"os"
 	"regexp"
 	"strings"
-	"time"
 
 	"github.com/creachadair/badgerstore"
 	"github.com/creachadair/repodeps/graph"
@@ -104,28 +101,6 @@ func Inputs(readStdin bool) <-chan string {
 	} else {
 		close(ch)
 	}
-	return ch
-}
-
-// ScanDB returns a channel that delivers all the keys of db and is then
-// closed. The caller must ensure the channel is fully drained. If ctx
-// completes the channel will be closed automatically.
-func ScanDB(ctx context.Context, db *poll.DB, min time.Duration) <-chan string {
-	ch := make(chan string)
-	go func() {
-		defer close(ch)
-		if err := db.Scan(ctx, "", func(url string) error {
-			stat, err := db.Status(ctx, url)
-			if err != nil {
-				return err
-			} else if poll.ShouldCheck(stat, min) {
-				ch <- url
-			}
-			return nil
-		}); err != nil {
-			log.Printf("Warning: scanning failed: %v", err)
-		}
-	}()
 	return ch
 }
 
