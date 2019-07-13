@@ -38,6 +38,10 @@ func (c *CheckResult) Clone(ctx context.Context, path string) error {
 		return runErr(err)
 	} else if _, err := git(ctx, "-C", path, "fetch", "origin", c.Digest).Output(); err != nil {
 		return runErr(err)
+
+		// TODO: Older versions of git do not seem to support fetch by digest.
+		// If you get an error like "no such remote ref <sha1>" you might have to
+		// update your git installation for this to work.
 	}
 	_, err := git(ctx, "-C", path, "checkout", "--detach", c.Digest).Output()
 	return runErr(err)
