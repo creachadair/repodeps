@@ -29,11 +29,14 @@ import (
 
 	"github.com/creachadair/repodeps/deps"
 	"github.com/creachadair/repodeps/graph"
+	"github.com/creachadair/repodeps/service"
 	"github.com/creachadair/repodeps/tools"
 )
 
 var (
-	storePath  = flag.String("store", os.Getenv("REPODEPS_DB"), "Storage path (required)")
+	graphDB = flag.String("graph-db", os.Getenv("REPODEPS_DB"), "Graph database")
+	repoDB  = flag.String("repo-db", os.Getenv("REPODEPS_POLLDB"), "Repository database")
+
 	useIDFile  = flag.String("ids", "", "Use integer IDs for imports and write them to this file")
 	domainOnly = flag.Bool("domain-only", false, "Skip packages without an import domain")
 	skipNoDeps = flag.Bool("skip-no-deps", false, "Skip packages without any dependencies")
@@ -44,11 +47,12 @@ var (
 
 func main() {
 	flag.Parse()
-	g, c, err := tools.OpenGraph(*storePath, tools.ReadOnly)
+
+	s, err := tools.OpenService(*graphDB, *repoDB)
 	if err != nil {
-		log.Fatalf("Opening graph: %v", err)
+		log.Fatalf("Opening service: %v", err)
 	}
-	defer c.Close()
+	defer s.Close()
 
 	if *useIDFile != "" {
 		f, err := os.Create(*useIDFile)
@@ -69,13 +73,10 @@ func main() {
 	w.Comma = ';'
 	defer w.Flush()
 
-	process := func(_ string, row *graph.Row) error {
-		if row == nil {
-			return nil
-		} else if _, ok := deps.HasDomain(row.ImportPath); !ok && *domainOnly {
-			return nil
+	process := func(row *graph.Row) {
+		if _, ok := deps.HasDomain(row.ImportPath); !ok && *domainOnly {
+			return
 		}
-
 		record := []string{assign(row.ImportPath)}
 		for _, dep := range row.Directs {
 			if _, ok := deps.HasDomain(dep); !ok && *domainOnly {
@@ -83,23 +84,25 @@ func main() {
 			}
 			record = append(record, assign(dep))
 		}
-		if len(record) == 1 && *skipNoDeps {
-			return nil
+		if len(record) > 1 || !*skipNoDeps {
+			w.Write(record)
 		}
-		return w.Write(record)
 	}
 
-	if flag.NArg() == 0 {
-		err = g.Scan(ctx, "", func(row *graph.Row) error {
-			return process(row.ImportPath, row)
-		})
-	} else {
-		err = g.DFS(ctx, flag.Args(), process)
+	var nextPage []byte
+	for {
+		rsp, err := s.Match(ctx, &service.MatchReq{PageKey: nextPage})
+		if err != nil {
+			log.Fatalf("Match failed: %v", err)
+		}
+		for _, row := range rsp.Rows {
+			process(row)
+		}
+		nextPage = rsp.NextPage
+		if nextPage == nil {
+			break
+		}
 	}
-	if err != nil {
-		log.Fatalf("Scan failed: %v", err)
-	}
-
 	log.Printf("Found %d unique nodes", len(pathID))
 }
 
