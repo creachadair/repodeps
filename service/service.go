@@ -143,36 +143,23 @@ func (u *Server) Close() error {
 // more rows are available than the limit requested, the response will indicate
 // the next offset of a matching row.
 func (u *Server) Match(ctx context.Context, req *MatchReq) (*MatchRsp, error) {
-	repo := req.Repository
-	if repo != "" {
-		repo = poll.FixRepoURL(repo)
-	}
-	cap := req.Limit
-	if cap <= 0 {
-		cap = 50 // default limit
-	}
-
-	// If a package or package prefix was specified, use that to constrain the
-	// scan for an appreciable performance improvement.
-	pkg, pfx := req.Package, req.Package
-	if t := strings.TrimSuffix(pkg, "/..."); t != pkg {
-		pkg, pfx = "", t
-	}
+	matchPackage, matchRepo, isFinal, start := req.compile()
 
 	rsp := new(MatchRsp)
-	var skipped int
-	err := u.graph.Scan(ctx, pfx, func(row *graph.Row) error {
-		if (pkg != "" && pkg != row.ImportPath) || (repo != "" && row.Repository != repo) {
+	err := u.graph.Scan(ctx, start, func(row *graph.Row) error {
+		if !matchRepo(row.Repository) {
+			return nil // row does not match
+		} else if !matchPackage(row.ImportPath) {
+			if isFinal {
+				return storage.ErrStopScan // no more matches are available
+			}
 			return nil // row does not match
 		}
-		rsp.NumRows++
+
 		if req.CountOnly {
 			// do nothing
-		} else if skipped < req.Offset {
-			skipped++ // skip prior to the requested offset
-		} else if len(rsp.Rows) < cap {
+		} else if len(rsp.Rows) < req.Limit {
 			rsp.Rows = append(rsp.Rows, row)
-			rsp.NextOffset = rsp.NumRows
 			if !req.IncludeSource {
 				row.SourceFiles = nil
 			}
@@ -180,13 +167,13 @@ func (u *Server) Match(ctx context.Context, req *MatchReq) (*MatchRsp, error) {
 				row.Directs = nil
 			}
 		} else {
+			// Found the starting point for the next page.
+			rsp.NextPage = []byte(row.ImportPath)
 			return storage.ErrStopScan
 		}
+		rsp.NumRows++
 		return nil
 	})
-	if rsp.NumRows == rsp.NextOffset {
-		rsp.NextOffset = 0 // we're done here
-	}
 	return rsp, err
 }
 
@@ -211,8 +198,35 @@ type MatchReq struct {
 	// Return at most this many rows (0 uses a reasonable default).
 	Limit int `json:"limit"`
 
-	// Return results starting from the specified offset (0 based).
-	Offset int `json:"offset"`
+	// Resume reading from this page key.
+	PageKey []byte `json:"pageKey"`
+}
+
+func (m *MatchReq) compile() (mpkg, mrepo func(string) bool, isFinal bool, start string) {
+	if m.Limit <= 0 {
+		m.Limit = 50
+	}
+
+	mpkg = func(string) bool { return true }
+	if t := strings.TrimSuffix(m.Package, "/..."); t != m.Package && t != "" {
+		start = t
+		isFinal = true
+		mpkg = func(pkg string) bool { return strings.HasPrefix(pkg, t) }
+	} else if m.Package != "" {
+		start = m.Package
+		mpkg = func(pkg string) bool { return pkg == m.Package }
+	}
+
+	mrepo = func(string) bool { return true }
+	if m.Repository != "" {
+		fixed := poll.FixRepoURL(m.Repository)
+		mrepo = func(repo string) bool { return repo == fixed }
+	}
+
+	if s := string(m.PageKey); s != "" {
+		start = s
+	}
+	return
 }
 
 // MatchRsp is the response from a successful Match query.
@@ -221,8 +235,8 @@ type MatchRsp struct {
 	// in the request, this is the total number of matching rows.
 	NumRows int `json:"numRows"`
 
-	Rows       []*graph.Row `json:"rows,omitempty"`
-	NextOffset int          `json:"nextOffset,omitempty"`
+	Rows     []*graph.Row `json:"rows,omitempty"`
+	NextPage []byte       `json:"nextPage,omitempty"`
 }
 
 // RepoStatus reports the current status of the specified repository.
