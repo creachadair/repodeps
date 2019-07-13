@@ -61,6 +61,17 @@ type Options struct {
 	deps.Options
 }
 
+func (o Options) merge(opts *deps.Options) *deps.Options {
+	out := o.Options
+	if opts != nil {
+		out.HashSourceFiles = out.HashSourceFiles || opts.HashSourceFiles
+		out.UseImportComments = out.UseImportComments || opts.UseImportComments
+		out.TrimRepoPrefix = out.TrimRepoPrefix || opts.TrimRepoPrefix
+		out.StandardLibrary = out.StandardLibrary || opts.StandardLibrary
+	}
+	return &out
+}
+
 // New constructs a new Server from the specified options.  As long as the
 // server is open, it holds a lock on the databases assigned to it.
 // The caller must call Close when the server is no longer in use.
@@ -312,8 +323,7 @@ func (u *Server) Update(ctx context.Context, req *UpdateReq) (*UpdateRsp, error)
 		}
 
 		// Clone the repository at the target head and update its packages.
-		// TODO: Load options.
-		np, err := u.cloneAndUpdate(ctx, res, &u.opts.Options)
+		np, err := u.cloneAndUpdate(ctx, res, u.opts.merge(req.Options))
 		out.NumPackages = np
 		if err != nil {
 			return nil, jrpc2.DataErrorf(code.SystemError, out, "update %s: %v", res.URL, err)
@@ -339,6 +349,9 @@ type UpdateReq struct {
 
 	// If true, force an update even if one is not needed.
 	Force bool `json:"force"`
+
+	// Options for the package loader (if unset, service defaults are used).
+	Options *deps.Options `json:"options"`
 }
 
 // UpdateRsp is the response from a successful Update call.
