@@ -18,21 +18,19 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"flag"
-	"fmt"
 	"log"
 	"os"
 
 	"github.com/creachadair/repodeps/poll"
 	"github.com/creachadair/repodeps/tools"
-	"github.com/golang/protobuf/jsonpb"
 )
 
 var (
 	pollDBPath  = flag.String("polldb", os.Getenv("REPODEPS_POLLDB"), "Poll database path (required)")
 	doReadStdin = flag.Bool("stdin", false, "Read repo URLs from stdin")
 	doRemove    = flag.Bool("remove", false, "Remove the specified URLs from the poll database")
-	doScanDB    = flag.Bool("scan", false, "Read repo URLs from the poll database")
 )
 
 func main() {
@@ -40,9 +38,6 @@ func main() {
 
 	opts := tools.ReadOnly
 	if *doRemove {
-		if *doScanDB {
-			log.Fatal("You may not combine -scan and -remove; just delete the database")
-		}
 		opts = tools.ReadWrite
 	}
 	db, c, err := tools.OpenPollDB(*pollDBPath, opts)
@@ -54,15 +49,8 @@ func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	var urls <-chan string
-	if *doScanDB {
-		urls = tools.ScanDB(ctx, db, 0) // list all entries
-	} else {
-		urls = tools.Inputs(*doReadStdin)
-	}
-	var enc jsonpb.Marshaler
-
-	for url := range urls {
+	enc := json.NewEncoder(os.Stdout)
+	for url := range tools.Inputs(*doReadStdin) {
 		url := poll.FixRepoURL(url)
 		stat, err := db.Status(ctx, url)
 		if err != nil {
@@ -75,7 +63,6 @@ func main() {
 				log.Printf("[removed] %q", url)
 			}
 		}
-		enc.Marshal(os.Stdout, stat)
-		fmt.Println()
+		enc.Encode(stat)
 	}
 }
