@@ -164,7 +164,7 @@ func bestHead(ctx context.Context, url, ref string) (name string, digest []byte,
 		if parts[1] == "refs/heads/master" {
 			name, hexDigest = parts[1], parts[0] // master is preferred, if present
 			break
-		} else if !strings.HasPrefix(parts[1], "refs/heads/") && parts[1] != "HEAD" {
+		} else if !isInterestingRef(parts[1], ref != "") {
 			continue // not interesting
 		}
 
@@ -179,6 +179,18 @@ func bestHead(ctx context.Context, url, ref string) (name string, digest []byte,
 		return "", nil, fmt.Errorf("invalid digest: %v", err)
 	}
 	return
+}
+
+func isInterestingRef(ref string, tagsOK bool) bool {
+	switch {
+	case strings.HasPrefix(ref, "refs/heads/"):
+		return true
+	case tagsOK && strings.HasPrefix(ref, "refs/tags/"):
+		return true
+	case ref == "HEAD":
+		return true
+	}
+	return false
 }
 
 func git(ctx context.Context, args ...string) *exec.Cmd {
