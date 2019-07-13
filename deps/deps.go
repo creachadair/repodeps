@@ -31,10 +31,10 @@ import (
 // Options control the behaviour of the Load function. A nil *Options behaves
 // as a zero-valued Options struct.
 type Options struct {
-	HashSourceFiles   bool // record source file digests
-	UseImportComments bool // use import comments to name packages
-	TrimRepoPrefix    bool // trim the repository prefix from each package
-	StandardLibrary   bool // treat the input repositories as standard libraries
+	HashSourceFiles   bool `json:"hashSourceFiles"`   // record source file digests
+	UseImportComments bool `json:"useImportComments"` // use import comments to name packages
+	TrimRepoPrefix    bool `json:"trimRepoPrefix"`    // trim the repository prefix from each package
+	StandardLibrary   bool `json:"standardLibrary"`   // treat the inputs as standard libraries
 }
 
 // Hash produces a SHA-256 digest of the contents of r.
