@@ -272,7 +272,11 @@ func (u *Server) Update(ctx context.Context, req *UpdateReq) (*UpdateRsp, error)
 	} else if req.CheckOnly && req.Force {
 		return nil, jrpc2.Errorf(code.InvalidParams, "checkOnly and force are mutually exclusive")
 	}
-	res, err := u.repoDB.Check(ctx, poll.FixRepoURL(req.Repository))
+	repoTag := poll.FixRepoURL(req.Repository)
+	if req.Reference != "" {
+		repoTag += "@@" + req.Reference
+	}
+	res, err := u.repoDB.Check(ctx, repoTag)
 	if err != nil {
 		return nil, jrpc2.Errorf(code.SystemError, "checking %s: %v", req.Repository, err)
 	}
