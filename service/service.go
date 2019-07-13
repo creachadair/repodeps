@@ -358,7 +358,7 @@ func (u *Server) Scan(ctx context.Context, req *ScanReq) (*ScanRsp, error) {
 
 	grp, run := taskgroup.New(nil).Limit(u.opts.Concurrency)
 	var numPkgs, numRepos int64
-	err := u.repoDB.Scan(ctx, "", func(url string) error {
+	err := u.repoDB.Scan(ctx, func(url string) error {
 		rsp.NumScanned++
 
 		// Filter duplicates.

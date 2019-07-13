@@ -55,9 +55,10 @@ func (db *DB) Remove(ctx context.Context, url string) error {
 	return db.st.Delete(ctx, url)
 }
 
-// Scan scans the URLs of the database having the given prefix.
-func (db *DB) Scan(ctx context.Context, prefix string, f func(string) error) error {
-	return db.st.Scan(ctx, prefix, f)
+// Scan scans all the URLs in the database. If f reports an error, that error
+// is propagated to the caller.
+func (db *DB) Scan(ctx context.Context, f func(string) error) error {
+	return db.st.Scan(ctx, "", f)
 }
 
 // Check reports whether the specified repository requires an update. If the
