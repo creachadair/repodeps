@@ -180,7 +180,7 @@ func (u *Server) Match(ctx context.Context, req *MatchReq) (*MatchRsp, error) {
 				row.Directs = nil
 			}
 		} else {
-			return graph.ErrStopScan
+			return storage.ErrStopScan
 		}
 		return nil
 	})

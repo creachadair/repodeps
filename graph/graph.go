@@ -20,7 +20,6 @@ package graph
 import (
 	"bytes"
 	"context"
-	"errors"
 	"fmt"
 	"sort"
 	"strings"
@@ -90,22 +89,20 @@ func (g *Graph) Row(ctx context.Context, pkg string) (*Row, error) {
 	return &row, nil
 }
 
-// List calls f with each key in the graph having the specified prefix.  If f
-// reports an error, scanning terminates. If te error is ErrStopScan, List
-// returns nil. Otherwise, List returns the error from f.
-func (g *Graph) List(ctx context.Context, prefix string, f func(string) error) error {
-	err := g.st.Scan(ctx, prefix, f)
-	if err == ErrStopScan {
-		return nil
-	}
-	return err
+// List calls f with each key in the graph lexicographically greater than or
+// equal to start.  If f reports an error, scanning terminates. If the error is
+// storage.ErrStopScan, List returns nil. Otherwise, List returns the error
+// from f.
+func (g *Graph) List(ctx context.Context, start string, f func(string) error) error {
+	return g.st.Scan(ctx, start, f)
 }
 
-// Scan calls f with each row in the graph having the specified prefix.
-// If f reports an error, scanning terminates. If the error is ErrStopScan, Scan
-// returns nil; otherwise Scan returns the error from f.
-func (g *Graph) Scan(ctx context.Context, prefix string, f func(*Row) error) error {
-	return g.List(ctx, prefix, func(key string) error {
+// Scan calls f with each row in the graph whose key is lexicographically
+// greater than or equal to start If f reports an error, scanning terminates.
+// If the error is storage.ErrStopScan, Scan returns nil. Otherwise Scan
+// returns the error from f.
+func (g *Graph) Scan(ctx context.Context, start string, f func(*Row) error) error {
+	return g.List(ctx, start, func(key string) error {
 		row, err := g.Row(ctx, key)
 		if err != nil {
 			return err
@@ -117,7 +114,7 @@ func (g *Graph) Scan(ctx context.Context, prefix string, f func(*Row) error) err
 // DFS performs a depth-first traversal of the forward dependency graph in g
 // starting from the specified import paths. It calls f for each package in the
 // traversal. If f reports an error, traversal stops. If the error is
-// ErrStopScan, DFS returns nil; otherwise DFS returns the error from f.
+// storage.ErrStopScan DFS returns nil; otherwise DFS returns the error from f.
 //
 // The first argument to f is the import path. If the path is in the graph, the
 // second argument is its row; otherwise the second argument is nil.
@@ -140,7 +137,7 @@ func (g *Graph) DFS(ctx context.Context, pkgs []string, f func(string, *Row) err
 			q = append(q, row.Directs...)
 		}
 
-		if err := f(next, row); err == ErrStopScan {
+		if err := f(next, row); err == storage.ErrStopScan {
 			return nil
 		} else if err != nil {
 			return err
@@ -191,10 +188,6 @@ func (g *Graph) MatchImporters(ctx context.Context, match func(string) bool, f f
 		return nil
 	})
 }
-
-// ErrStopScan is returned by the callback to Scan to signal that scanning
-// should terminate without error.
-var ErrStopScan = errors.New("stop scanning")
 
 // MarshalJSON implements json.Marshaler for a Row by delegating to jsonpb.
 func (r *Row) MarshalJSON() ([]byte, error) {

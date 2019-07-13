@@ -18,15 +18,19 @@ package storage
 import (
 	"context"
 	"errors"
-	"strings"
 
 	"github.com/creachadair/ffs/blob"
 	"github.com/golang/protobuf/proto"
 	"golang.org/x/xerrors"
 )
 
-// ErrKeyNotFound is returned by Load when the specified key is not found.
-var ErrKeyNotFound = errors.New("key not found")
+var (
+	// ErrKeyNotFound is returned by Load when the specified key is not found.
+	ErrKeyNotFound = errors.New("key not found")
+
+	// ErrStopScan is returned by the callback to Scan to terminate a scan.
+	ErrStopScan = errors.New("stop scanning")
+)
 
 // Interface represents the interface to persistent storage.
 type Interface interface {
@@ -37,9 +41,10 @@ type Interface interface {
 	// Store marshals the data from value and stores it under key.
 	Store(ctx context.Context, key string, val proto.Message) error
 
-	// Scan calls f with each key having the specified prefix. If f reports an
-	// error that error is propagated to the caller of Scan.
-	Scan(ctx context.Context, prefix string, f func(string) error) error
+	// Scan calls f with each key lexicographically greater than or equal to
+	// start.  If f reports an error scanning stops; if the error is ErrStopScan
+	// then Scan return nil, otherwise Scan returns the error from f.
+	Scan(ctx context.Context, start string, f func(string) error) error
 
 	// Delete removes the specified key from the database.
 	Delete(ctx context.Context, key string) error
@@ -78,11 +83,11 @@ func (s BlobStore) Store(ctx context.Context, key string, val proto.Message) err
 }
 
 // Scan implements part of graph.Storage and poll.Storage.
-func (s BlobStore) Scan(ctx context.Context, prefix string, f func(string) error) error {
-	return s.bs.List(ctx, prefix, func(key string) error {
-		if !strings.HasPrefix(key, prefix) {
+func (s BlobStore) Scan(ctx context.Context, start string, f func(string) error) error {
+	return s.bs.List(ctx, start, func(key string) error {
+		if err := f(key); err == ErrStopScan {
 			return blob.ErrStopListing
-		} else if err := f(key); err != nil {
+		} else if err != nil {
 			return err
 		}
 		return nil
