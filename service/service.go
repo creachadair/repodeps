@@ -26,7 +26,6 @@ import (
 	"github.com/creachadair/repodeps/local"
 	"github.com/creachadair/repodeps/poll"
 	"github.com/creachadair/repodeps/storage"
-	"github.com/creachadair/repodeps/tools"
 	"github.com/creachadair/taskgroup"
 )
 
@@ -146,7 +145,7 @@ func (u *Server) Close() error {
 func (u *Server) Match(ctx context.Context, req *MatchReq) (*MatchRsp, error) {
 	repo := req.Repository
 	if repo != "" {
-		repo = tools.FixRepoURL(repo)
+		repo = poll.FixRepoURL(repo)
 	}
 	cap := req.Limit
 	if cap <= 0 {
@@ -180,6 +179,8 @@ func (u *Server) Match(ctx context.Context, req *MatchReq) (*MatchRsp, error) {
 			if req.ExcludeDirects {
 				row.Directs = nil
 			}
+		} else {
+			return graph.ErrStopScan
 		}
 		return nil
 	})
@@ -216,7 +217,10 @@ type MatchReq struct {
 
 // MatchRsp is the response from a successful Match query.
 type MatchRsp struct {
-	NumRows    int          `json:"numRows"`
+	// The number of rows processed to obtain this result. If countOnly was true
+	// in the request, this is the total number of matching rows.
+	NumRows int `json:"numRows"`
+
 	Rows       []*graph.Row `json:"rows,omitempty"`
 	NextOffset int          `json:"nextOffset,omitempty"`
 }
@@ -226,7 +230,7 @@ func (u *Server) RepoStatus(ctx context.Context, req *RepoStatusReq) (*RepoStatu
 	if req.Repository == "" {
 		return nil, jrpc2.Errorf(code.InvalidParams, "empty repository URL")
 	}
-	stat, err := u.repoDB.Status(ctx, tools.FixRepoURL(req.Repository))
+	stat, err := u.repoDB.Status(ctx, poll.FixRepoURL(req.Repository))
 	if err != nil {
 		return nil, err
 	}
@@ -254,7 +258,7 @@ func (u *Server) Update(ctx context.Context, req *UpdateReq) (*UpdateRsp, error)
 	} else if req.CheckOnly && req.Force {
 		return nil, jrpc2.Errorf(code.InvalidParams, "checkOnly and force are mutually exclusive")
 	}
-	res, err := u.repoDB.Check(ctx, tools.FixRepoURL(req.Repository))
+	res, err := u.repoDB.Check(ctx, poll.FixRepoURL(req.Repository))
 	if err != nil {
 		return nil, jrpc2.Errorf(code.SystemError, "checking %s: %v", req.Repository, err)
 	}
@@ -439,7 +443,7 @@ func (u *Server) Remove(ctx context.Context, req *RemoveReq) (*RemoveRsp, error)
 		}
 	}
 	repos := stringset.FromIndexed(len(req.Repositories), func(i int) string {
-		return tools.FixRepoURL(req.Repositories[i])
+		return poll.FixRepoURL(req.Repositories[i])
 	})
 	if len(repos) != 0 {
 		for repo := range repos {

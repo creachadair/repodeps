@@ -23,6 +23,7 @@ import (
 	"log"
 	"os"
 
+	"github.com/creachadair/repodeps/poll"
 	"github.com/creachadair/repodeps/tools"
 	"github.com/golang/protobuf/jsonpb"
 )
@@ -62,7 +63,7 @@ func main() {
 	var enc jsonpb.Marshaler
 
 	for url := range urls {
-		url := tools.FixRepoURL(url)
+		url := poll.FixRepoURL(url)
 		stat, err := db.Status(ctx, url)
 		if err != nil {
 			log.Printf("[skipped] status for %q: %v", url, err)

@@ -29,7 +29,7 @@ import (
 	"strings"
 
 	"github.com/creachadair/repodeps/deps"
-	"github.com/creachadair/repodeps/tools"
+	"github.com/creachadair/repodeps/poll"
 )
 
 // Load reads the repository structure of a local directory. This will return
@@ -51,7 +51,7 @@ func Load(ctx context.Context, dir string, opts *deps.Options) ([]*deps.Repo, er
 	// GOPATH containing only this package, in a directory named by the remote
 	// URL of the repository.
 	repo := &deps.Repo{From: dir, Remotes: remotes}
-	repoPrefix := tools.CleanRepoURL(remotes[0].Url)
+	repoPrefix := poll.CleanRepoURL(remotes[0].Url)
 	vfs := newVFS(dir, repoPrefix)
 
 	var importMode build.ImportMode
@@ -145,7 +145,7 @@ func gitRemotes(ctx context.Context, dir string) ([]*deps.Remote, error) {
 
 func parseRemote(bits []byte) string {
 	url := strings.TrimSpace(string(bits))
-	return tools.FixRepoURL(url)
+	return poll.FixRepoURL(url)
 }
 
 func hashFile(path string) ([]byte, error) {

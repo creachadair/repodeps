@@ -23,6 +23,7 @@ import (
 	"time"
 
 	"github.com/creachadair/repodeps/graph"
+	"github.com/creachadair/repodeps/poll"
 	"github.com/creachadair/repodeps/tools"
 )
 
@@ -47,7 +48,7 @@ func main() {
 
 	var numRemoved int
 	if *rmRepo != "" {
-		needle := tools.FixRepoURL(*rmRepo)
+		needle := poll.FixRepoURL(*rmRepo)
 		log.Printf("Removing packages from %q...", needle)
 
 		if err := g.Scan(ctx, "", func(row *graph.Row) error {

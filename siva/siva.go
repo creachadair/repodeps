@@ -27,7 +27,7 @@ import (
 	"time"
 
 	"github.com/creachadair/repodeps/deps"
-	"github.com/creachadair/repodeps/tools"
+	"github.com/creachadair/repodeps/poll"
 
 	sivafs "gopkg.in/src-d/go-billy-siva.v4"
 	"gopkg.in/src-d/go-billy.v4/osfs"
@@ -80,7 +80,7 @@ func Load(ctx context.Context, path string, opts *deps.Options) ([]*deps.Repo, e
 			From: path,
 			Remotes: []*deps.Remote{{
 				Name: rem.Name,
-				Url:  tools.FixRepoURL(rem.URLs[0]),
+				Url:  poll.FixRepoURL(rem.URLs[0]),
 			}},
 		}
 		repos[rem.Name] = r
@@ -128,7 +128,7 @@ func Load(ctx context.Context, path string, opts *deps.Options) ([]*deps.Repo, e
 		}
 
 		// Record the directory structure to support the build.Context VFS.
-		repoPrefix := tools.CleanRepoURL(here.Remotes[0].Url)
+		repoPrefix := poll.CleanRepoURL(here.Remotes[0].Url)
 		vfs := newVFS(repoPrefix)
 		if err := tree.Files().ForEach(func(f *object.File) error {
 			if err := check("scanning files"); err != nil {

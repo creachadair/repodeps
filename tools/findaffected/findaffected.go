@@ -30,6 +30,7 @@ import (
 	"bitbucket.org/creachadair/stringset"
 	"github.com/creachadair/repodeps/graph"
 	"github.com/creachadair/repodeps/local"
+	"github.com/creachadair/repodeps/poll"
 	"github.com/creachadair/repodeps/tools"
 	"github.com/creachadair/taskgroup"
 )
@@ -90,7 +91,7 @@ func main() {
 		}
 		grp, run := taskgroup.New(taskgroup.Trigger(cancel)).Limit(8)
 		for _, url := range stringset.FromValues(pkgRepo).Elements() {
-			url := tools.FixRepoURL(url)
+			url := poll.FixRepoURL(url)
 			run(func() error {
 				cmd := exec.CommandContext(ctx, "git", "-C", *clonePath, "clone", url)
 				if err := cmd.Run(); err != nil {

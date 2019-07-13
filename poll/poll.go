@@ -212,3 +212,22 @@ func (s *Status) UnmarshalJSON(data []byte) error {
 	var dec jsonpb.Unmarshaler
 	return dec.Unmarshal(bytes.NewReader(data), s)
 }
+
+// FixRepoURL ensures s has a valid protocol prefix for Git.
+func FixRepoURL(s string) string {
+	return "https://" + CleanRepoURL(s)
+}
+
+// CleanRepoURL removes protocol and format tags from a repository URL.
+func CleanRepoURL(url string) string {
+	if trim := strings.TrimPrefix(url, "git@"); trim != url {
+		parts := strings.SplitN(trim, ":", 2)
+		url = parts[0]
+		if len(parts) == 2 {
+			url += "/" + parts[1]
+		}
+	} else if parts := strings.SplitN(url, "://", 2); len(parts) == 2 {
+		url = parts[1] // discard http:// or https://
+	}
+	return strings.TrimSuffix(url, ".git")
+}
