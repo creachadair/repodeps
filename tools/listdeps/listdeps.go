@@ -17,19 +17,21 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"flag"
 	"fmt"
 	"log"
 	"os"
 
 	"github.com/creachadair/repodeps/deps"
-	"github.com/creachadair/repodeps/graph"
+	"github.com/creachadair/repodeps/service"
 	"github.com/creachadair/repodeps/tools"
-	"github.com/golang/protobuf/jsonpb"
 )
 
 var (
-	storePath   = flag.String("store", os.Getenv("REPODEPS_DB"), "Storage path (required)")
+	graphDB = flag.String("graph-db", os.Getenv("REPODEPS_DB"), "Graph database")
+	repoDB  = flag.String("repo-db", os.Getenv("REPODEPS_POLLDB"), "Repository database")
+
 	doKeysOnly  = flag.Bool("keys", false, "Print only import paths, not full rows")
 	doFilterDom = flag.Bool("domain-only", false, "Print only import paths that begin with a domain")
 	matchRepo   = flag.String("repo", "", "List only rows matching this repository")
@@ -38,38 +40,42 @@ var (
 func main() {
 	flag.Parse()
 
-	g, c, err := tools.OpenGraph(*storePath, tools.ReadOnly)
+	s, err := tools.OpenService(*graphDB, *repoDB)
 	if err != nil {
 		log.Fatalf("Opening graph: %v", err)
 	}
-	defer c.Close()
+	defer s.Close()
 
-	pfxs := flag.Args()
-	if len(pfxs) == 0 {
-		pfxs = append(pfxs, "") // list all
-	}
 	ctx := context.Background()
-	var enc jsonpb.Marshaler
-	if *matchRepo != "" {
-		*matchRepo = tools.FixRepoURL(*matchRepo)
+	enc := json.NewEncoder(os.Stdout)
+	var pkg string
+	if flag.NArg() != 0 {
+		pkg = flag.Arg(0)
 	}
 
-	for _, pfx := range pfxs {
-		err := g.Scan(ctx, pfx, func(row *graph.Row) error {
-			if *matchRepo != "" && row.Repository != *matchRepo {
-				return nil // skip non-matching repositories
-			} else if _, ok := deps.HasDomain(row.ImportPath); !ok && *doFilterDom {
-				return nil // skip non-domain paths
-			} else if *doKeysOnly {
-				fmt.Println(row.ImportPath)
-				return nil
-			}
-
-			defer fmt.Println()
-			return enc.Marshal(os.Stdout, row)
+	var nextPage []byte
+	for {
+		rsp, err := s.Match(ctx, &service.MatchReq{
+			Package:    pkg,
+			Repository: *matchRepo,
+			PageKey:    nextPage,
 		})
 		if err != nil {
-			log.Fatalf("Scan failed: %v", err)
+			log.Printf("Listing %q failed: %v", pkg, err)
+			break
+		}
+		for _, row := range rsp.Rows {
+			if _, ok := deps.HasDomain(row.ImportPath); !ok && *doFilterDom {
+				continue
+			} else if *doKeysOnly {
+				fmt.Println(row.ImportPath)
+			} else {
+				enc.Encode(row)
+			}
+		}
+		nextPage = rsp.NextPage
+		if nextPage == nil {
+			break
 		}
 	}
 }
