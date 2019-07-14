@@ -154,17 +154,14 @@ func (u *Server) Close() error {
 // more rows are available than the limit requested, the response will indicate
 // the next offset of a matching row.
 func (u *Server) Match(ctx context.Context, req *MatchReq) (*MatchRsp, error) {
-	matchPackage, matchRepo, isFinal, start := req.compile()
+	matchPackage, matchRepo, start := req.compile()
 
 	rsp := new(MatchRsp)
 	err := u.graph.Scan(ctx, start, func(row *graph.Row) error {
 		if !matchRepo(row.Repository) {
 			return nil // row does not match
 		} else if !matchPackage(row.ImportPath) {
-			if isFinal {
-				return storage.ErrStopScan // no more matches are available
-			}
-			return nil // row does not match
+			return storage.ErrStopScan // no more matches are possible
 		}
 
 		if req.CountOnly {
@@ -213,7 +210,7 @@ type MatchReq struct {
 	PageKey []byte `json:"pageKey"`
 }
 
-func (m *MatchReq) compile() (mpkg, mrepo func(string) bool, isFinal bool, start string) {
+func (m *MatchReq) compile() (mpkg, mrepo func(string) bool, start string) {
 	if m.Limit <= 0 {
 		m.Limit = 50
 	}
@@ -221,7 +218,6 @@ func (m *MatchReq) compile() (mpkg, mrepo func(string) bool, isFinal bool, start
 	mpkg = func(string) bool { return true }
 	if t := strings.TrimSuffix(m.Package, "/..."); t != m.Package && t != "" {
 		start = t
-		isFinal = true
 		mpkg = func(pkg string) bool { return strings.HasPrefix(pkg, t) }
 	} else if m.Package != "" {
 		start = m.Package
