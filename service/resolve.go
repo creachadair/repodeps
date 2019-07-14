@@ -19,7 +19,14 @@ import (
 // Resolve attempts to resolve the URL of the repository containing the
 // specified import path, using the HTTP metadata protocol used by "go get".
 // Unlike "go get", this resolver only considers Git targets.
-func (u *Server) Resolve(ctx context.Context, req *ResolveReq) (*ResolveRsp, error) {
+func (*Server) Resolve(ctx context.Context, req *ResolveReq) (*ResolveRsp, error) {
+	return ResolveRepository(ctx, req)
+}
+
+// ResolveRepository attempts to resolve the URL of the repository containing
+// the specified import path, using the HTTP metadata protocol used by "go
+// get".  Unlike "go get", this resolver only considers Git targets.
+func ResolveRepository(ctx context.Context, req *ResolveReq) (*ResolveRsp, error) {
 	if req.Package == "" {
 		return nil, jrpc2.Errorf(code.InvalidParams, "missing package import path")
 	} else if deps.IsLocalPackage(req.Package) {
