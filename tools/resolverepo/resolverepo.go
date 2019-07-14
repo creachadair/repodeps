@@ -19,13 +19,9 @@ package main
 import (
 	"context"
 	"encoding/json"
-	"encoding/xml"
-	"errors"
 	"flag"
 	"fmt"
-	"io"
 	"log"
-	"net/http"
 	"os"
 	"path/filepath"
 	"sort"
@@ -33,8 +29,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/creachadair/repodeps/deps"
-	"github.com/creachadair/repodeps/poll"
+	"github.com/creachadair/repodeps/service"
 	"github.com/creachadair/repodeps/tools"
 	"github.com/creachadair/taskgroup"
 )
@@ -137,146 +132,16 @@ type bundle struct {
 // using the HTTP metadata protocol used by "go get". Unlike "go get", this
 // resolver only considers Git targets.
 func resolveImportRepo(ctx context.Context, ipath string) *metaImport {
-	// Shortcut well-known Git hosting providers, to save network traffic.
-	if wk := checkWellKnown(ctx, ipath); wk != nil {
-		return wk
-	}
-
-	// Request package resolution. If the site supports it, we will receive a
-	// <meta name="go-import" content="<prefix> <vcs> <url>"> tag.
-	base := "https://" + ipath
-	url := base + "?go-get=1"
-	fail := func(err error) *metaImport {
-		return &metaImport{Repo: base, Prefix: ipath, Err: err}
-	}
-
-	rsp, err := http.Get(url)
-	if err != nil {
-		return fail(err)
-	}
-	defer rsp.Body.Close()
-	if rsp.StatusCode != http.StatusOK && rsp.StatusCode != http.StatusNotFound {
-		return fail(errors.New(rsp.Status))
-	}
-
-	// Logic cribbed with modificdations from parseMetaGoImports in
-	// src/cmd/go/internal/get/discovery.go
-	var imps []*metaImport
-	dec := xml.NewDecoder(rsp.Body)
-	dec.Strict = false
-	var t xml.Token
-	for {
-		t, err = dec.RawToken()
-		if err != nil {
-			if err == io.EOF || len(imps) > 0 {
-				err = nil
-			}
-			break
-		}
-		st, ok := t.(xml.StartElement)
-		if ok && strings.EqualFold(st.Name.Local, "body") {
-			break // stop scanning when the body begins
-		} else if e, ok := t.(xml.EndElement); ok && strings.EqualFold(e.Name.Local, "head") {
-			break // stop scanning when the head ends
-		}
-
-		if !ok || !strings.EqualFold(st.Name.Local, "meta") {
-			continue // skip non-meta tags
-		} else if attrValue(st.Attr, "name") != "go-import" {
-			continue // skip unrelated meta tags
-		}
-
-		fields := strings.Fields(attrValue(st.Attr, "content"))
-		if len(fields) == 3 && fields[1] == "git" {
-			imps = append(imps, &metaImport{
-				Prefix:     fields[0],
-				Repo:       fields[2],
-				ImportPath: ipath,
-			})
-		}
-	}
-	if rsp.StatusCode != http.StatusOK && len(imps) == 0 {
-		return fail(errors.New(rsp.Status))
-	} else if len(imps) == 0 {
-		return fail(errors.New("no targets"))
-	}
-	return imps[0]
-}
-
-// checkWellKnown checks whether ip is lexically associated with a well-known
-// git host. If so, it synthesizes an import location; otherwise returns nil.
-func checkWellKnown(ctx context.Context, ip string) (wk *metaImport) {
-	defer func() {
-		if wk != nil && !poll.RepoExists(ctx, wk.Repo) {
-			wk.Err = errors.New("repository does not exist")
-		}
-	}()
-	pfx, _ := deps.HasDomain(ip)
-	switch pfx {
-	case "github.com", "bitbucket.org":
-		// TODO: Because we didn't actually try to resolve these, we don't know
-		// whether the predicted repo actually exists.
-		parts := strings.Split(ip, "/")
-		if len(parts) >= 3 {
-			prefix := strings.Join(parts[:3], "/")
-			return &metaImport{
-				Prefix:     prefix,
-				Repo:       "https://" + prefix,
-				ImportPath: ip,
-			}
-		}
-
-	case "gopkg.in":
-		// The actual mapping to source code requires version information, but we
-		// can construct the repository URL from the import alone.
-		parts := strings.SplitN(ip, "/", 4)
-		if len(parts) < 2 {
-			return nil
-		}
-
-		var user, repo, prefix string
-		if len(parts) == 2 {
-			// Rule 1: gopkg.in/pkg.vN ⇒ github.com/go-pkg/pkg
-			repo = trimExt(parts[1])
-			user = "go-" + repo
-			prefix = strings.Join(parts[:2], "/")
-		} else {
-			// Rule 2: gopkg.in/user/pkg.vN ⇒ github.com/user/pkg
-			repo = trimExt(parts[2])
-			user = parts[1]
-			prefix = strings.Join(parts[:3], "/")
-		}
-		url := strings.Join([]string{
-			"https://github.com", user, repo,
-		}, "/")
-		return &metaImport{
-			Prefix:     prefix,
-			Repo:       url,
-			ImportPath: ip,
-		}
-	}
-	return nil
+	rsp, err := service.ResolveRepository(ctx, &service.ResolveReq{
+		Package: ipath,
+	})
+	return &metaImport{Repo: rsp, Err: err}
 }
 
 type metaImport struct {
-	Prefix, Repo string
-	ImportPath   string
-	Err          error
+	Repo *service.ResolveRsp
+	Err  error
 }
-
-// attrValue returns the value for the named attribute, or "" if the name is
-// not found.
-func attrValue(attrs []xml.Attr, name string) string {
-	for _, attr := range attrs {
-		if strings.EqualFold(attr.Name.Local, name) {
-			return attr.Value
-		}
-	}
-	return ""
-}
-
-// trimExt returns a copy of s with a trailing extension removed.
-func trimExt(s string) string { return strings.TrimSuffix(s, filepath.Ext(s)) }
 
 type repoMap struct {
 	μ sync.RWMutex
@@ -308,17 +173,17 @@ func (r *repoMap) find(ip string) bool {
 func (r *repoMap) set(imp *metaImport) {
 	r.μ.Lock()
 	defer r.μ.Unlock()
-	b := r.m[imp.Prefix]
+	b := r.m[imp.Repo.Prefix]
 	if b == nil {
 		b = &bundle{
-			Repo:   imp.Repo,
-			Prefix: imp.Prefix,
+			Repo:   imp.Repo.Repository,
+			Prefix: imp.Repo.Prefix,
 		}
 		if imp.Err != nil {
 			b.Error = imp.Err.Error()
 		}
-		r.m[imp.Prefix] = b
-	} else if b.Error == "" && imp.ImportPath != "" {
-		b.ImportPaths = append(b.ImportPaths, imp.ImportPath)
+		r.m[imp.Repo.Prefix] = b
+	} else if b.Error == "" && imp.Repo.ImportPath != "" {
+		b.ImportPaths = append(b.ImportPaths, imp.Repo.ImportPath)
 	}
 }
