@@ -35,15 +35,15 @@ var (
 	opts service.Options
 
 	serviceAddr = flag.String("address", "", "Service address (required)")
-	repoDB      = os.Getenv("UPDATER_REPO_DB")
-	graphDB     = os.Getenv("UPDATER_GRAPH_DB")
-	workDir     = os.Getenv("UPDATER_WORK_DIR")
+	repoDB      = os.Getenv("DEPSERVER_REPO_DB")
+	graphDB     = os.Getenv("DEPSERVER_GRAPH_DB")
+	workDir     = os.Getenv("DEPSERVER_WORK_DIR")
 )
 
 func init() {
-	flag.StringVar(&opts.RepoDB, "repo-db", repoDB, "Repository database (required; $UPDATER_REPO_DB)")
-	flag.StringVar(&opts.GraphDB, "graph-db", graphDB, "Graph database (required; $UPDATER_GRAPH_DB)")
-	flag.StringVar(&opts.WorkDir, "workdir", workDir, "Working directory for updates ($UPDATER_WORK_DIR)")
+	flag.StringVar(&opts.RepoDB, "repo-db", repoDB, "Repository database (required; $DEPSERVER_REPO_DB)")
+	flag.StringVar(&opts.GraphDB, "graph-db", graphDB, "Graph database (required; $DEPSERVER_GRAPH_DB)")
+	flag.StringVar(&opts.WorkDir, "workdir", workDir, "Working directory for updates ($DEPSERVER_WORK_DIR)")
 	flag.DurationVar(&opts.MinPollInterval, "interval", 1*time.Hour, "Minimum scan interval")
 	flag.IntVar(&opts.ErrorLimit, "error-limit", 10, "Maximum repository update failures")
 	flag.Float64Var(&opts.SampleRate, "sample-rate", 1, "Sample fraction of eligible updates (0..1)")
