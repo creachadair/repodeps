@@ -10,8 +10,8 @@ set -e
 
 case "$1" in
     (update)
-	docker pull "$image"
 	docker stop repo-crawler || true
+	docker pull "$image"
 	docker rm repo-crawler || true
 	;;
     ("")
