@@ -1,28 +1,14 @@
 #!/bin/bash
 
-update() {
-  local base="${1:?missing database name}"
-  if [[ -f "${base}.snap" ]] ; then
-    badger restore -f "${base}.snap" --dir "${base}.new"
-    mv "$base" "${base}.old"
-    mv "${base}.new" "${base}"
-    rm -fr "${base}.old"
-  fi
-}
-
 set -e
 set -o pipefail
 readonly port=9735
-readonly root="$HOME/software/sourced/data"
+readonly root=/mnt/data/repodeps
 readonly image=creachadair/repo-depserver:latest
 
 set -x
 docker stop repo-depserver || true
-(cd "$root" \
-     && rsync -vzt -e 'ssh -o ClearAllForwardings=yes' \
-	      la-experiments:/mnt/data/repodeps/'*.snap' . \
-     && update graph-db \
-     && update repo-db)
+docker pull ${image}
 docker rm repo-depserver || true
 docker run \
        --detach \
