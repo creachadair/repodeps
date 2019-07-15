@@ -14,6 +14,7 @@ FROM alpine:latest AS server
 
 # Run the server.
 ENV GRAPH_DB= REPO_DB= ADDRESS=
+RUN apk add --no-cache git  # needed for updates
 VOLUME /data
 WORKDIR /serve
 COPY --from=build /build/depserver .
