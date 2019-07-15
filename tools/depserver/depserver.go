@@ -48,6 +48,9 @@ func init() {
 	flag.DurationVar(&opts.MinPollInterval, "interval", 1*time.Hour, "Minimum scan interval")
 	flag.IntVar(&opts.ErrorLimit, "error-limit", 10, "Maximum repository update failures")
 	flag.Float64Var(&opts.SampleRate, "sample-rate", 1, "Sample fraction of eligible updates (0..1)")
+	flag.IntVar(&opts.RankScale, "rank-scale", 4, "Scale rank values to this many significant figures")
+	flag.Float64Var(&opts.RankDamping, "rank-damping", 0.85, "Damping factor for ranking (0..1)")
+	flag.IntVar(&opts.RankIterations, "rank-iter", 10, "Default iteration count for ranking")
 	flag.IntVar(&opts.Concurrency, "concurrency", 16, "Maximum concurrent updates")
 	flag.BoolVar(&opts.ReadOnly, "read-only", false, "Open database read-only, disallowing updates")
 

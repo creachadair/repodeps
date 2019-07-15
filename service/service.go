@@ -49,6 +49,15 @@ type Options struct {
 	// Default sampling rate for scans (0..1); zero means 1.0.
 	SampleRate float64
 
+	// Default scale factor for ranking; zero means 4.
+	RankScale int
+
+	// Default damping factor for ranking; zero means 0.85.
+	RankDamping float64
+
+	// Default iteration count for ranking; zero means 10.
+	RankIterations int
+
 	// The maximum number of concurrent workers that may be processing updates.
 	// A value less that or equal to zero means 1.
 	Concurrency int
@@ -88,6 +97,15 @@ func New(opts Options) (*Server, error) {
 	}
 	if opts.SampleRate == 0 {
 		opts.SampleRate = 1
+	}
+	if opts.RankScale <= 0 {
+		opts.RankScale = 4
+	}
+	if opts.RankDamping == 0 {
+		opts.RankDamping = 0.85
+	}
+	if opts.RankIterations <= 0 {
+		opts.RankIterations = 10
 	}
 	if opts.Concurrency <= 0 {
 		opts.Concurrency = 1
