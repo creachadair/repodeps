@@ -27,6 +27,7 @@ import (
 	"github.com/creachadair/jrpc2"
 	"github.com/creachadair/jrpc2/handler"
 	"github.com/creachadair/jrpc2/jctx"
+	"github.com/creachadair/jrpc2/metrics"
 	"github.com/creachadair/jrpc2/server"
 	"github.com/creachadair/repodeps/service"
 )
@@ -83,10 +84,17 @@ func main() {
 	if err != nil {
 		log.Fatalf("Creating updater: %v", err)
 	}
+	m := metrics.New()
+	if opts.ReadOnly {
+		m.SetLabel("mode", "read-only")
+	} else {
+		m.SetLabel("mode", "read-write")
+	}
 	if err := server.Loop(lst, handler.NewService(u), &server.LoopOptions{
 		ServerOptions: &jrpc2.ServerOptions{
 			AllowPush:     true,
 			DecodeContext: jctx.Decode,
+			Metrics:       m,
 		},
 	}); err != nil {
 		log.Printf("Server loop failed: %v", err)
