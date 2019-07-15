@@ -16,6 +16,7 @@ package service
 
 import (
 	"context"
+	"encoding/json"
 
 	"bitbucket.org/creachadair/stringset"
 	"github.com/creachadair/repodeps/graph"
@@ -26,7 +27,7 @@ import (
 // Remove removes package and repositories from the database.
 func (u *Server) Remove(ctx context.Context, req *RemoveReq) (*RemoveRsp, error) {
 	pkgs := stringset.New()
-	for _, pkg := range req.Packages {
+	for _, pkg := range req.Package {
 		if err := u.graph.Remove(ctx, pkg); err == storage.ErrKeyNotFound {
 			continue
 		} else if err != nil {
@@ -38,8 +39,8 @@ func (u *Server) Remove(ctx context.Context, req *RemoveReq) (*RemoveRsp, error)
 			pkgs.Add(pkg)
 		}
 	}
-	repos := stringset.FromIndexed(len(req.Repositories), func(i int) string {
-		return poll.FixRepoURL(req.Repositories[i])
+	repos := stringset.FromIndexed(len(req.Repository), func(i int) string {
+		return poll.FixRepoURL(req.Repository[i])
 	})
 	if len(repos) != 0 {
 		for repo := range repos {
@@ -70,13 +71,30 @@ func (u *Server) Remove(ctx context.Context, req *RemoveReq) (*RemoveRsp, error)
 
 // RemoveReq is the request parameter to the Remove method.
 type RemoveReq struct {
-	Repositories []string `json:"repositories"`
-	Packages     []string `json:"packages"`
-	LogErrors    bool     `json:"logErrors"`
+	Repository StringList `json:"repository"`
+	Package    StringList `json:"package"`
+	LogErrors  bool       `json:"logErrors"`
 }
 
 // RemoveRsp is the result from a successful Remove call.
 type RemoveRsp struct {
 	Repositories []string `json:"repositories,omitempty"` // repositories removed
 	Packages     []string `json:"packages,omitempty"`     // packages removed
+}
+
+// A StringList is a slice of strings that can be decoded from JSON as either
+// an array or a single string.
+type StringList []string
+
+// UnmarshalJSON decodes a StringList from JSON, accepting either a string
+// value (corresponding to a single-element slice) or an array of strings.
+func (s *StringList) UnmarshalJSON(data []byte) error {
+	if len(data) == 0 {
+		*s = nil
+		return nil
+	} else if data[0] == '"' {
+		*s = []string{""}
+		return json.Unmarshal(data, &(*s)[0])
+	}
+	return json.Unmarshal(data, (*[]string)(s))
 }
