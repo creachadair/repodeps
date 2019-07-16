@@ -22,6 +22,7 @@ import (
 	"net"
 	"os"
 	"os/signal"
+	"syscall"
 	"time"
 
 	"github.com/creachadair/jrpc2"
@@ -75,8 +76,8 @@ func main() {
 - Graph database:      %s
 `, *serviceAddr, opts.RepoDB, opts.GraphDB)
 
-	sig := make(chan os.Signal, 1)
-	signal.Notify(sig, os.Interrupt)
+	sig := make(chan os.Signal, 2)
+	signal.Notify(sig, os.Interrupt, syscall.SIGTERM)
 	go func() {
 		log.Printf("Received signal: %v; shutting down", <-sig)
 		lst.Close()
