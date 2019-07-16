@@ -8,6 +8,7 @@ case "$1" in
 	docker stop deps-server
 	docker rm deps-server
 	docker network rm ${net}
+	docker network create --driver=bridge ${net}
 	;;
     ("")
 	# OK
@@ -20,7 +21,6 @@ esac
 
 set -x
 set -e
-docker network create --driver=bridge ${net}
 docker run \
        --detach \
        --name deps-server \
