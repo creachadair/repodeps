@@ -14,7 +14,7 @@ while true ; do
 
     ./jcall -c "$SERVER" \
 	    Scan '{"logUpdates":true}' \
-	    Rank '{"logUpdates":true}'
+	    Rank '{"logUpdates":false}'
 
     echo "\"-- DONE $(now)\""
     sleep "$SLEEPTIME"
