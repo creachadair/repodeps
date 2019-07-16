@@ -26,10 +26,11 @@ import (
 // Reverse enumerates the reverse dependencies of one or more packages.  The
 // order of results is unspecified but deterministic.
 func (u *Server) Reverse(ctx context.Context, req *ReverseReq) (*ReverseRsp, error) {
-	pkgs, filter, err := req.compile(ctx, u.graph)
+	match, filter, err := req.compile(ctx, u.graph)
 	if err != nil {
 		return nil, err
 	}
+	repo := newRepoMap(ctx, u.graph)
 
 	start := string(req.PageKey)
 	rsp := new(ReverseRsp)
@@ -41,10 +42,12 @@ func (u *Server) Reverse(ctx context.Context, req *ReverseReq) (*ReverseRsp, err
 		// Look for imports of candidate packages in each row.
 		var hits []string
 		for _, dep := range row.Directs {
-			repo, ok := pkgs[dep]
-			if ok && (!req.FilterSameRepo || row.Repository != repo) {
-				hits = append(hits, dep)
+			if !match(dep) {
+				continue // not one of the packages we care about
+			} else if req.FilterSameRepo && repo.same(row.ImportPath, dep) {
+				continue // package is in the same repository
 			}
+			hits = append(hits, dep)
 		}
 		rsp.NumImports += len(hits)
 
@@ -96,42 +99,29 @@ type ReverseReq struct {
 
 // compile returns a mapping from the candidate packages to their enclosing
 // repositories.
-func (m *ReverseReq) compile(ctx context.Context, db *graph.Graph) (map[string]string, func(string) bool, error) {
+func (m *ReverseReq) compile(ctx context.Context, db *graph.Graph) (match, filter func(string) bool, err error) {
+	if m.Limit <= 0 {
+		m.Limit = 50
+	}
+
 	// Compile the dependency filter.
-	filter := func(string) bool { return true }
 	if m.Matching != "" {
 		r, err := regexp.Compile(m.Matching)
 		if err != nil {
 			return nil, nil, err
 		}
 		filter = r.MatchString
+	} else {
+		filter = func(string) bool { return true }
 	}
 
-	// Enumerate the candidate target packages.
-	start := m.Package
-	match := func(pkg string) bool { return pkg == m.Package }
+	// Compile the matching filter.
 	if t := strings.TrimSuffix(m.Package, "/..."); t != m.Package && t != "" {
-		start = t
 		match = func(pkg string) bool { return strings.HasPrefix(pkg, t) }
+	} else {
+		match = func(pkg string) bool { return pkg == m.Package }
 	}
-
-	// Look up the target repositories.
-	pkgRepo := make(map[string]string)
-	if err := db.Scan(ctx, start, func(row *graph.Row) error {
-		if !match(row.ImportPath) {
-			return storage.ErrStopScan
-		}
-		pkgRepo[row.ImportPath] = row.Repository
-		return nil
-	}); err != nil {
-		return nil, nil, err
-	}
-
-	// Pin the default limit.
-	if m.Limit <= 0 {
-		m.Limit = 50
-	}
-	return pkgRepo, filter, nil
+	return
 }
 
 // A ReverseDep encodes a single reverse direct dependency relationship. The
@@ -148,4 +138,36 @@ type ReverseRsp struct {
 	NumImports int           `json:"numImports"`
 	Imports    []*ReverseDep `json:"imports,omitempty"`
 	NextPage   []byte        `json:"nextPage,omitempty"`
+}
+
+type repoMap struct {
+	ctx context.Context
+	g   *graph.Graph
+	m   map[string]string
+}
+
+func newRepoMap(ctx context.Context, g *graph.Graph) *repoMap {
+	return &repoMap{ctx: ctx, g: g, m: make(map[string]string)}
+}
+
+func (r *repoMap) same(a, b string) bool {
+	ra, ok := r.m[a]
+	if !ok {
+		row, err := r.g.Row(r.ctx, a)
+		if err != nil {
+			return false
+		}
+		ra = row.Repository
+		r.m[a] = ra
+	}
+	rb, ok := r.m[b]
+	if !ok {
+		row, err := r.g.Row(r.ctx, b)
+		if err != nil {
+			return false
+		}
+		rb = row.Repository
+		r.m[b] = rb
+	}
+	return ra == rb
 }
