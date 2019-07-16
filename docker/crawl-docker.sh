@@ -1,14 +1,12 @@
 #!/bin/sh
 
 readonly image=creachadair/deps-crawler:latest
-readonly net=deps
-readonly port=9735
+. "$(dirname $0)/config.sh"
 
 case "$1" in
     (reset)
 	docker stop deps-crawler
 	docker rm deps-crawler
-	docker volume create crawler-log
 	;;
     ("")
 	# OK
@@ -25,6 +23,6 @@ docker run \
        --detach \
        --name deps-crawler \
        --network ${net} \
-       -v crawler-log:/logs \
+       -v ${root}:/logs \
        --env SERVER=deps-server:${port} \
        ${image}

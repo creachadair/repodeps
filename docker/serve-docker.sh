@@ -1,9 +1,7 @@
 #!/bin/bash
 
 readonly image=creachadair/deps-server:latest
-readonly net=deps
-readonly port=9735
-readonly root=/mnt/data/repodeps
+. "$(dirname $0)/config.sh"
 
 case "$1" in
     (reset)
