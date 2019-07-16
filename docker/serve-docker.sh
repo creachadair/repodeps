@@ -29,5 +29,6 @@ docker run \
        -p 127.0.0.1:${port}:${port} \
        --env GRAPH_DB=/data/graph-db \
        --env REPO_DB=/data/repo-db \
+       --env WORKDIR=/data/tmp \
        --env ADDRESS=0.0.0.0:${port} \
        ${image}

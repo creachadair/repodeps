@@ -18,12 +18,15 @@ CMD ./run-crawler.sh
 
 # The server.
 FROM alpine:latest AS server
-ENV GRAPH_DB= REPO_DB= ADDRESS=
+ENV GRAPH_DB= REPO_DB= ADDRESS= WORKDIR=
 RUN apk add --no-cache git  # needed to do updates
 VOLUME /data
 WORKDIR /serve
 COPY --from=build /build/depserver .
 CMD ./depserver \
-	-address "$ADDRESS" -graph-db "$GRAPH_DB" -repo-db "$REPO_DB" \
+	-address "$ADDRESS" \
+	-graph-db "$GRAPH_DB" \
+	-repo-db "$REPO_DB" \
+	-workdir "$WORKDIR" \
 	-rank-iter 40 -rank-scale 6 -sample-rate 0.1
 
