@@ -2,7 +2,7 @@
 #
 # Usage: serve-local.sh
 #
-readonly port=9735
+readonly port=9736
 readonly root="$HOME/software/sourced/data"
 readonly data='la-experiments:/mnt/data/repodeps'
 
