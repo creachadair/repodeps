@@ -13,8 +13,8 @@ while true ; do
     echo "\"-- CHECK $(now)\""
 
     ./jcall -c "$SERVER" \
-	    Scan '{"logUpdates":true, "logErrors":true}' \
-	    Rank '{"logUpdates":true, "logProgress":true}'
+	    Scan '{"logUpdates":true}' \
+	    Rank '{"logUpdates":true}'
 
     echo "\"-- DONE $(now)\""
     sleep "$SLEEPTIME"
