@@ -12,7 +12,7 @@ set -e
 while true ; do
     echo "\"-- CHECK $(now)\""
 
-    ./jcall -v -c "$SERVER" \
+    ./jcall -c "$SERVER" \
 	    Scan '{"logUpdates":true, "logErrors":true}' \
 	    Rank '{"logUpdates":true, "logProgress":true}'
 
