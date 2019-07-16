@@ -5,6 +5,8 @@
 : ${LOGDIR:='/logs'}
 : ${SLEEPTIME:=720} # seconds
 
+export TZ=PST8PDT
+
 now() { echo "$(date +'%F %T %z')" ; }
 
 trap 'echo terminated by signal 1>&2; exit 3' TERM
