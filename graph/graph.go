@@ -22,7 +22,6 @@ import (
 	"context"
 	"fmt"
 	"sort"
-	"strings"
 
 	"bitbucket.org/creachadair/stringset"
 	"github.com/creachadair/repodeps/deps"
@@ -162,17 +161,6 @@ func (g *Graph) ScanUpdate(ctx context.Context, prefix string, f func(*Row) bool
 // Remove removes the row for pkg from g.
 func (g *Graph) Remove(ctx context.Context, pkg string) error {
 	return g.st.Delete(ctx, pkg)
-}
-
-// Importers calls f for each package that directly depends on pkg.
-// If pkg ends with "/...", any package with that prefix is matched.  For
-// example "regexp/..." matches "regexp" and "regexp/syntax".
-// The order of results is unspecified.
-func (g *Graph) Importers(ctx context.Context, pkg string, f func(tpkg, ipkg string)) error {
-	if t := strings.TrimSuffix(pkg, "/..."); t != pkg {
-		return g.MatchImporters(ctx, func(s string) bool { return strings.HasPrefix(s, t) }, f)
-	}
-	return g.MatchImporters(ctx, func(s string) bool { return s == pkg }, f)
 }
 
 // MatchImporters calls f(q, p) for each package p that directly depends on any
