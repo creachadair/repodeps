@@ -14,7 +14,7 @@ set -e
 while true ; do
     echo "\"-- CHECK $(now)\""
 
-    ./jcall -c "$SERVER" \
+    ./jcall -T -c "$SERVER" \
 	    Scan '{"logUpdates":true}' \
 	    Rank '{"logUpdates":false}'
 
