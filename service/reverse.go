@@ -106,11 +106,13 @@ func (m *ReverseReq) compile(ctx context.Context, db *graph.Graph) (match, filte
 
 	// Compile the dependency filter.
 	if m.Matching != "" {
-		r, err := regexp.Compile(m.Matching)
+		exp := strings.TrimPrefix(m.Matching, "(?!)")
+		ok := exp == m.Matching
+		r, err := regexp.Compile(exp)
 		if err != nil {
 			return nil, nil, err
 		}
-		filter = r.MatchString
+		filter = func(pkg string) bool { return r.MatchString(pkg) == ok }
 	} else {
 		filter = func(string) bool { return true }
 	}
