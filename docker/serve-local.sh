@@ -17,8 +17,8 @@ update() {
 }
 
 set -e
-set -x
 pid="$(lsof -Fp -i4tcp:${port} | grep ^p | cut -c2-)"
+set -x
 if [[ "$pid" != "" ]] ; then
     kill -INT "$pid"
     sleep 2
