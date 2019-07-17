@@ -25,4 +25,5 @@ docker run \
        --network ${net} \
        -v ${root}:/logs \
        --env SERVER=deps-server:${port} \
+       --env SLEEPTIME=600 \
        ${image}
