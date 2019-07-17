@@ -67,6 +67,9 @@ type Options struct {
 	// this callback at once.
 	StreamLog func(ctx context.Context, key string, value interface{}) error
 
+	// The default page size for paginated responses (0 means 100).
+	DefaultPageSize int
+
 	// Open read-only, disallow updates.
 	ReadOnly bool
 
@@ -109,6 +112,9 @@ func New(opts Options) (*Server, error) {
 	}
 	if opts.Concurrency <= 0 {
 		opts.Concurrency = 1
+	}
+	if opts.DefaultPageSize <= 0 {
+		opts.DefaultPageSize = 100
 	}
 	u := &Server{opts: opts}
 	if f := opts.StreamLog; f != nil {

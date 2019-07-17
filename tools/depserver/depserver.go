@@ -53,6 +53,7 @@ func init() {
 	flag.Float64Var(&opts.RankDamping, "rank-damping", 0.85, "Damping factor for ranking (0..1)")
 	flag.IntVar(&opts.RankIterations, "rank-iter", 10, "Default iteration count for ranking")
 	flag.IntVar(&opts.Concurrency, "concurrency", 16, "Maximum concurrent updates")
+	flag.IntVar(&opts.DefaultPageSize, "page-size", 100, "Default result page size")
 	flag.BoolVar(&opts.ReadOnly, "read-only", false, "Open database read-only, disallowing updates")
 
 	flag.BoolVar(&opts.Options.HashSourceFiles, "hash-source-files", true,

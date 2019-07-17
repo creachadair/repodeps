@@ -30,6 +30,9 @@ func (u *Server) Reverse(ctx context.Context, req *ReverseReq) (*ReverseRsp, err
 	if err != nil {
 		return nil, err
 	}
+	if req.Limit <= 0 {
+		req.Limit = u.opts.DefaultPageSize
+	}
 	repo := newRepoMap(ctx, u.graph)
 
 	start := string(req.PageKey)
@@ -100,10 +103,6 @@ type ReverseReq struct {
 // compile returns a mapping from the candidate packages to their enclosing
 // repositories.
 func (m *ReverseReq) compile(ctx context.Context, db *graph.Graph) (match, filter func(string) bool, err error) {
-	if m.Limit <= 0 {
-		m.Limit = 50
-	}
-
 	// Compile the dependency filter.
 	if m.Matching != "" {
 		exp := strings.TrimPrefix(m.Matching, "(?!)")

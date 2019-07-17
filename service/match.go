@@ -28,6 +28,9 @@ import (
 // the next offset of a matching row.
 func (u *Server) Match(ctx context.Context, req *MatchReq) (*MatchRsp, error) {
 	matchPackage, matchRepo, start := req.compile()
+	if req.Limit <= 0 {
+		req.Limit = u.opts.DefaultPageSize
+	}
 
 	rsp := new(MatchRsp)
 	err := u.graph.Scan(ctx, start, func(row *graph.Row) error {
@@ -84,10 +87,6 @@ type MatchReq struct {
 }
 
 func (m *MatchReq) compile() (mpkg, mrepo func(string) bool, start string) {
-	if m.Limit <= 0 {
-		m.Limit = 50
-	}
-
 	mpkg = func(string) bool { return true }
 	if t := strings.TrimSuffix(m.Package, "/..."); t != m.Package && t != "" {
 		start = t
