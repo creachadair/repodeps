@@ -33,6 +33,4 @@ sync
 depserver -address "localhost:$port" \
 	  -graph-db graph-db \
 	  -repo-db repo-db \
-	  -rank-iter 40 \
-	  -rank-scale 6 \
-	  -sample-rate 0.1 &
+	  -read-only &
