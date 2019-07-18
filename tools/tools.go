@@ -27,7 +27,6 @@ import (
 
 	"github.com/creachadair/badgerstore"
 	"github.com/creachadair/repodeps/graph"
-	"github.com/creachadair/repodeps/poll"
 	"github.com/creachadair/repodeps/service"
 	"github.com/creachadair/repodeps/storage"
 )
@@ -59,16 +58,6 @@ func OpenGraph(path string, mode OpenMode) (*graph.Graph, io.Closer, error) {
 		return nil, nil, fmt.Errorf("opening storage: %v", err)
 	}
 	return graph.New(storage.NewBlob(s)), s, nil
-}
-
-// OpenPollDB opens the poll database named by path. The caller must ensure the
-// closer is closed when the graph is no longer in use.
-func OpenPollDB(path string, mode OpenMode) (*poll.DB, io.Closer, error) {
-	s, err := openBadger(path, mode)
-	if err != nil {
-		return nil, nil, fmt.Errorf("opening storage: %v", err)
-	}
-	return poll.NewDB(storage.NewBlob(s)), s, nil
 }
 
 func openBadger(path string, mode OpenMode) (*badgerstore.Store, error) {
