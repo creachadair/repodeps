@@ -76,6 +76,7 @@ func (c *Client) Close() error { c.cancel(); return c.cli.Close() }
 // returned.
 func (c *Client) Match(ctx context.Context, req *service.MatchReq, f func(*graph.Row) error) (int, error) {
 	cp := *req
+	lim := cp.Limit
 	nr := 0
 	for {
 		var rsp service.MatchRsp
@@ -84,8 +85,12 @@ func (c *Client) Match(ctx context.Context, req *service.MatchReq, f func(*graph
 		}
 		nr += len(rsp.Rows)
 		for _, row := range rsp.Rows {
-			if err := f(row); err != nil {
+			err := f(row)
+			nr++
+			if err != nil {
 				return nr, err
+			} else if lim > 0 && nr == lim {
+				return nr, nil
 			}
 		}
 		if rsp.NextPage == nil {
@@ -110,16 +115,20 @@ func (c *Client) Resolve(ctx context.Context, pkg string) (*service.ResolveRsp, 
 // matching rows is returned.
 func (c *Client) Reverse(ctx context.Context, req *service.ReverseReq, f func(*service.ReverseDep) error) (int, error) {
 	cp := *req
+	lim := cp.Limit
 	nr := 0
 	for {
 		var rsp service.ReverseRsp
 		if err := c.cli.CallResult(ctx, "Reverse", &cp, &rsp); err != nil {
 			return nr, err
 		}
-		nr += len(rsp.Imports)
 		for _, imp := range rsp.Imports {
-			if err := f(imp); err != nil {
+			err := f(imp)
+			nr++
+			if err != nil {
 				return nr, err
+			} else if lim > 0 && nr == lim {
+				return nr, nil
 			}
 		}
 		if rsp.NextPage == nil {
