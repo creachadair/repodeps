@@ -53,6 +53,9 @@ func (u *Server) Reverse(ctx context.Context, req *ReverseReq) (*ReverseRsp, err
 			hits = append(hits, dep)
 		}
 		rsp.NumImports += len(hits)
+		if req.CountOnly {
+			return nil
+		}
 
 		// If reading this row will blow the limit, skip it till the next pass.
 		// To ensure we make progress even if one package has a huge number of
@@ -62,10 +65,7 @@ func (u *Server) Reverse(ctx context.Context, req *ReverseReq) (*ReverseRsp, err
 			rsp.NumImports -= len(hits)
 			rsp.NextPage = []byte(row.ImportPath)
 			return storage.ErrStopScan
-		} else if req.CountOnly {
-			return nil
 		}
-
 		for _, hit := range hits {
 			rsp.Imports = append(rsp.Imports, &ReverseDep{
 				Target: hit,

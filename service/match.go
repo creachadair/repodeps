@@ -87,13 +87,14 @@ type MatchReq struct {
 }
 
 func (m *MatchReq) compile() (mpkg, mrepo func(string) bool, start string) {
-	mpkg = func(string) bool { return true }
 	if t := strings.TrimSuffix(m.Package, "/..."); t != m.Package && t != "" {
 		start = t
 		mpkg = func(pkg string) bool { return strings.HasPrefix(pkg, t) }
 	} else if m.Package != "" {
 		start = m.Package
 		mpkg = func(pkg string) bool { return pkg == m.Package }
+	} else {
+		mpkg = func(string) bool { return true }
 	}
 
 	mrepo = func(string) bool { return true }
