@@ -82,8 +82,9 @@ func (c *Client) Match(ctx context.Context, req *service.MatchReq, f func(*graph
 		var rsp service.MatchRsp
 		if err := c.cli.CallResult(ctx, "Match", &cp, &rsp); err != nil {
 			return nr, err
+		} else if req.CountOnly {
+			return rsp.NumRows, nil
 		}
-		nr += len(rsp.Rows)
 		for _, row := range rsp.Rows {
 			err := f(row)
 			nr++
@@ -121,6 +122,8 @@ func (c *Client) Reverse(ctx context.Context, req *service.ReverseReq, f func(*s
 		var rsp service.ReverseRsp
 		if err := c.cli.CallResult(ctx, "Reverse", &cp, &rsp); err != nil {
 			return nr, err
+		} else if req.CountOnly {
+			return rsp.NumImports, nil
 		}
 		for _, imp := range rsp.Imports {
 			err := f(imp)
