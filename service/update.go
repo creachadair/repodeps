@@ -42,10 +42,10 @@ func (u *Server) Update(ctx context.Context, req *UpdateReq) (*UpdateRsp, error)
 		return nil, jrpc2.Errorf(code.InvalidParams, "checkOnly and force are mutually exclusive")
 	}
 	repoTag := poll.FixRepoURL(req.Repository)
-	if req.Reference != "" {
-		repoTag += "@@" + req.Reference
-	}
-	res, err := u.repoDB.Check(ctx, repoTag, nil)
+	res, err := u.repoDB.Check(ctx, repoTag, &poll.CheckOptions{
+		Reference: req.Reference,
+		Prefix:    req.Prefix,
+	})
 	if err != nil {
 		return nil, jrpc2.Errorf(code.SystemError, "checking %s: %v", req.Repository, err)
 	}
@@ -97,6 +97,9 @@ type UpdateReq struct {
 
 	// The reference name to update (optional).
 	Reference string `json:"reference"`
+
+	// The package prefix to attribute to packages in this repository.
+	Prefix string `json:"prefix"`
 
 	// If true, only check the repository state, do not update.
 	CheckOnly bool `json:"checkOnly"`
