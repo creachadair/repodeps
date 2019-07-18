@@ -17,33 +17,37 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"flag"
 	"fmt"
 	"log"
 	"os"
 	"path/filepath"
 
+	"github.com/creachadair/repodeps/client"
 	"github.com/creachadair/repodeps/deps"
-	"github.com/creachadair/repodeps/tools"
+	"github.com/creachadair/repodeps/service"
 )
 
 var (
-	storePath   = flag.String("store", os.Getenv("REPODEPS_DB"), "Storage path (required)")
-	doFilterDom = flag.Bool("domain-only", false, "Print only import paths that begin with a domain")
+	address    = flag.String("address", os.Getenv("REPODEPS_ADDR"), "Service address")
+	filterSame = flag.Bool("filter-same-repo", false, "Exclude dependencies from the same repository")
+	filterDom  = flag.Bool("domain-only", false, "Exclude local and intrinsic imports")
+	limit      = flag.Int("limit", 0, "Return at most this many results")
 )
 
 func init() {
 	flag.Usage = func() {
-		fmt.Fprintf(os.Stderr, `Usage: %[1]s <package>...
+		fmt.Fprintf(os.Stderr, `Usage: %[1]s <package>
 
 Print the import paths of packages that depend directly on each named package.
 If a package ends with "/...", it matches any package with the given prefix.
-Each output line has the form:
+Each output is a JSON text:
 
-   target-package <TAB> source-package <LF>
+   {"target": target-package, "source": source-package}
 
-where source-package is the dependent package and target-package is the
-imported package.
+where source-package is the dependent (importing) package and target-package is
+the dependency (imported) package.
 
 Options:
 `, filepath.Base(os.Args[0]))
@@ -53,24 +57,31 @@ Options:
 
 func main() {
 	flag.Parse()
-	g, c, err := tools.OpenGraph(*storePath, tools.ReadOnly)
+	if flag.NArg() == 0 {
+		log.Fatal("You must provide a package or prefix to match")
+	}
+
+	ctx := context.Background()
+	c, err := client.Dial(ctx, *address)
 	if err != nil {
-		log.Fatalf("Opening graph: %v", err)
+		log.Fatalf("Dialing service: %v", err)
 	}
 	defer c.Close()
 
-	ctx := context.Background()
-	if err := g.MatchImporters(ctx, tools.NewMatcher(flag.Args()), func(tpath, ipath string) {
-		if *doFilterDom {
-			if _, ok := deps.HasDomain(tpath); !ok {
-				return
-			}
-			if _, ok := deps.HasDomain(ipath); !ok {
-				return
-			}
+	enc := json.NewEncoder(os.Stdout)
+	nr, err := c.Reverse(ctx, &service.ReverseReq{
+		Package:        flag.Arg(0),
+		FilterSameRepo: *filterSame,
+		Limit:          *limit,
+	}, func(dep *service.ReverseDep) error {
+		if _, ok := deps.HasDomain(dep.Source); ok || !*filterDom {
+			enc.Encode(dep)
 		}
-		fmt.Print(tpath, "\t", ipath, "\n")
-	}); err != nil {
-		log.Fatalf("Importers failed: %v", err)
+		return nil
+	})
+	if err != nil {
+		log.Printf("Reverse failed: %v", err)
+	} else if nr == 0 {
+		log.Printf("No reverse dependencies matching %q", flag.Arg(0))
 	}
 }
