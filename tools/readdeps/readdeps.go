@@ -44,8 +44,8 @@ func main() {
 	enc := json.NewEncoder(os.Stdout)
 	for _, ipath := range flag.Args() {
 		rsp, err := s.Match(ctx, &service.MatchReq{
-			Package:       ipath,
-			IncludeSource: true,
+			Package:      ipath,
+			IncludeFiles: true,
 		})
 		if err != nil {
 			log.Printf("Reading %q: %v", ipath, err)

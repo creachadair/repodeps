@@ -44,7 +44,7 @@ func (u *Server) Match(ctx context.Context, req *MatchReq) (*MatchRsp, error) {
 			// do nothing
 		} else if len(rsp.Rows) < req.Limit {
 			rsp.Rows = append(rsp.Rows, row)
-			if !req.IncludeSource {
+			if !req.IncludeFiles {
 				row.SourceFiles = nil
 			}
 			if req.ExcludeDirects {
@@ -74,7 +74,7 @@ type MatchReq struct {
 	CountOnly bool `json:"countOnly"`
 
 	// Whether to include source file paths.
-	IncludeSource bool `json:"includeSource"`
+	IncludeFiles bool `json:"includeFiles"`
 
 	// Whether to exclude direct dependencies.
 	ExcludeDirects bool `json:"excludeDirects"`
