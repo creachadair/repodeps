@@ -10,6 +10,7 @@ message Status {
   string ref_name = 2;   // reference name to fetch (default is HEAD)
   bytes digest = 3;      // latest known digest
   int32 error_count = 6; // fetch errors since last successful check
+  string prefix = 7;     // package prefix to attribute to this repository
 
   // When the last check of this repository was made. If unset, the repository
   // has never been checked.
@@ -18,7 +19,7 @@ message Status {
   // The history of updates, oldest to newest.
   repeated Update updates = 5;
 
-  // next id: 7
+  // next id: 8
 
   message Update {
     // When this update was discovered.

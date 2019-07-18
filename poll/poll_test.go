@@ -26,7 +26,7 @@ func TestCheck(t *testing.T) {
 
 	// The first time we check the database is empty, so this should report that
 	// the repository needs an update.
-	res, err := db.Check(ctx, url)
+	res, err := db.Check(ctx, url, nil)
 	if err != nil {
 		t.Fatalf("Check failed: %v", err)
 	}
@@ -51,7 +51,7 @@ func TestCheck(t *testing.T) {
 	//
 	// This could in principle fail if the repository is updated while the test
 	// is running. Don't do that.
-	cmp, err := db.Check(ctx, url)
+	cmp, err := db.Check(ctx, url, nil)
 	if err != nil {
 		t.Fatalf("Check failed: %v", err)
 	}

@@ -61,6 +61,30 @@ func (db *DB) Scan(ctx context.Context, f func(string) error) error {
 	return db.st.Scan(ctx, "", f)
 }
 
+// CheckOptions control optional features of repostory checks.  A nil
+// *CheckOptions is ready for use with default values.
+type CheckOptions struct {
+	// If set, use this reference name to resolve a target digest.
+	Reference string
+
+	// If set, attribute this prefix to the packages found in the repository.
+	Prefix string
+}
+
+func (o *CheckOptions) refName() string {
+	if o != nil && o.Reference != "" {
+		return o.Reference
+	}
+	return "*"
+}
+
+func (o *CheckOptions) prefix() string {
+	if o == nil {
+		return ""
+	}
+	return o.Prefix
+}
+
 // Check reports whether the specified repository requires an update. If the
 // repository does not exist, it is added and reported as needing update.
 //
@@ -70,23 +94,29 @@ func (db *DB) Scan(ctx context.Context, f func(string) error) error {
 // pruned from the database.
 //
 // If url has the form <base>@@<tag>, the specified tag is applied.
-func (db *DB) Check(ctx context.Context, url string) (*CheckResult, error) {
-	url, tag := url, "*"
-	if i := strings.LastIndex(url, "@@"); i >= 0 {
-		url, tag = url[:i], url[i+2:]
-	}
+func (db *DB) Check(ctx context.Context, url string, opts *CheckOptions) (*CheckResult, error) {
+	url, tag := url, opts.refName()
 	stat, err := db.Status(ctx, url)
 	if err == storage.ErrKeyNotFound {
 		// This is a new repository; set up the initial state.
 		stat = &Status{
 			Repository: url,
 			RefName:    tag, // to be updated
+			Prefix:     opts.prefix(),
 		}
 	} else if err != nil {
 		return nil, err
-	} else if tag != "*" && tag != stat.RefName {
+	}
+
+	// If the reference name has changed, force an update.
+	if tag != "*" && tag != stat.RefName {
 		stat.RefName = tag
 		stat.Digest = nil
+	}
+
+	// If a prefix was provided, record it.
+	if pfx := opts.prefix(); pfx != "" {
+		stat.Prefix = pfx
 	}
 
 	// Build the return value before updating the saved state.
@@ -95,6 +125,7 @@ func (db *DB) Check(ctx context.Context, url string) (*CheckResult, error) {
 		URL:    url,
 		Name:   stat.RefName,
 		Digest: old,
+		Prefix: stat.Prefix,
 		old:    old,
 	}
 

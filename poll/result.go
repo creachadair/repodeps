@@ -15,6 +15,7 @@ type CheckResult struct {
 	Name   string // remote head name
 	Digest string // current digest value
 	Errors int    // errors since last successful update
+	Prefix string // package prefix, if defined
 
 	old string // old digest value
 }
