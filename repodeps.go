@@ -44,6 +44,7 @@ var (
 	doImportComm  = flag.Bool("import-comments", true, "Parse and use import comments")
 	doTrimRepo    = flag.Bool("trim-repo", false, "Trim the repository prefix from each import path")
 	doStandardLib = flag.Bool("stdlib", false, "Treat packages in the input as standard libraries")
+	pkgPrefix     = flag.String("prefix", "", "Attribute package names to this prefix")
 	taskTimeout   = flag.Duration("timeout", 5*time.Minute, "Timeout on processing a single repository")
 	concurrency   = flag.Int("concurrency", 32, "Maximum concurrent workers")
 
@@ -91,6 +92,7 @@ func main() {
 		UseImportComments: *doImportComm,
 		TrimRepoPrefix:    *doTrimRepo,
 		StandardLibrary:   *doStandardLib,
+		PackagePrefix:     *pkgPrefix,
 	}
 	defer cancel()
 	var db *graph.Graph
