@@ -23,14 +23,14 @@ import (
 	"log"
 	"os"
 
+	"github.com/creachadair/repodeps/client"
 	"github.com/creachadair/repodeps/deps"
+	"github.com/creachadair/repodeps/graph"
 	"github.com/creachadair/repodeps/service"
-	"github.com/creachadair/repodeps/tools"
 )
 
 var (
-	graphDB = flag.String("graph-db", os.Getenv("REPODEPS_DB"), "Graph database")
-	repoDB  = flag.String("repo-db", os.Getenv("REPODEPS_POLLDB"), "Repository database")
+	address = flag.String("address", os.Getenv("REPODEPS_ADDR"), "Service address")
 
 	doKeysOnly  = flag.Bool("keys", false, "Print only import paths, not full rows")
 	doFilterDom = flag.Bool("domain-only", false, "Print only import paths that begin with a domain")
@@ -40,42 +40,35 @@ var (
 func main() {
 	flag.Parse()
 
-	s, err := tools.OpenService(*graphDB, *repoDB)
-	if err != nil {
-		log.Fatalf("Opening graph: %v", err)
-	}
-	defer s.Close()
-
 	ctx := context.Background()
+	c, err := client.Dial(ctx, *address)
+	if err != nil {
+		log.Fatalf("Dialing service: %v", err)
+	}
+	defer c.Close()
+
 	enc := json.NewEncoder(os.Stdout)
 	var pkg string
 	if flag.NArg() != 0 {
 		pkg = flag.Arg(0)
 	}
 
-	var nextPage []byte
-	for {
-		rsp, err := s.Match(ctx, &service.MatchReq{
-			Package:    pkg,
-			Repository: *matchRepo,
-			PageKey:    nextPage,
-		})
-		if err != nil {
-			log.Printf("Listing %q failed: %v", pkg, err)
-			break
+	nr, err := c.Match(ctx, &service.MatchReq{
+		Package:    pkg,
+		Repository: *matchRepo,
+	}, func(row *graph.Row) error {
+		if _, ok := deps.HasDomain(row.ImportPath); !ok && *doFilterDom {
+			// skip
+		} else if *doKeysOnly {
+			fmt.Println(row.ImportPath)
+		} else {
+			enc.Encode(row)
 		}
-		for _, row := range rsp.Rows {
-			if _, ok := deps.HasDomain(row.ImportPath); !ok && *doFilterDom {
-				continue
-			} else if *doKeysOnly {
-				fmt.Println(row.ImportPath)
-			} else {
-				enc.Encode(row)
-			}
-		}
-		nextPage = rsp.NextPage
-		if nextPage == nil {
-			break
-		}
+		return nil
+	})
+	if err != nil {
+		log.Printf("Listing %q failed: %v", pkg, err)
+	} else if nr == 0 {
+		log.Printf("No packages matching %q", pkg)
 	}
 }
