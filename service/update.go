@@ -45,7 +45,7 @@ func (u *Server) Update(ctx context.Context, req *UpdateReq) (*UpdateRsp, error)
 	if req.Reference != "" {
 		repoTag += "@@" + req.Reference
 	}
-	res, err := u.repoDB.Check(ctx, repoTag)
+	res, err := u.repoDB.Check(ctx, repoTag, nil)
 	if err != nil {
 		return nil, jrpc2.Errorf(code.SystemError, "checking %s: %v", req.Repository, err)
 	}

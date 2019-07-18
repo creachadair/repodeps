@@ -51,7 +51,10 @@ func Load(ctx context.Context, dir string, opts *deps.Options) ([]*deps.Repo, er
 	// GOPATH containing only this package, in a directory named by the remote
 	// URL of the repository.
 	repo := &deps.Repo{From: dir, Remotes: remotes}
-	repoPrefix := poll.CleanRepoURL(remotes[0].Url)
+	repoPrefix := opts.PackagePrefix
+	if repoPrefix == "" {
+		repoPrefix = poll.CleanRepoURL(remotes[0].Url)
+	}
 	vfs := newVFS(dir, repoPrefix)
 
 	var importMode build.ImportMode
