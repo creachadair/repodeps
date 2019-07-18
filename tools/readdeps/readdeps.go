@@ -22,39 +22,36 @@ import (
 	"log"
 	"os"
 
+	"github.com/creachadair/repodeps/client"
+	"github.com/creachadair/repodeps/graph"
 	"github.com/creachadair/repodeps/service"
-	"github.com/creachadair/repodeps/tools"
 )
 
-var (
-	graphDB = flag.String("graph-db", os.Getenv("REPODEPS_DB"), "Graph database")
-	repoDB  = flag.String("repo-db", os.Getenv("REPODEPS_POLLDB"), "Repository database")
-)
+var address = flag.String("address", os.Getenv("REPODEPS_ADDR"), "Service address")
 
 func main() {
 	flag.Parse()
 
-	s, err := tools.OpenService(*graphDB, *repoDB)
-	if err != nil {
-		log.Fatalf("Opening service: %v", err)
-	}
-	defer s.Close()
-
 	ctx := context.Background()
+	c, err := client.Dial(ctx, *address)
+	if err != nil {
+		log.Fatalf("Dialing service: %v", err)
+	}
+	defer c.Close()
+
 	enc := json.NewEncoder(os.Stdout)
 	for _, ipath := range flag.Args() {
-		rsp, err := s.Match(ctx, &service.MatchReq{
+		nr, err := c.Match(ctx, &service.MatchReq{
 			Package:      ipath,
 			IncludeFiles: true,
+		}, func(row *graph.Row) error {
+			enc.Encode(row)
+			return nil
 		})
 		if err != nil {
 			log.Printf("Reading %q: %v", ipath, err)
-		} else if rsp.NumRows == 0 {
+		} else if nr == 0 {
 			log.Printf("Package %q not found", ipath)
-		} else {
-			for _, row := range rsp.Rows {
-				enc.Encode(row)
-			}
 		}
 	}
 }
