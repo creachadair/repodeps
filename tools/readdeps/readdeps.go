@@ -29,8 +29,13 @@ import (
 )
 
 var (
-	address     = flag.String("address", os.Getenv("REPODEPS_ADDR"), "Service address")
-	doCountOnly = flag.Bool("count", false, "Count the number of matching packages")
+	address = flag.String("address", os.Getenv("REPODEPS_ADDR"), "Service address")
+
+	doCountOnly  = flag.Bool("count", false, "Count the number of matching packages")
+	doKeysOnly   = flag.Bool("keys", false, "Print only import paths, not full rows")
+	rowLimit     = flag.Int("limit", 0, "List at most this many matching rows (0 = no limit)")
+	matchPackage = flag.String("pkg", "", "Match this package or prefix with /...")
+	matchRepo    = flag.String("repo", "", "List only rows matching this repository")
 )
 
 func main() {
@@ -43,25 +48,30 @@ func main() {
 	}
 	defer c.Close()
 
-	enc := json.NewEncoder(os.Stdout)
-	var total int
-	for _, ipath := range flag.Args() {
-		nr, err := c.Match(ctx, &service.MatchReq{
-			Package:      ipath,
-			CountOnly:    *doCountOnly,
-			IncludeFiles: true,
-		}, func(row *graph.Row) error {
-			enc.Encode(row)
-			return nil
-		})
-		if err != nil {
-			log.Printf("Reading %q: %v", ipath, err)
-		} else if nr == 0 && !*doCountOnly {
-			log.Printf("Package %q not found", ipath)
-		}
-		total += nr
+	if *matchPackage == "" && flag.NArg() != 0 {
+		*matchPackage = flag.Arg(0)
 	}
-	if *doCountOnly {
-		fmt.Println(total)
+
+	enc := json.NewEncoder(os.Stdout)
+	nr, err := c.Match(ctx, &service.MatchReq{
+		Package:      *matchPackage,
+		Repository:   *matchRepo,
+		CountOnly:    *doCountOnly,
+		IncludeFiles: true,
+		Limit:        *rowLimit,
+	}, func(row *graph.Row) error {
+		if *doKeysOnly {
+			fmt.Println(row.ImportPath)
+		} else {
+			enc.Encode(row)
+		}
+		return nil
+	})
+	if err != nil {
+		log.Printf("Match failed: %v", err)
+	} else if *doCountOnly {
+		fmt.Println(nr)
+	} else if nr == 0 {
+		log.Printf("No packages matching %q", *matchPackage)
 	}
 }
