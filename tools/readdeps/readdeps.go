@@ -19,6 +19,7 @@ import (
 	"context"
 	"encoding/json"
 	"flag"
+	"fmt"
 	"log"
 	"os"
 
@@ -27,7 +28,10 @@ import (
 	"github.com/creachadair/repodeps/service"
 )
 
-var address = flag.String("address", os.Getenv("REPODEPS_ADDR"), "Service address")
+var (
+	address     = flag.String("address", os.Getenv("REPODEPS_ADDR"), "Service address")
+	doCountOnly = flag.Bool("count", false, "Count the number of matching packages")
+)
 
 func main() {
 	flag.Parse()
@@ -40,9 +44,11 @@ func main() {
 	defer c.Close()
 
 	enc := json.NewEncoder(os.Stdout)
+	var total int
 	for _, ipath := range flag.Args() {
 		nr, err := c.Match(ctx, &service.MatchReq{
 			Package:      ipath,
+			CountOnly:    *doCountOnly,
 			IncludeFiles: true,
 		}, func(row *graph.Row) error {
 			enc.Encode(row)
@@ -50,8 +56,12 @@ func main() {
 		})
 		if err != nil {
 			log.Printf("Reading %q: %v", ipath, err)
-		} else if nr == 0 {
+		} else if nr == 0 && !*doCountOnly {
 			log.Printf("Package %q not found", ipath)
 		}
+		total += nr
+	}
+	if *doCountOnly {
+		fmt.Println(total)
 	}
 }
