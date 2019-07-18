@@ -33,6 +33,7 @@ var (
 	address = flag.String("address", os.Getenv("REPODEPS_ADDR"), "Service address")
 
 	doKeysOnly  = flag.Bool("keys", false, "Print only import paths, not full rows")
+	doCountOnly = flag.Bool("count", false, "Count the number of matching rows")
 	doFilterDom = flag.Bool("domain-only", false, "Print only import paths that begin with a domain")
 	matchRepo   = flag.String("repo", "", "List only rows matching this repository")
 )
@@ -55,6 +56,7 @@ func main() {
 
 	nr, err := c.Match(ctx, &service.MatchReq{
 		Package:    pkg,
+		CountOnly:  *doCountOnly,
 		Repository: *matchRepo,
 	}, func(row *graph.Row) error {
 		if _, ok := deps.HasDomain(row.ImportPath); !ok && *doFilterDom {
@@ -68,6 +70,8 @@ func main() {
 	})
 	if err != nil {
 		log.Printf("Listing %q failed: %v", pkg, err)
+	} else if *doCountOnly {
+		fmt.Println(nr)
 	} else if nr == 0 {
 		log.Printf("No packages matching %q", pkg)
 	}
