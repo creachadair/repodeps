@@ -58,7 +58,7 @@ Options:
 func main() {
 	flag.Parse()
 	if flag.NArg() == 0 {
-		log.Fatal("You must provide a package or prefix to match")
+		log.Fatal("You must provide at least one package or prefix to match")
 	}
 
 	ctx := context.Background()
@@ -70,7 +70,7 @@ func main() {
 
 	enc := json.NewEncoder(os.Stdout)
 	nr, err := c.Reverse(ctx, &service.ReverseReq{
-		Package:        flag.Arg(0),
+		Package:        flag.Args(),
 		FilterSameRepo: *filterSame,
 		Limit:          *limit,
 	}, func(dep *service.ReverseDep) error {

@@ -81,7 +81,7 @@ func (u *Server) Reverse(ctx context.Context, req *ReverseReq) (*ReverseRsp, err
 type ReverseReq struct {
 	// Find reverse dependencies for this package. If package ends with "/...",
 	// any row with that prefix is matched.
-	Package string `json:"package"`
+	Package StringList `json:"package"`
 
 	// Only count the number of matching rows; do not emit them.
 	CountOnly bool `json:"countOnly"`
@@ -117,11 +117,19 @@ func (m *ReverseReq) compile(ctx context.Context, db *graph.Graph) (match, filte
 	}
 
 	// Compile the matching filter.
-	if t := strings.TrimSuffix(m.Package, "/..."); t != m.Package && t != "" {
-		match = func(pkg string) bool { return strings.HasPrefix(pkg, t) }
-	} else {
-		match = func(pkg string) bool { return pkg == m.Package }
+	var exprs []string
+	for _, pkg := range m.Package {
+		if t := strings.TrimSuffix(pkg, "/..."); t != pkg && t != "" {
+			exprs = append(exprs, regexp.QuoteMeta(t)+".*")
+		} else {
+			exprs = append(exprs, regexp.QuoteMeta(pkg))
+		}
 	}
+	r, err := regexp.Compile(`^(?:` + strings.Join(exprs, "|") + `)$`)
+	if err != nil {
+		return nil, nil, err
+	}
+	match = r.MatchString
 	return
 }
 
