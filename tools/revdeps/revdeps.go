@@ -31,6 +31,7 @@ import (
 
 var (
 	address    = flag.String("address", os.Getenv("REPODEPS_ADDR"), "Service address")
+	countOnly  = flag.Bool("count", false, "Count the number of matching dependencies")
 	filterSame = flag.Bool("filter-same-repo", false, "Exclude dependencies from the same repository")
 	filterDom  = flag.Bool("domain-only", false, "Exclude local and intrinsic imports")
 	limit      = flag.Int("limit", 0, "Return at most this many results")
@@ -71,6 +72,7 @@ func main() {
 	enc := json.NewEncoder(os.Stdout)
 	nr, err := c.Reverse(ctx, &service.ReverseReq{
 		Package:        flag.Args(),
+		CountOnly:      *countOnly,
 		FilterSameRepo: *filterSame,
 		Limit:          *limit,
 	}, func(dep *service.ReverseDep) error {
@@ -81,6 +83,8 @@ func main() {
 	})
 	if err != nil {
 		log.Printf("Reverse failed: %v", err)
+	} else if *countOnly {
+		fmt.Println(nr)
 	} else if nr == 0 {
 		log.Printf("No reverse dependencies matching %q", flag.Arg(0))
 	}
