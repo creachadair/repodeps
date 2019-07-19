@@ -34,6 +34,7 @@ var (
 	countOnly  = flag.Bool("count", false, "Count the number of matching dependencies")
 	filterSame = flag.Bool("filter-same-repo", false, "Exclude dependencies from the same repository")
 	filterDom  = flag.Bool("domain-only", false, "Exclude local and intrinsic imports")
+	matchExpr  = flag.String("matching", "", "Select dependencies matching this regexp")
 	limit      = flag.Int("limit", 0, "Return at most this many results")
 )
 
@@ -74,6 +75,7 @@ func main() {
 		Package:        flag.Args(),
 		CountOnly:      *countOnly,
 		FilterSameRepo: *filterSame,
+		Matching:       *matchExpr,
 		Limit:          *limit,
 	}, func(dep *service.ReverseDep) error {
 		if _, ok := deps.HasDomain(dep.Source); ok || !*filterDom {
