@@ -19,6 +19,7 @@ package service
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -185,4 +186,21 @@ func (u *Server) pushLog(ctx context.Context, sel bool, key string, arg interfac
 		}{t.Error()}
 	}
 	u.log(ctx, key, arg)
+}
+
+// A StringList is a slice of strings that can be decoded from JSON as either
+// an array or a single string.
+type StringList []string
+
+// UnmarshalJSON decodes a StringList from JSON, accepting either a string
+// value (corresponding to a single-element slice) or an array of strings.
+func (s *StringList) UnmarshalJSON(data []byte) error {
+	if len(data) == 0 {
+		*s = nil
+		return nil
+	} else if data[0] == '"' {
+		*s = []string{""}
+		return json.Unmarshal(data, &(*s)[0])
+	}
+	return json.Unmarshal(data, (*[]string)(s))
 }

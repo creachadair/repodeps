@@ -16,7 +16,6 @@ package service
 
 import (
 	"context"
-	"encoding/json"
 
 	"bitbucket.org/creachadair/stringset"
 	"github.com/creachadair/repodeps/graph"
@@ -80,21 +79,4 @@ type RemoveReq struct {
 type RemoveRsp struct {
 	Repositories []string `json:"repositories,omitempty"` // repositories removed
 	Packages     []string `json:"packages,omitempty"`     // packages removed
-}
-
-// A StringList is a slice of strings that can be decoded from JSON as either
-// an array or a single string.
-type StringList []string
-
-// UnmarshalJSON decodes a StringList from JSON, accepting either a string
-// value (corresponding to a single-element slice) or an array of strings.
-func (s *StringList) UnmarshalJSON(data []byte) error {
-	if len(data) == 0 {
-		*s = nil
-		return nil
-	} else if data[0] == '"' {
-		*s = []string{""}
-		return json.Unmarshal(data, &(*s)[0])
-	}
-	return json.Unmarshal(data, (*[]string)(s))
 }
