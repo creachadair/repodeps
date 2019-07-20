@@ -37,7 +37,10 @@ func (u *Server) Match(ctx context.Context, req *MatchReq) (*MatchRsp, error) {
 		if !matchRepo(row.Repository) {
 			return nil // row does not match
 		} else if !matchPackage(row.ImportPath) {
-			return storage.ErrStopScan // no more matches are possible
+			if !strings.HasPrefix(row.ImportPath, start) {
+				return storage.ErrStopScan // no more matches are possible
+			}
+			return nil
 		}
 
 		if req.CountOnly {
@@ -89,7 +92,7 @@ type MatchReq struct {
 func (m *MatchReq) compile() (mpkg, mrepo func(string) bool, start string) {
 	if t := strings.TrimSuffix(m.Package, "/..."); t != m.Package && t != "" {
 		start = t
-		mpkg = func(pkg string) bool { return strings.HasPrefix(pkg, t) }
+		mpkg = func(pkg string) bool { return pkg == t || strings.HasPrefix(pkg, t+"/") }
 	} else if m.Package != "" {
 		start = m.Package
 		mpkg = func(pkg string) bool { return pkg == m.Package }

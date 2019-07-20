@@ -120,7 +120,7 @@ func (m *ReverseReq) compile(ctx context.Context, db *graph.Graph) (match, filte
 	var exprs []string
 	for _, pkg := range m.Package {
 		if t := strings.TrimSuffix(pkg, "/..."); t != pkg && t != "" {
-			exprs = append(exprs, regexp.QuoteMeta(t)+".*")
+			exprs = append(exprs, regexp.QuoteMeta(t)+"(?:/.+)?")
 		} else {
 			exprs = append(exprs, regexp.QuoteMeta(pkg))
 		}
