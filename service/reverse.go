@@ -144,9 +144,9 @@ func (m *ReverseReq) compile(ctx context.Context, db *graph.Graph) (match, filte
 // source package directly imports the target package.
 type ReverseDep struct {
 	Target string `json:"target"` // the target (imported) package
-	Source string `json:"source"` // the source (importing) package
 
-	Row *graph.Row `json:"row,omitempty"`
+	Source string     `json:"source,omitempty"` // the source (importing) package
+	Row    *graph.Row `json:"row,omitempty"`    // same, but the full row
 }
 
 // ReverseRsp is the response from a successful Reverse query.  If additional
