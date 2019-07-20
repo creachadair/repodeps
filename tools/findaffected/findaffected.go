@@ -23,10 +23,9 @@ import (
 	"flag"
 	"log"
 	"os"
-	"sort"
 
+	"bitbucket.org/creachadair/stringset"
 	"github.com/creachadair/repodeps/client"
-	"github.com/creachadair/repodeps/graph"
 	"github.com/creachadair/repodeps/local"
 	"github.com/creachadair/repodeps/service"
 )
@@ -67,44 +66,38 @@ func main() {
 	}
 
 	// Compute reverse dependencies for the named packages.
-	revDeps := make(map[string][]*graph.Row)
+	allPkgs := stringset.New()
+	byRepo := make(map[string]stringset.Set) // affected packages by repo
 	if _, err := c.Reverse(ctx, &service.ReverseReq{
 		Package:        paths,
 		FilterSameRepo: *filterSame,
 		Complete:       true,
 	}, func(dep *service.ReverseDep) error {
-		revDeps[dep.Target] = append(revDeps[dep.Target], dep.Row)
+		allPkgs.Add(dep.Target)
+		s, ok := byRepo[dep.Row.Repository]
+		if !ok {
+			s = stringset.New()
+			byRepo[dep.Row.Repository] = s
+		}
+		s.Add(dep.Row.ImportPath)
 		return nil
 	}); err != nil {
 		log.Fatalf("Reverse lookup failed: %v", err)
 	}
 
 	// Write output.
-	enc := json.NewEncoder(os.Stdout)
-	for pkg, deps := range revDeps {
-		sort.Slice(deps, func(i, j int) bool {
-			if deps[i].Ranking == deps[j].Ranking {
-				return deps[i].ImportPath < deps[j].ImportPath
-			}
-			return deps[i].Ranking > deps[j].Ranking
+	out := output{Pkgs: allPkgs.Elements()}
+	for repo, deps := range byRepo {
+		out.Deps = append(out.Deps, oneRepo{
+			Repo: repo,
+			Pkgs: deps.Elements(),
 		})
-		rmap := make(map[string][]string)
-		for _, dep := range deps {
-			rmap[dep.Repository] = append(rmap[dep.Repository], dep.ImportPath)
-		}
-		out := output{Pkg: pkg}
-		for repo, deps := range rmap {
-			out.Deps = append(out.Deps, oneRepo{
-				Repo: repo,
-				Pkgs: deps,
-			})
-		}
-		enc.Encode(out)
 	}
+	json.NewEncoder(os.Stdout).Encode(out)
 }
 
 type output struct {
-	Pkg  string    `json:"package"`
+	Pkgs []string  `json:"packages"`
 	Deps []oneRepo `json:"affected"`
 }
 
