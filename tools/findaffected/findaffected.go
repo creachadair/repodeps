@@ -21,38 +21,33 @@ import (
 	"context"
 	"encoding/json"
 	"flag"
-	"fmt"
 	"log"
 	"os"
-	"os/exec"
 	"sort"
 
-	"bitbucket.org/creachadair/stringset"
+	"github.com/creachadair/repodeps/client"
 	"github.com/creachadair/repodeps/graph"
 	"github.com/creachadair/repodeps/local"
-	"github.com/creachadair/repodeps/poll"
-	"github.com/creachadair/repodeps/tools"
-	"github.com/creachadair/taskgroup"
+	"github.com/creachadair/repodeps/service"
 )
 
 var (
-	storePath = flag.String("store", os.Getenv("REPODEPS_DB"), "Storage path (required)")
-	repoPath  = flag.String("repo", "", "Path to local repository to analyze")
-	clonePath = flag.String("clone", "", "Clone repositories in this directory")
-	skipSame  = flag.Bool("skip-same", false, "Skip packages in the same repository")
+	address = flag.String("address", os.Getenv("REPODEPS_ADDR"), "Service address")
+
+	repoPath   = flag.String("repo", "", "Path to local repository to analyze")
+	filterSame = flag.Bool("filter-same-repo", false, "Exclude dependencies from the same repository")
 )
 
 func main() {
 	flag.Parse()
 
-	g, c, err := tools.OpenGraph(*storePath, tools.ReadOnly)
-	if err != nil {
-		log.Fatalf("Opening graph: %v", err)
-	}
-	defer c.Close()
-
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
+	c, err := client.Dial(ctx, *address)
+	if err != nil {
+		log.Fatalf("Dialing service: %v", err)
+	}
+	defer c.Close()
 
 	// Find the packages to analyze.
 	paths := flag.Args()
@@ -67,66 +62,44 @@ func main() {
 			}
 		}
 	}
-	pkgs := tools.NewMatcher(paths)
-
-	// Compute reverse dependencies for the named packages.
-	revDeps := make(map[string][]string)
-	pkgRepo := make(map[string]string)
-	if err := g.Scan(ctx, "", func(row *graph.Row) error {
-		pkgRepo[row.ImportPath] = row.Repository
-		for _, pkg := range row.Directs {
-			if pkgs(pkg) {
-				revDeps[pkg] = append(revDeps[pkg], row.ImportPath)
-			}
-		}
-		return nil
-	}); err != nil {
-		log.Fatalf("Scan failed: %v", err)
+	if len(paths) == 0 {
+		log.Fatal("No packages to analyze")
 	}
 
-	// If requested, clone the repositories.
-	if *clonePath != "" {
-		if err := os.MkdirAll(*clonePath, 0700); err != nil {
-			log.Fatalf("Creating fork directory: %v", err)
-		}
-		grp, run := taskgroup.New(taskgroup.Trigger(cancel)).Limit(8)
-		for _, url := range stringset.FromValues(pkgRepo).Elements() {
-			url := poll.FixRepoURL(url)
-			run(func() error {
-				cmd := exec.CommandContext(ctx, "git", "-C", *clonePath, "clone", url)
-				if err := cmd.Run(); err != nil {
-					return fmt.Errorf("fetching %q: %v", url, err)
-				}
-				log.Printf("Cloned %q", url)
-				return nil
-			})
-		}
-		if err := grp.Wait(); err != nil {
-			log.Fatalf("Cloning failed: %v", err)
-		}
+	// Compute reverse dependencies for the named packages.
+	revDeps := make(map[string][]*graph.Row)
+	if _, err := c.Reverse(ctx, &service.ReverseReq{
+		Package:        paths,
+		FilterSameRepo: *filterSame,
+		Complete:       true,
+	}, func(dep *service.ReverseDep) error {
+		revDeps[dep.Target] = append(revDeps[dep.Target], dep.Row)
+		return nil
+	}); err != nil {
+		log.Fatalf("Reverse lookup failed: %v", err)
 	}
 
 	// Write output.
 	enc := json.NewEncoder(os.Stdout)
 	for pkg, deps := range revDeps {
+		sort.Slice(deps, func(i, j int) bool {
+			if deps[i].Ranking == deps[j].Ranking {
+				return deps[i].ImportPath < deps[j].ImportPath
+			}
+			return deps[i].Ranking > deps[j].Ranking
+		})
 		rmap := make(map[string][]string)
 		for _, dep := range deps {
-			rmap[pkgRepo[dep]] = append(rmap[pkgRepo[dep]], dep)
+			rmap[dep.Repository] = append(rmap[dep.Repository], dep.ImportPath)
 		}
 		out := output{Pkg: pkg}
 		for repo, deps := range rmap {
-			if *skipSame && repo == pkgRepo[pkg] {
-				continue
-			}
-			sort.Strings(deps)
 			out.Deps = append(out.Deps, oneRepo{
 				Repo: repo,
 				Pkgs: deps,
 			})
 		}
-		if len(out.Deps) != 0 {
-			enc.Encode(out)
-		}
+		enc.Encode(out)
 	}
 }
 
