@@ -33,6 +33,7 @@ var (
 
 	doCountOnly  = flag.Bool("count", false, "Count the number of matching packages")
 	doKeysOnly   = flag.Bool("keys", false, "Print only import paths, not full rows")
+	doFiles      = flag.Bool("files", false, "Include source files")
 	rowLimit     = flag.Int("limit", 0, "List at most this many matching rows (0 = no limit)")
 	matchPackage = flag.String("pkg", "", "Match this package or prefix with /...")
 	matchRepo    = flag.String("repo", "", "List only rows matching this repository")
@@ -57,7 +58,7 @@ func main() {
 		Package:      *matchPackage,
 		Repository:   *matchRepo,
 		CountOnly:    *doCountOnly,
-		IncludeFiles: true,
+		IncludeFiles: *doFiles,
 		Limit:        *rowLimit,
 	}, func(row *graph.Row) error {
 		if *doKeysOnly {
