@@ -34,6 +34,12 @@ func (u *Server) Reverse(ctx context.Context, req *ReverseReq) (*ReverseRsp, err
 		req.Limit = u.opts.DefaultPageSize
 	}
 	repo := newRepoMap(ctx, u.graph)
+	rdep := func(pkg string, row *graph.Row) *ReverseDep {
+		if req.Complete {
+			return &ReverseDep{Target: pkg, Row: row}
+		}
+		return &ReverseDep{Target: pkg, Source: row.ImportPath}
+	}
 
 	start := string(req.PageKey)
 	rsp := new(ReverseRsp)
@@ -67,10 +73,7 @@ func (u *Server) Reverse(ctx context.Context, req *ReverseReq) (*ReverseRsp, err
 			return storage.ErrStopScan
 		}
 		for _, hit := range hits {
-			rsp.Imports = append(rsp.Imports, &ReverseDep{
-				Target: hit,
-				Source: row.ImportPath,
-			})
+			rsp.Imports = append(rsp.Imports, rdep(hit, row))
 		}
 		return nil
 	})
@@ -92,6 +95,10 @@ type ReverseReq struct {
 
 	// If set, select only reverse dependencies matching this regexp.
 	Matching string `json:"matching"`
+
+	// If true, return the complete row for each dependendent package, rather
+	// than only the import path.
+	Complete bool `json:"complete"`
 
 	// Return at most this many rows (0 uses a reasonable default).
 	Limit int `json:"limit"`
@@ -138,6 +145,8 @@ func (m *ReverseReq) compile(ctx context.Context, db *graph.Graph) (match, filte
 type ReverseDep struct {
 	Target string `json:"target"` // the target (imported) package
 	Source string `json:"source"` // the source (importing) package
+
+	Row *graph.Row `json:"row,omitempty"`
 }
 
 // ReverseRsp is the response from a successful Reverse query.  If additional
