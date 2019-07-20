@@ -26,6 +26,7 @@ import (
 
 	"bitbucket.org/creachadair/stringset"
 	"github.com/creachadair/repodeps/client"
+	"github.com/creachadair/repodeps/deps"
 	"github.com/creachadair/repodeps/local"
 	"github.com/creachadair/repodeps/service"
 )
@@ -51,7 +52,9 @@ func main() {
 	// Find the packages to analyze.
 	paths := flag.Args()
 	if *repoPath != "" {
-		repos, err := local.Load(ctx, *repoPath, nil)
+		repos, err := local.Load(ctx, *repoPath, &deps.Options{
+			UseImportComments: true,
+		})
 		if err != nil {
 			log.Fatalf("Loading %q failed: %v", *repoPath, err)
 		}
