@@ -67,12 +67,6 @@ func main() {
 		defer mu.Unlock()
 		pfxs.Add(pfx)
 	}
-	repo := stringset.New()
-	addRepo := func(url string) {
-		mu.Lock()
-		defer mu.Unlock()
-		repo.Add(url)
-	}
 	g, run := taskgroup.New(taskgroup.Trigger(cancel)).Limit(*numWorkers)
 
 	for pkg := range tools.Inputs(*doReadStdin) {
@@ -89,7 +83,7 @@ func main() {
 			addPfx(rsp.Prefix)
 			_, err = c.RepoStatus(ctx, rsp.Repository)
 			if code.FromError(err) == service.KeyNotFound {
-				addRepo(rsp.Repository)
+				fmt.Println(rsp.Repository)
 			} else if err != nil {
 				log.Printf("Repo status %q: %v", rsp.Repository, err)
 			}
@@ -98,8 +92,5 @@ func main() {
 	}
 	if err := g.Wait(); err != nil {
 		log.Fatal(err)
-	}
-	for _, url := range repo.Elements() {
-		fmt.Println(url)
 	}
 }
