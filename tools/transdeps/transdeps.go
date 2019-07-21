@@ -23,42 +23,55 @@ import (
 	"log"
 	"os"
 
+	"bitbucket.org/creachadair/stringset"
+	"github.com/creachadair/repodeps/client"
 	"github.com/creachadair/repodeps/graph"
-	"github.com/creachadair/repodeps/tools"
-	"github.com/golang/protobuf/jsonpb"
+	"github.com/creachadair/repodeps/service"
 )
 
 var (
-	storePath     = flag.String("store", os.Getenv("REPODEPS_DB"), "Storage path (required)")
-	doKeysOnly    = flag.Bool("keys", false, "Print only import paths, not full rows")
-	noStandardLib = flag.Bool("no-stdlib", false, "Do not visit standard library packages")
+	address = flag.String("address", os.Getenv("REPODEPS_ADDR"), "Service address")
+
+	noStdLib = flag.Bool("no-stdlib", false, "Filter out standard library packages")
 )
 
 func main() {
 	flag.Parse()
-	g, c, err := tools.OpenGraph(*storePath, tools.ReadOnly)
+
+	ctx := context.Background()
+	c, err := client.Dial(ctx, *address)
 	if err != nil {
-		log.Fatalf("Opening graph: %v", err)
+		log.Fatalf("Dialing service: %v", err)
 	}
 	defer c.Close()
 
-	ctx := context.Background()
-	var enc jsonpb.Marshaler
-	if err := g.DFS(ctx, flag.Args(), func(pkg string, row *graph.Row) error {
-		if row == nil {
-			log.Printf("[skipping] unindexed dependency %q", pkg)
-			return nil
+	seen := stringset.New()
+	dead := stringset.New()
+	todo := stringset.New(flag.Args()...)
+	for len(todo) != 0 {
+		for pkg := range todo {
+			todo.Discard(pkg)
+			if seen.Contains(pkg) {
+				continue
+			}
+			c.Match(ctx, &service.MatchReq{Package: pkg}, func(row *graph.Row) error {
+				if seen.Contains(row.ImportPath) {
+					return nil
+				}
+				seen.Add(row.ImportPath)
+				if *noStdLib && row.Type == graph.Row_STDLIB {
+					dead.Add(row.ImportPath)
+				}
+				for _, dep := range row.Directs {
+					todo.Add(dep)
+				}
+				return nil
+			})
 		}
-		if *noStandardLib && row.Type == graph.Row_STDLIB {
-			return nil
-		} else if *doKeysOnly {
-			fmt.Println(row.ImportPath)
-			return nil
-		}
-
-		defer fmt.Println()
-		return enc.Marshal(os.Stdout, row)
-	}); err != nil {
-		log.Fatalf("Scan failed: %v", err)
+		todo.Remove(seen)
+	}
+	seen.Remove(dead)
+	for _, pkg := range seen.Elements() {
+		fmt.Println(pkg)
 	}
 }
