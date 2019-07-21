@@ -74,7 +74,7 @@ func main() {
 			log.Printf("Repo status %q: %v", rsp.Repository, err)
 		}
 	}
-	for url := range repo.Elements() {
+	for _, url := range repo.Elements() {
 		fmt.Println(url)
 	}
 }
