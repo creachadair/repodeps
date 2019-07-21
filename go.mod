@@ -9,7 +9,7 @@ require (
 	github.com/cayleygraph/cayley v0.7.5
 	github.com/creachadair/badgerstore v0.0.3
 	github.com/creachadair/ffs v0.0.0-20190622160218-fd16ac7ed292
-	github.com/creachadair/jrpc2 v0.2.6
+	github.com/creachadair/jrpc2 v0.3.0
 	github.com/creachadair/taskgroup v0.2.0
 	github.com/cznic/mathutil v0.0.0-20181122101859-297441e03548 // indirect
 	github.com/d4l3k/messagediff v1.2.1 // indirect
