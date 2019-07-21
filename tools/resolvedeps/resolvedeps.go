@@ -33,7 +33,7 @@ import (
 var (
 	address = flag.String("address", os.Getenv("REPODEPS_ADDR"), "Service address")
 
-	doReadStdin = flag.Bool("stdon", false, "Read package names from stdin")
+	doReadStdin = flag.Bool("stdin", false, "Read package names from stdin")
 )
 
 func main() {
