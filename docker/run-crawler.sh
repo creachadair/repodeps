@@ -15,7 +15,7 @@ while true ; do
     echo "\"-- CHECK $(now)\"" | tee /dev/fd/2
 
     ./jcall -T -c "$SERVER" \
-	    Scan '{"logUpdates":true}' \
+	    Scan '{"logUpdates":true, "sampleRate": 0.2}' \
 	    Rank '{"logUpdates":false, "update":true}'
 
     echo "\"-- DONE $(now)\""
