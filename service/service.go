@@ -28,6 +28,7 @@ import (
 
 	"github.com/creachadair/badgerstore"
 	"github.com/creachadair/jrpc2"
+	"github.com/creachadair/jrpc2/code"
 	"github.com/creachadair/repodeps/deps"
 	"github.com/creachadair/repodeps/graph"
 	"github.com/creachadair/repodeps/poll"
@@ -88,6 +89,10 @@ func (o Options) merge(opts *deps.Options) *deps.Options {
 	}
 	return &out
 }
+
+// KeyNotFound is the error code returned when a requested key is not found in
+// the database.
+var KeyNotFound = code.Register(404, "key not found")
 
 // New constructs a new Server from the specified options.  As long as the
 // server is open, it holds a lock on the databases assigned to it.

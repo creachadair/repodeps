@@ -20,6 +20,7 @@ import (
 	"github.com/creachadair/jrpc2"
 	"github.com/creachadair/jrpc2/code"
 	"github.com/creachadair/repodeps/poll"
+	"github.com/creachadair/repodeps/storage"
 )
 
 // RepoStatus reports the current status of the specified repository.
@@ -28,7 +29,9 @@ func (u *Server) RepoStatus(ctx context.Context, req *RepoStatusReq) (*RepoStatu
 		return nil, jrpc2.Errorf(code.InvalidParams, "empty repository URL")
 	}
 	stat, err := u.repoDB.Status(ctx, poll.FixRepoURL(req.Repository))
-	if err != nil {
+	if err == storage.ErrKeyNotFound {
+		return nil, jrpc2.Errorf(KeyNotFound, "repo %q not found", req.Repository)
+	} else if err != nil {
 		return nil, err
 	}
 	return &RepoStatusRsp{Status: stat}, nil
