@@ -23,7 +23,6 @@ import (
 	"fmt"
 	"sort"
 
-	"bitbucket.org/creachadair/stringset"
 	"github.com/creachadair/repodeps/deps"
 	"github.com/creachadair/repodeps/storage"
 	"github.com/golang/protobuf/jsonpb"
@@ -108,41 +107,6 @@ func (g *Graph) Scan(ctx context.Context, start string, f func(*Row) error) erro
 		}
 		return f(row)
 	})
-}
-
-// DFS performs a depth-first traversal of the forward dependency graph in g
-// starting from the specified import paths. It calls f for each package in the
-// traversal. If f reports an error, traversal stops. If the error is
-// storage.ErrStopScan DFS returns nil; otherwise DFS returns the error from f.
-//
-// The first argument to f is the import path. If the path is in the graph, the
-// second argument is its row; otherwise the second argument is nil.
-func (g *Graph) DFS(ctx context.Context, pkgs []string, f func(string, *Row) error) error {
-	seen := stringset.New()
-	q := stringset.New(pkgs...).Elements()
-	for len(q) != 0 {
-		next := q[len(q)-1]
-		q = q[:len(q)-1]
-		if seen.Contains(next) {
-			continue
-		}
-		seen.Add(next)
-		row, err := g.Row(ctx, next)
-		if err == storage.ErrKeyNotFound {
-			// this package is not indexed
-		} else if err != nil {
-			return err
-		} else {
-			q = append(q, row.Directs...)
-		}
-
-		if err := f(next, row); err == storage.ErrStopScan {
-			return nil
-		} else if err != nil {
-			return err
-		}
-	}
-	return nil
 }
 
 // ScanUpdate calls f with each row in the graph having the specified prefix.
