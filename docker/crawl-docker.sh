@@ -26,4 +26,5 @@ docker run \
        -v ${root}:/logs \
        --env SERVER=deps-server:${port} \
        --env SLEEPTIME=600 \
+       --env FRACTION=0.2 \
        ${image}

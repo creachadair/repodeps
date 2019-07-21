@@ -4,6 +4,7 @@
 : ${SERVER:?missing depserver address}
 : ${LOGDIR:='/logs'}
 : ${SLEEPTIME:=720} # seconds
+: ${FRACTION:='0.1'}
 
 export TZ=PST8PDT
 
@@ -15,7 +16,7 @@ while true ; do
     echo "\"-- CHECK $(now)\"" | tee /dev/fd/2
 
     ./jcall -T -c "$SERVER" \
-	    Scan '{"logUpdates":true, "sampleRate": 0.2}' \
+	    Scan '{"logUpdates":true, "sampleRate": $FRACTION}' \
 	    Rank '{"logUpdates":false, "update":true}'
 
     echo "\"-- DONE $(now)\""
