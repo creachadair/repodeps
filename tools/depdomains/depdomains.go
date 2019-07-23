@@ -33,6 +33,7 @@ import (
 
 var (
 	limit     = flag.Int("limit", 0, "Show only this many top order statistics")
+	minCount  = flag.Int("min", 0, "Show only domains with at least this many packages")
 	storePath = flag.String("store", os.Getenv("REPODEPS_DB"), "Storage path (required)")
 )
 
@@ -87,6 +88,9 @@ func main() {
 		dkeys = dkeys[:*limit]
 	}
 	for _, key := range dkeys {
+		if phist[key] < int64(*minCount) {
+			continue
+		}
 		fmt.Fprintf(tw, "%s\t%d\t%3.2g%%\t%d\t%3.2g%%\t%2.1f\n", key,
 			dhist[key], 100*float64(dhist[key])/float64(numDeps),
 			phist[key], 100*float64(phist[key])/float64(numPkgs),
