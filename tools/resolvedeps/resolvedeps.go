@@ -35,8 +35,9 @@ import (
 var (
 	address = flag.String("address", os.Getenv("REPODEPS_ADDR"), "Service address")
 
-	doReadStdin = flag.Bool("stdin", false, "Read package names from stdin")
-	numWorkers  = flag.Int("workers", 16, "Numcer of concurrent workers")
+	doReadStdin   = flag.Bool("stdin", false, "Read package names from stdin")
+	doFilterKnown = flag.Bool("filter-known", false, "Filter out known repositories")
+	numWorkers    = flag.Int("workers", 16, "Numcer of concurrent workers")
 )
 
 func main() {
@@ -81,6 +82,10 @@ func main() {
 				return nil
 			}
 			addPfx(rsp.Prefix)
+			if !*doFilterKnown {
+				fmt.Println(rsp.Repository)
+				return nil
+			}
 			_, err = c.RepoStatus(ctx, rsp.Repository)
 			if code.FromError(err) == service.KeyNotFound {
 				fmt.Println(rsp.Repository)
