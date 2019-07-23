@@ -53,7 +53,8 @@ existing ones.
    For local experimentation, you can use your own repositories:
 
    ```shell
-   hub --verbose api users/creachadair/repos \
+   # If you get rate limited, set GITHUB_TOKEN.
+   hub api --paginate users/creachadair/repos \
    | jq -r '.[]|select(.fork|not).html_url' > repos.txt
    ```
 
