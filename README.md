@@ -99,14 +99,11 @@ existing ones.
 
 ## Finding Missing Dependencies
 
-N.B. This section is partly wrong and needs to be updated.
-
 1. Find import paths mentioned as dependencies, but not having their own nodes
    in the graph. Resolve each of these to a repository URL:
 
    ```shell
-   missingdeps -domain-only | resolverepo -stdin \
-   | jq -r .repository > missing.txt
+   missingdeps -domain-only | resolvedeps -stdin | sort -u > missing.txt
    ```
 
 2. Attempt to fetch and update the contents of the missing repositories into
@@ -114,12 +111,16 @@ N.B. This section is partly wrong and needs to be updated.
    authentication, or if there are other issues cloning the repository.
 
    ```shell
-   export REPODEPS_POLLDB="$HOME/crawl/poll-db"
-   checkrepo -update -store "$REPODEPS_DB" -stdin < missing.txt \
-   | tee capture.json | jq 'select(.needsUpdate or .errors > 1)'
+   xargs -I@ jcall -c "$REPODEPS_ADDR" Update '{"repository":"@"}' < missing.txt
    ```
 
-This process may be iterated to convergence.
+   Be warned, however, that programs in the wild often have weird dependencies.
+   For example, there are packages that depend on non-standard forks of the
+   standard library, and you may wind up pulling thos forks into your database.
+
+This process may be iterated to convergence, in theory, but in practice it will
+never fully converge because there are a lot of custom build hacks, dead code,
+deleted repositories, and so forth. Call it, rather, iterated improvement.
 
 
 ## Updating the Graph

@@ -25,13 +25,15 @@ import (
 	"path/filepath"
 
 	"bitbucket.org/creachadair/stringset"
+	"github.com/creachadair/repodeps/client"
 	"github.com/creachadair/repodeps/deps"
 	"github.com/creachadair/repodeps/graph"
-	"github.com/creachadair/repodeps/tools"
+	"github.com/creachadair/repodeps/service"
 )
 
 var (
-	storePath   = flag.String("store", os.Getenv("REPODEPS_DB"), "Storage path (required)")
+	address = flag.String("address", os.Getenv("REPODEPS_ADDR"), "Service address")
+
 	doFilterDom = flag.Bool("domain-only", false, "Print only import paths that begin with a domain")
 )
 
@@ -55,22 +57,25 @@ Options:
 
 func main() {
 	flag.Parse()
-	g, c, err := tools.OpenGraph(*storePath, tools.ReadOnly)
+
+	ctx := context.Background()
+	c, err := client.Dial(ctx, *address)
 	if err != nil {
-		log.Fatalf("Opening graph: %v", err)
+		log.Fatalf("Dialing service: %v", err)
 	}
 	defer c.Close()
 
-	ctx := context.Background()
 	have := stringset.New()
 	want := stringset.New()
-	if err := g.Scan(ctx, "", func(row *graph.Row) error {
+	nr, err := c.Match(ctx, new(service.MatchReq), func(row *graph.Row) error {
 		have.Add(row.ImportPath)
 		want.Add(row.Directs...)
 		return nil
-	}); err != nil {
-		log.Fatalf("Scan failed: %v", err)
+	})
+	if err != nil {
+		log.Fatalf("Match failed: %v", err)
 	}
+	log.Printf("Matched %d rows", nr)
 
 	for pkg := range want.Diff(have) {
 		_, ok := deps.HasDomain(pkg)
