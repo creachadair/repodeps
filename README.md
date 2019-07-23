@@ -13,6 +13,7 @@ Be warned that this code is not production ready and may change without notice.
 git clone github.com/creachadair/repodeps
 cd repodeps
 ./install.sh  # copies binaries to $GOBIN or $GOPATH/bin
+go install github.com/creachadair/jrpc2/cmd/jcall
 ```
 
 The rest of these instructions assume the installed binaries are somewhere in
@@ -127,10 +128,6 @@ To scan all the repositories currently mentioned by the graph to check for
 updates:
 
 ```shell
-# One time
-(cd /tmp ; go get github.com/creachadair/jrpc2/cmd/jcall)
-
-# Periodically
 jcall -c "$REPODEPS_ADDR" Scan '{"logUpdates":true, "logErrors":true}'
 ```
 
