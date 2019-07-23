@@ -79,12 +79,21 @@ existing ones.
    smallish set of repositories, you probably don't need to do this step.
 
 
-3. Extract dependency information into a database:
+3. Extract dependency information into a database. If you used `borges` to
+   fetch the repositories as in step (2), you can run:
 
    ```shell
    find ~/crawl/siva -type f -name '*.siva' -print \
    | repodeps -stdin -sourcehash -import-comments -store "$REPODEPS_ADDR"
    ```
+
+   If, instead, you have a list of repository URLs as in step (1), use:
+
+   ```shell
+   xargs -I@ jcall -c "$REPODEPS_ADDR" Update '{"repository":"@"}' < repos.txt
+   ```
+
+   This will be slow if the list is very long, but fine for a few dozen.
 
 
 ## Finding Missing Dependencies
