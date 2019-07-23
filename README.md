@@ -20,7 +20,22 @@ your `$PATH`. You will also need [`jq`](https://stedolan.github.io/jq/).  On
 macOS you can get `jq` via `brew install jq`.
 
 
-## Generating a Database
+## Set Up a Database
+
+The `depserver` program maintains a database of dependency graph information,
+and a database of repository state. Most of the other programs work by sending
+JSON-RPC requests to `depserver`. To set up a server, choose an address (either
+a host:port pair or a Unix-domain socket), and run:
+
+```
+export REPODEPS_ADDR=$TMPDIR/depserver.sock
+depserver -address $REPODEPS_ADDR -graph-db path/to/graphdb -repo-db path/to/repodb
+```
+
+This will create empty databases if they do not already exist, or re-open
+existing ones.
+
+## Initializing the Database
 
 1. Generate an initial list of repositories. For our experiment, we did this
    using a GitHub search for repositories with a `go.mod` file at the root.
@@ -28,16 +43,22 @@ macOS you can get `jq` via `brew install jq`.
 
    ```shell
    curl -L https://api.godoc.org/packages | jq -r .results[].path > paths.txt
-   cat paths.txt | resolverepo -stdin | jq -r .repository > repos.txt
+   resolvedeps -filter-known -stdin < paths.txt > repos.txt
    ```
 
-   Note if you do this, however, that the results will contain a lot of noise,
-   as the `godoc.org` corpus includes vendored packages, internal packages,
-   code that doesn't build, and so forth. For our experiment we had better
-   results from the search query.
+   Note that doing this for the complete list of `godoc.org` packages will take
+   a long time, and the results will contain a lot of noise, as that corpus
+   includes vendored packages, internal packages, code that doesn't build, and
+   so forth. For our experiment we had better results from the search query.
+   For local experimentation, you can use your own repositories:
 
+   ```shell
+   hub --verbose api users/creachadair/repos \
+   | jq -r '.[]|select(.fork|not).html_url' > repos.txt
+   ```
 
-2. Fetch the repositories using [Borges](https://github.com/src-d/borges).
+2. [optional] Fetch the repositories. For our original experiment, we did this
+   using the [Borges](https://github.com/src-d/borges) tool:
 
    ```shell
    export GITHUB_TOKEN=<token-string>  # recommended, because rate limits
@@ -53,20 +74,21 @@ macOS you can get `jq` via `brew install jq`.
    ```
 
    Depending how big your seed list is, this may take a while. Repositories
-   that require authentication will be skipped.
+   that require authentication will be skipped. If you are starting from a
+   smallish set of repositories, you probably don't need to do this step.
 
 
 3. Extract dependency information into a database:
 
    ```shell
-   export REPODEPS_DB="$HOME/crawl/godeps-db"
-
    find ~/crawl/siva -type f -name '*.siva' -print \
-   | repodeps -stdin -sourcehash -import-comments -store "$REPODEPS_DB"
+   | repodeps -stdin -sourcehash -import-comments -store "$REPODEPS_ADDR"
    ```
 
 
 ## Finding Missing Dependencies
+
+N.B. This section is partly wrong and needs to be updated.
 
 1. Find import paths mentioned as dependencies, but not having their own nodes
    in the graph. Resolve each of these to a repository URL:
@@ -95,19 +117,19 @@ To scan all the repositories currently mentioned by the graph to check for
 updates:
 
 ```shell
-checkrepo -scan -update -store $REPODEPS_DB \
-| tee capture.json \
-| jq 'select(.needsUpdate or .errors > 1)'
+# One time
+(cd /tmp ; go get github.com/creachadair/jrpc2/cmd/jcall)
+
+# Periodically
+jcall -c "$REPODEPS_ADDR" Scan '{"logUpdates":true, "logErrors":true}'
 ```
 
-The `jq` part of the pipeline is optional; it just serves as a less verbose
-progress indicator than watching the entire log.
-
-This may be rerun as often as desired; the `checkrepo` tool maintains a log of
+This may be rerun as often as desired; the repository database keeps track of
 which repository digests it has seen most recently, and will only update those
-that change. Use the `-interval` flag to control how often this may occur.  It
-doesn't make sense to choose an interval shorter than the time it takes to
-fully run the update (which depends on the current database size).
+that change. Use the `-interval` flag on the `depserver` tool to control how
+often this may occur.  It doesn't make sense to choose an interval shorter than
+the time it takes to fully run the update (which depends on the current
+database size).
 
 
 ## Indexing the Standard Library
@@ -116,7 +138,7 @@ The standard library packages follow different rules. To index them:
 
 ```shell
 git clone https://github.com/golang/go
-repodeps -store "$REPODEPS_DB" -stdlib -trim-repo -import-comments=0 -sourcehash=0 ./go/src
+repodeps -store "$REPODEPS_ADDR" -stdlib -trim-repo -import-comments=0 -sourcehash=0 ./go/src
 ```
 
 Generally these only need to be reindexed when there is a new release.
@@ -124,31 +146,34 @@ Generally these only need to be reindexed when there is a new release.
 
 ## Computing PageRank
 
+To compute or re-compute ranking stats,
+
 ```shell
-rankdeps -iterations 40 -store "$REPODEPS_DB" -update -scale 6
+jcall -c "$REPODEPS_ADDR" Rank '{"logProgress": true, "update": true}'
 ```
 
-Omit the `-update` flag to dump the rank values to stdout.
-
-
 ## Converting to Other Formats
+
+These tools work directly on the database, so you have to stop `depserver` if
+you want to use them. TODO(creachadair): Fix that.
 
 - To convert to CSV for [Gephi](https://gephi.org):
 
     ```shell
 	# With everything inline.
-	csvdeps -store "$REPODEPS_DB" > output.csv
+	csvdeps -store path/to/graphdb > output.csv
 
 	# With a separate vocabulary file.
-	csvdeps -store "$REPODEPS_DB" -ids vocab.txt > output.csv
+	csvdeps -store path/to/graphdb -ids vocab.txt > output.csv
 	```
 
 - To convert to RDF N-quads for a graph database like [Cayley](https://cayley.io/):
 
 	```shell
 	# To write RDF quads to stdout.
-	quaddeps -store "$REPODEPS_DB"
+	quaddeps -store path/to/graphdb
 
 	# To write to a Bolt database for Cayley.
-	quaddeps -store "$REPODEPS_DB" -output cayley.bolt
+	# N.B. If your database is very large, Bolt may choke.
+	quaddeps -store path/to/graphdb -output cayley.bolt
 	```
