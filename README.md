@@ -114,9 +114,10 @@ existing ones.
    xargs -I@ jcall -c "$REPODEPS_ADDR" Update '{"repository":"@"}' < missing.txt
    ```
 
-   Be warned, however, that programs in the wild often have weird dependencies.
-   For example, there are packages that depend on non-standard forks of the
-   standard library, and you may wind up pulling thos forks into your database.
+   **Be warned**, however, that programs in the wild often have very weird
+   dependencies.  For example, there are packages that depend on non-standard
+   forks of the standard library, and you may wind up pulling those forks into
+   your database.
 
 This process may be iterated to convergence, in theory, but in practice it will
 never fully converge because there are a lot of custom build hacks, dead code,
