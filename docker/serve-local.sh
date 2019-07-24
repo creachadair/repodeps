@@ -30,7 +30,19 @@ rsync -vzt -e 'ssh -o ClearAllForwardings=yes' "${data}/*.snap" .
 update graph-db
 update repo-db
 sync
-depserver -address "localhost:$port" \
-	  -graph-db graph-db \
-	  -repo-db repo-db \
-	  -read-only &
+case "$1" in
+    (""|serve)
+	depserver -address "localhost:$port" \
+		  -graph-db graph-db \
+		  -repo-db repo-db \
+		  -read-only &
+	echo "Database updated; service restarted." 1>&2
+	;;
+    (sync)
+	echo "Database updated; service not restarted." 1>&2
+	;;
+    (*)
+	echo "Unknown argument '$1'" 1>&2
+	exit 1
+	;;
+esac
