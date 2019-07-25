@@ -10,7 +10,7 @@ export TZ=PST8PDT
 
 now() { echo "$(date +'%F %T %z')" ; }
 
-trap 'echo terminated by signal 1>&2; exit 3' TERM
+trap 'echo terminated by signal 1>&2; exit 3' INT TERM
 set -e
 while true ; do
     echo "\"-- CHECK $(now)\"" | tee /dev/fd/2
