@@ -170,7 +170,7 @@ func (db *DB) Check(ctx context.Context, url string, opts *CheckOptions) (*Check
 // require authentication. A false result may be incorrect, for example if the
 // caller's network filters outbound git requests.
 func RepoExists(ctx context.Context, url string) bool {
-	_, err := git(ctx, "ls-remote", "-q", url, "").Output()
+	_, err := gitOutput(ctx, "ls-remote", "-q", url, "")
 	if err == nil {
 		return true
 	} else if e, ok := err.(*exec.ExitError); ok {
@@ -182,7 +182,7 @@ func RepoExists(ctx context.Context, url string) bool {
 }
 
 func bestHead(ctx context.Context, url, ref string) (name string, digest []byte, _ error) {
-	out, err := git(ctx, "ls-remote", "-q", url, ref).Output()
+	out, err := gitOutput(ctx, "ls-remote", "-q", url, ref)
 	if err != nil {
 		return "", nil, runErr(err)
 	}
@@ -228,6 +228,12 @@ func git(ctx context.Context, args ...string) *exec.Cmd {
 	cmd := exec.CommandContext(ctx, "git", args...)
 	cmd.Env = append(cmd.Env, "GIT_TERMINAL_PROMPT=0")
 	return cmd
+}
+
+func gitOutput(ctx context.Context, args ...string) ([]byte, error) {
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+	return git(ctx, args...).Output()
 }
 
 func runErr(err error) error {
