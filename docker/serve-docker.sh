@@ -23,6 +23,7 @@ set -x
 set -e
 docker run \
        --detach \
+       --init \
        --name deps-server \
        --network ${net} \
        -v ${root}:/data \
