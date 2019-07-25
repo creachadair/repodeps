@@ -47,19 +47,20 @@ func (u *Server) Remove(ctx context.Context, req *RemoveReq) (*RemoveRsp, error)
 				u.pushLog(ctx, req.LogErrors, "log.removeRepo", err)
 			}
 		}
-		if err := u.graph.Scan(ctx, "", func(row *graph.Row) error {
-			if repos.Contains(row.Repository) {
-				err := u.graph.Remove(ctx, row.ImportPath)
-				if err != nil {
-					u.pushLog(ctx, req.LogErrors, "log.removePackage", err)
-				} else {
-					pkgs.Add(row.ImportPath)
+		if !req.KeepPackages {
+			err := u.graph.Scan(ctx, "", func(row *graph.Row) error {
+				if repos.Contains(row.Repository) {
+					if err := u.graph.Remove(ctx, row.ImportPath); err != nil {
+						u.pushLog(ctx, req.LogErrors, "log.removePackage", err)
+					} else {
+						pkgs.Add(row.ImportPath)
+					}
 				}
 				return nil
+			})
+			if err != nil {
+				return nil, err
 			}
-			return nil
-		}); err != nil {
-			return nil, err
 		}
 	}
 	return &RemoveRsp{
@@ -70,9 +71,10 @@ func (u *Server) Remove(ctx context.Context, req *RemoveReq) (*RemoveRsp, error)
 
 // RemoveReq is the request parameter to the Remove method.
 type RemoveReq struct {
-	Repository StringList `json:"repository"`
-	Package    StringList `json:"package"`
-	LogErrors  bool       `json:"logErrors"`
+	Repository   StringList `json:"repository"`
+	Package      StringList `json:"package"`
+	KeepPackages bool       `json:"keepPackages"`
+	LogErrors    bool       `json:"logErrors"`
 }
 
 // RemoveRsp is the result from a successful Remove call.
