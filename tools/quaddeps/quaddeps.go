@@ -28,13 +28,13 @@ import (
 )
 
 var (
-	storePath  = flag.String("store", os.Getenv("REPODEPS_DB"), "Input storage path (required)")
+	graphDB    = flag.String("graph-db", os.Getenv("REPODEPS_DB"), "Graph database path (required)")
 	outputPath = flag.String("output", "", "Output storage path (optional)")
 )
 
 func main() {
 	flag.Parse()
-	g, c, err := tools.OpenGraph(*storePath, tools.ReadOnly)
+	g, c, err := tools.OpenGraph(*graphDB, tools.ReadOnly)
 	if err != nil {
 		log.Fatalf("Opening graph: %v", err)
 	}
