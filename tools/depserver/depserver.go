@@ -17,6 +17,7 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"log"
 	"net"
@@ -40,6 +41,7 @@ var (
 	repoDB      = os.Getenv("DEPSERVER_REPO_DB")
 	graphDB     = os.Getenv("DEPSERVER_GRAPH_DB")
 	workDir     = os.Getenv("DEPSERVER_WORK_DIR")
+	writeToken  = os.Getenv("DEPSERVER_WRITE_TOKEN")
 )
 
 func init() {
@@ -100,6 +102,7 @@ func main() {
 			AllowPush:     true,
 			DecodeContext: jctx.Decode,
 			Metrics:       m,
+			CheckRequest:  checkAccess,
 		},
 	}); err != nil {
 		log.Printf("Server loop failed: %v", err)
@@ -108,4 +111,22 @@ func main() {
 	if err := u.Close(); err != nil {
 		log.Fatalf("Closing updater: %v", err)
 	}
+}
+
+func checkAccess(ctx context.Context, req *jrpc2.Request) error {
+	switch req.Method() {
+	case "Rank", "Remove", "Scan", "Update":
+		if writeToken == "" {
+			return nil
+		}
+	default:
+		return nil // this method does not write
+	}
+	var tok string
+	if err := jctx.UnmarshalMetadata(ctx, &tok); err != nil {
+		return jrpc2.Errorf(400, "write token not present")
+	} else if tok != writeToken {
+		return jrpc2.Errorf(401, "method not allowed")
+	}
+	return nil
 }
