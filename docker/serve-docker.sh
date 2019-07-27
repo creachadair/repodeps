@@ -19,6 +19,7 @@ case "$1" in
 	;;
 esac
 
+# N.B. The write token is for safety, not security.
 set -x
 set -e
 docker run \
@@ -32,4 +33,5 @@ docker run \
        --env REPO_DB=/data/repo-db \
        --env WORKDIR=/data/tmp \
        --env ADDRESS=0.0.0.0:${port} \
+       --env DEPSERVER_WRITE_TOKEN=37F23ABF-0D81-4B51-8D14-BE8A01ACDDE0 \
        ${image}

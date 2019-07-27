@@ -6,6 +6,11 @@
 : ${SLEEPTIME:=720} # seconds
 : ${FRACTION:='0.1'}
 
+TOKEN=
+if [ ! -z "$DEPSERVER_WRITE_TOKEN" ] ; then
+    TOKEN=\""${DEPSERVER_WRITE_TOKEN}"\"
+fi
+
 export TZ=PST8PDT
 
 now() { echo "$(date +'%F %T %z')" ; }
@@ -15,7 +20,7 @@ set -e
 while true ; do
     echo "\"-- CHECK $(now)\"" | tee /dev/fd/2
 
-    ./jcall -T -c "$SERVER" \
+    ./jcall -T -c -meta "$TOKEN" "$SERVER" \
 	    Scan '{"logUpdates":true, "sampleRate": '"$FRACTION"'}' \
 	    Rank '{"logUpdates":false, "update":true}'
 
