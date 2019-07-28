@@ -27,15 +27,14 @@ import (
 	"log"
 	"os"
 
+	"github.com/creachadair/repodeps/client"
 	"github.com/creachadair/repodeps/deps"
 	"github.com/creachadair/repodeps/graph"
 	"github.com/creachadair/repodeps/service"
-	"github.com/creachadair/repodeps/tools"
 )
 
 var (
-	graphDB = flag.String("graph-db", os.Getenv("REPODEPS_DB"), "Graph database")
-	repoDB  = flag.String("repo-db", os.Getenv("REPODEPS_POLLDB"), "Repository database")
+	address = flag.String("address", os.Getenv("REPODEPS_ADDR"), "Service address")
 
 	useIDFile  = flag.String("ids", "", "Use integer IDs for imports and write them to this file")
 	domainOnly = flag.Bool("domain-only", false, "Skip packages without an import domain")
@@ -48,11 +47,12 @@ var (
 func main() {
 	flag.Parse()
 
-	s, err := tools.OpenService(*graphDB, *repoDB)
+	ctx := context.Background()
+	c, err := client.Dial(ctx, *address)
 	if err != nil {
-		log.Fatalf("Opening service: %v", err)
+		log.Fatalf("Dialing service: %v", err)
 	}
-	defer s.Close()
+	defer c.Close()
 
 	if *useIDFile != "" {
 		f, err := os.Create(*useIDFile)
@@ -68,14 +68,13 @@ func main() {
 		log.Printf("Writing ID vocabulary to %q", *useIDFile)
 	}
 
-	ctx := context.Background()
 	w := csv.NewWriter(os.Stdout)
 	w.Comma = ';'
 	defer w.Flush()
 
-	process := func(row *graph.Row) {
+	nr, err := c.Match(ctx, new(service.MatchReq), func(row *graph.Row) error {
 		if _, ok := deps.HasDomain(row.ImportPath); !ok && *domainOnly {
-			return
+			return nil
 		}
 		record := []string{assign(row.ImportPath)}
 		for _, dep := range row.Directs {
@@ -87,23 +86,12 @@ func main() {
 		if len(record) > 1 || !*skipNoDeps {
 			w.Write(record)
 		}
+		return nil
+	})
+	if err != nil {
+		log.Fatalf("Match failed: %v", err)
 	}
-
-	var nextPage []byte
-	for {
-		rsp, err := s.Match(ctx, &service.MatchReq{PageKey: nextPage})
-		if err != nil {
-			log.Fatalf("Match failed: %v", err)
-		}
-		for _, row := range rsp.Rows {
-			process(row)
-		}
-		nextPage = rsp.NextPage
-		if nextPage == nil {
-			break
-		}
-	}
-	log.Printf("Found %d unique nodes", len(pathID))
+	log.Printf("Matched %d rows, found %d unique nodes", nr, len(pathID))
 }
 
 func assign(path string) string {
