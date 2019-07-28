@@ -22,8 +22,6 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"regexp"
-	"strings"
 
 	"github.com/creachadair/badgerstore"
 	"github.com/creachadair/repodeps/graph"
@@ -91,20 +89,4 @@ func Inputs(readStdin bool) <-chan string {
 		close(ch)
 	}
 	return ch
-}
-
-// NewMatcher constructs a function that reports true for names that match one
-// of the specified patterns. Each pattern is either a plain string, which
-// matches exactly, or a prefix match ending with "/...".
-func NewMatcher(pats []string) func(string) bool {
-	var ps []string
-	for _, pat := range pats {
-		if t := strings.TrimSuffix(pat, "/..."); t != pat {
-			ps = append(ps, regexp.QuoteMeta(t)+"(?:/.*)?$")
-		} else {
-			ps = append(ps, regexp.QuoteMeta(pat)+"$")
-		}
-	}
-	re := regexp.MustCompile("^(?:" + strings.Join(ps, "|") + ")")
-	return re.MatchString
 }
