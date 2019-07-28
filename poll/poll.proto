@@ -12,6 +12,8 @@ message Status {
   int32 error_count = 6; // fetch errors since last successful check
   string prefix = 7;     // package prefix to attribute to this repository
 
+  string key = 8; // storage key for this status, if different from repository
+
   // When the last check of this repository was made. If unset, the repository
   // has never been checked.
   google.protobuf.Timestamp last_check = 4;
@@ -19,7 +21,7 @@ message Status {
   // The history of updates, oldest to newest.
   repeated Update updates = 5;
 
-  // next id: 8
+  // next id: 9
 
   message Update {
     // When this update was discovered.

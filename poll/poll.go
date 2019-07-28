@@ -140,6 +140,10 @@ func (db *DB) Check(ctx context.Context, url string, opts *CheckOptions) (*Check
 		return nil, err
 	}
 
+	if key != url {
+		stat.Key = key
+	}
+
 	// If the reference name has changed, force an update.
 	if tag != "*" && tag != stat.RefName {
 		stat.RefName = tag
