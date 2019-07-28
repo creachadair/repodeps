@@ -60,7 +60,7 @@ func (u *Server) Update(ctx context.Context, req *UpdateReq) (*UpdateRsp, error)
 		Errors:      res.Errors,
 	}
 	if u.opts.ErrorLimit > 0 && out.Errors >= u.opts.ErrorLimit {
-		u.repoDB.Remove(ctx, out.Repository)
+		u.repoDB.Remove(ctx, out.Repository, out.Tag)
 		out.Removed = true
 		return nil, jrpc2.DataErrorf(code.SystemError, out, "removed after %d failures", out.Errors)
 	} else if req.CheckOnly {

@@ -72,7 +72,10 @@ func (db *DB) Tags(ctx context.Context, base string) ([]*Status, error) {
 }
 
 // Remove removes the status record for the specified URL.
-func (db *DB) Remove(ctx context.Context, url string) error {
+func (db *DB) Remove(ctx context.Context, url, tag string) error {
+	if tag != "" {
+		url += "@" + tag
+	}
 	return db.st.Delete(ctx, url)
 }
 
@@ -95,11 +98,11 @@ type CheckOptions struct {
 	Prefix string
 }
 
-func (o *CheckOptions) repoKey(base string) string {
+func (o *CheckOptions) repoKey(base string) (key, label string) {
 	if o == nil || o.Label == "" {
-		return base
+		return base, ""
 	}
-	return base + "@" + o.Label
+	return base + "@" + o.Label, o.Label
 }
 
 func (o *CheckOptions) refName() string {
@@ -127,7 +130,7 @@ func (o *CheckOptions) prefix() string {
 // If url has the form <base>@@<tag>, the specified tag is applied.
 func (db *DB) Check(ctx context.Context, url string, opts *CheckOptions) (*CheckResult, error) {
 	url, tag := url, opts.refName()
-	key := opts.repoKey(url)
+	key, label := opts.repoKey(url)
 	stat, err := db.Status(ctx, key)
 	if err == storage.ErrKeyNotFound {
 		// This is a new repository; set up the initial state.
@@ -141,7 +144,7 @@ func (db *DB) Check(ctx context.Context, url string, opts *CheckOptions) (*Check
 	}
 
 	if key != url {
-		stat.Key = key
+		stat.Tag = label
 	}
 
 	// If the reference name has changed, force an update.

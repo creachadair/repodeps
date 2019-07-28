@@ -46,19 +46,14 @@ func (u *Server) Remove(ctx context.Context, req *RemoveReq) (*RemoveRsp, error)
 	for repo := range repos {
 		tags, err := u.repoDB.Tags(ctx, repo)
 		if err != nil {
-			u.pushLog(ctx, req.LogErrors, "log.removeRepo", fmt.Errorf("repo %s: %v", repo, err))
+			u.pushLog(ctx, req.LogErrors, "log.removeRepo", fmt.Errorf("lookup %s: %v", repo, err))
 			continue
 		}
 		for _, stat := range tags {
-			if stat.Key != "" {
-				err = u.repoDB.Remove(ctx, stat.Key)
+			if err := u.repoDB.Remove(ctx, stat.Repository, stat.Tag); err != nil {
+				u.pushLog(ctx, req.LogErrors, "log.removeRepo", fmt.Errorf("remove %s: %v", stat.Repository, err))
 			} else {
-				err = u.repoDB.Remove(ctx, repo)
-			}
-			if err == nil {
 				bases.Add(stat.Repository)
-			} else {
-				u.pushLog(ctx, req.LogErrors, "log.removeRepo", fmt.Errorf("tag %s: %v", stat.Key, err))
 			}
 		}
 	}

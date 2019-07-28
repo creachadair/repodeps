@@ -77,6 +77,7 @@ func (u *Server) Scan(ctx context.Context, req *ScanReq) (*ScanRsp, error) {
 			// notifications to the client if that is enabled.
 			repo, err := u.Update(ctx, &UpdateReq{
 				Repository: stat.Repository,
+				Tag:        stat.Tag,
 				Reference:  stat.RefName,
 			})
 			if err == nil {
