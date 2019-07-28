@@ -17,7 +17,6 @@ package tools
 
 import (
 	"bufio"
-	"errors"
 	"flag"
 	"fmt"
 	"io"
@@ -27,15 +26,6 @@ import (
 	"github.com/creachadair/repodeps/graph"
 	"github.com/creachadair/repodeps/service"
 	"github.com/creachadair/repodeps/storage"
-)
-
-// OpenMode controls how OpenGraph accesses storage.
-type OpenMode int
-
-// Mode constants for OpenGraph.
-const (
-	ReadOnly OpenMode = iota
-	ReadWrite
 )
 
 // OpenService opens a read-only service associated with the graph and
@@ -48,24 +38,14 @@ func OpenService(graph, repos string) (*service.Server, error) {
 	})
 }
 
-// OpenGraph opens the graph named by path.  The caller must ensure the closer
-// is closed when the graph is no longer in use.
-func OpenGraph(path string, mode OpenMode) (*graph.Graph, io.Closer, error) {
-	s, err := openBadger(path, mode)
+// OpenGraph opens a read-only view of the graph named by path.  The caller
+// must ensure the closer is closed when the graph is no longer in use.
+func OpenGraph(path string) (*graph.Graph, io.Closer, error) {
+	s, err := badgerstore.NewPathReadOnly(path)
 	if err != nil {
 		return nil, nil, fmt.Errorf("opening storage: %v", err)
 	}
 	return graph.New(storage.NewBlob(s)), s, nil
-}
-
-func openBadger(path string, mode OpenMode) (*badgerstore.Store, error) {
-	if path == "" {
-		return nil, errors.New("no path was provided")
-	}
-	if mode == ReadWrite {
-		return badgerstore.NewPath(path)
-	}
-	return badgerstore.NewPathReadOnly(path)
 }
 
 // Inputs returns a channel that delivers the paths of inputs and is closed

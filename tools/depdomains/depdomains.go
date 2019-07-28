@@ -39,7 +39,7 @@ var (
 
 func main() {
 	flag.Parse()
-	g, c, err := tools.OpenGraph(*storePath, tools.ReadOnly)
+	g, c, err := tools.OpenGraph(*storePath)
 	if err != nil {
 		log.Fatalf("Opening graph: %v", err)
 	}

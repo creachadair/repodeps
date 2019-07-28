@@ -28,10 +28,12 @@ import (
 	"sync"
 	"time"
 
+	"github.com/creachadair/badgerstore"
 	"github.com/creachadair/repodeps/deps"
 	"github.com/creachadair/repodeps/graph"
 	"github.com/creachadair/repodeps/local"
 	"github.com/creachadair/repodeps/siva"
+	"github.com/creachadair/repodeps/storage"
 	"github.com/creachadair/repodeps/tools"
 	"github.com/creachadair/taskgroup"
 	"github.com/golang/protobuf/jsonpb"
@@ -97,16 +99,16 @@ func main() {
 	defer cancel()
 	var db *graph.Graph
 	if *storePath != "" {
-		g, c, err := tools.OpenGraph(*storePath, tools.ReadWrite)
+		s, err := badgerstore.NewPath(*storePath)
 		if err != nil {
 			log.Fatalf("Opening graph: %v", err)
 		}
+		db = graph.New(storage.NewBlob(s))
 		defer func() {
-			if err := c.Close(); err != nil {
+			if err := s.Close(); err != nil {
 				log.Fatalf("Closing graph: %v", err)
 			}
 		}()
-		db = g
 		log.Printf("Writing output to graph %q", *storePath)
 	}
 
