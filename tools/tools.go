@@ -24,19 +24,8 @@ import (
 
 	"github.com/creachadair/badgerstore"
 	"github.com/creachadair/repodeps/graph"
-	"github.com/creachadair/repodeps/service"
 	"github.com/creachadair/repodeps/storage"
 )
-
-// OpenService opens a read-only service associated with the graph and
-// repository databases named.
-func OpenService(graph, repos string) (*service.Server, error) {
-	return service.New(service.Options{
-		RepoDB:   repos,
-		GraphDB:  graph,
-		ReadOnly: true,
-	})
-}
 
 // OpenGraph opens a read-only view of the graph named by path.  The caller
 // must ensure the closer is closed when the graph is no longer in use.
