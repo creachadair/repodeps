@@ -16,6 +16,7 @@ package service
 
 import (
 	"context"
+	"fmt"
 
 	"bitbucket.org/creachadair/stringset"
 	"github.com/creachadair/repodeps/graph"
@@ -41,30 +42,43 @@ func (u *Server) Remove(ctx context.Context, req *RemoveReq) (*RemoveRsp, error)
 	repos := stringset.FromIndexed(len(req.Repository), func(i int) string {
 		return poll.FixRepoURL(req.Repository[i])
 	})
-	if len(repos) != 0 {
-		for repo := range repos {
-			if err := u.repoDB.Remove(ctx, repo); err != nil {
-				u.pushLog(ctx, req.LogErrors, "log.removeRepo", err)
-			}
+	bases := stringset.New()
+	for repo := range repos {
+		tags, err := u.repoDB.Tags(ctx, repo)
+		if err != nil {
+			u.pushLog(ctx, req.LogErrors, "log.removeRepo", fmt.Errorf("repo %s: %v", repo, err))
+			continue
 		}
-		if !req.KeepPackages {
-			err := u.graph.Scan(ctx, "", func(row *graph.Row) error {
-				if repos.Contains(row.Repository) {
-					if err := u.graph.Remove(ctx, row.ImportPath); err != nil {
-						u.pushLog(ctx, req.LogErrors, "log.removePackage", err)
-					} else {
-						pkgs.Add(row.ImportPath)
-					}
-				}
-				return nil
-			})
-			if err != nil {
-				return nil, err
+		for _, stat := range tags {
+			if stat.Key != "" {
+				err = u.repoDB.Remove(ctx, stat.Key)
+			} else {
+				err = u.repoDB.Remove(ctx, repo)
+			}
+			if err == nil {
+				bases.Add(stat.Repository)
+			} else {
+				u.pushLog(ctx, req.LogErrors, "log.removeRepo", fmt.Errorf("tag %s: %v", stat.Key, err))
 			}
 		}
 	}
+	if !req.KeepPackages && len(bases) != 0 {
+		err := u.graph.Scan(ctx, "", func(row *graph.Row) error {
+			if bases.Contains(row.Repository) {
+				if err := u.graph.Remove(ctx, row.ImportPath); err != nil {
+					u.pushLog(ctx, req.LogErrors, "log.removePackage", fmt.Errorf("pkg %s: %v", row.ImportPath, err))
+				} else {
+					pkgs.Add(row.ImportPath)
+				}
+			}
+			return nil
+		})
+		if err != nil {
+			return nil, err
+		}
+	}
 	return &RemoveRsp{
-		Repositories: repos.Elements(),
+		Repositories: bases.Elements(),
 		Packages:     pkgs.Elements(),
 	}, nil
 }
