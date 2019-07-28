@@ -37,7 +37,7 @@ var (
 
 	doReadStdin   = flag.Bool("stdin", false, "Read package names from stdin")
 	doFilterKnown = flag.Bool("filter-known", false, "Filter out known repositories")
-	numWorkers    = flag.Int("workers", 16, "Numcer of concurrent workers")
+	numWorkers    = flag.Int("workers", 16, "Number of concurrent workers")
 )
 
 func main() {
