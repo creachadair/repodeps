@@ -28,13 +28,13 @@ func (u *Server) RepoStatus(ctx context.Context, req *RepoStatusReq) (*RepoStatu
 	if req.Repository == "" {
 		return nil, jrpc2.Errorf(code.InvalidParams, "empty repository URL")
 	}
-	stat, err := u.repoDB.Status(ctx, poll.FixRepoURL(req.Repository))
+	stats, err := u.repoDB.Tags(ctx, poll.FixRepoURL(req.Repository))
 	if err == storage.ErrKeyNotFound {
 		return nil, jrpc2.Errorf(KeyNotFound, "repo %q not found", req.Repository)
 	} else if err != nil {
 		return nil, err
 	}
-	return &RepoStatusRsp{Status: stat}, nil
+	return &RepoStatusRsp{Status: stats}, nil
 }
 
 // RepoStatusReq is the request parameter to the RepoStatus method.
@@ -44,5 +44,5 @@ type RepoStatusReq struct {
 
 // RepoStatusRsp is the response message from a successful RepoStatus call.
 type RepoStatusRsp struct {
-	Status *poll.Status `json:"status"`
+	Status []*poll.Status `json:"status,omitempty"`
 }

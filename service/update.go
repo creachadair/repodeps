@@ -44,6 +44,7 @@ func (u *Server) Update(ctx context.Context, req *UpdateReq) (*UpdateRsp, error)
 	repoTag := poll.FixRepoURL(req.Repository)
 	res, err := u.repoDB.Check(ctx, repoTag, &poll.CheckOptions{
 		Reference: req.Reference,
+		Label:     req.Tag,
 		Prefix:    req.Prefix,
 	})
 	if err != nil {
@@ -52,6 +53,7 @@ func (u *Server) Update(ctx context.Context, req *UpdateReq) (*UpdateRsp, error)
 
 	out := &UpdateRsp{
 		Repository:  res.URL,
+		Tag:         req.Tag,
 		NeedsUpdate: res.NeedsUpdate(),
 		Reference:   res.Name,
 		Digest:      res.Digest,
@@ -95,6 +97,9 @@ type UpdateReq struct {
 	// The URL of the repository to update, must be non-empty.
 	Repository string `json:"repository"`
 
+	// The storage tag for this snapshot of the repository (optional).
+	Tag string `json:"tag"`
+
 	// The reference name to update (optional).
 	Reference string `json:"reference"`
 
@@ -117,10 +122,11 @@ type UpdateReq struct {
 
 // UpdateRsp is the response from a successful Update call.
 type UpdateRsp struct {
-	Repository  string `json:"repository"`  // the fetch URL of the repository
-	NeedsUpdate bool   `json:"needsUpdate"` // whether an update was needed
-	Reference   string `json:"reference"`   // the name of the target reference
-	Digest      string `json:"digest"`      // the SHA-1 digest (hex) at the reference
+	Repository  string `json:"repository"`    // the fetch URL of the repository
+	Tag         string `json:"tag,omitempty"` // the storage tag, if set.
+	NeedsUpdate bool   `json:"needsUpdate"`   // whether an update was needed
+	Reference   string `json:"reference"`     // the name of the target reference
+	Digest      string `json:"digest"`        // the SHA-1 digest (hex) at the reference
 
 	NumPackages int  `json:"numPackages,omitempty"` // the number of packages updated
 	Errors      int  `json:"errors,omitempty"`      // number of consecutive update failures

@@ -50,6 +50,27 @@ func (db *DB) Status(ctx context.Context, url string) (*Status, error) {
 	return &stat, nil
 }
 
+// Tags returns the status records for all tags of the specified URL.
+func (db *DB) Tags(ctx context.Context, base string) ([]*Status, error) {
+	var stat []*Status
+	if err := db.st.Scan(ctx, base, func(url string) error {
+		if !strings.HasPrefix(url, base) {
+			return storage.ErrStopScan
+		}
+		s, err := db.Status(ctx, url)
+		if err != nil {
+			return err
+		}
+		stat = append(stat, s)
+		return nil
+	}); err != nil {
+		return nil, err
+	} else if len(stat) == 0 {
+		return nil, storage.ErrKeyNotFound
+	}
+	return stat, nil
+}
+
 // Remove removes the status record for the specified URL.
 func (db *DB) Remove(ctx context.Context, url string) error {
 	return db.st.Delete(ctx, url)
@@ -64,11 +85,21 @@ func (db *DB) Scan(ctx context.Context, f func(string) error) error {
 // CheckOptions control optional features of repostory checks.  A nil
 // *CheckOptions is ready for use with default values.
 type CheckOptions struct {
+	// If set, append this label to the repository key.
+	Label string
+
 	// If set, use this reference name to resolve a target digest.
 	Reference string
 
 	// If set, attribute this prefix to the packages found in the repository.
 	Prefix string
+}
+
+func (o *CheckOptions) repoKey(base string) string {
+	if o == nil || o.Label == "" {
+		return base
+	}
+	return base + "@" + o.Label
 }
 
 func (o *CheckOptions) refName() string {
@@ -96,7 +127,8 @@ func (o *CheckOptions) prefix() string {
 // If url has the form <base>@@<tag>, the specified tag is applied.
 func (db *DB) Check(ctx context.Context, url string, opts *CheckOptions) (*CheckResult, error) {
 	url, tag := url, opts.refName()
-	stat, err := db.Status(ctx, url)
+	key := opts.repoKey(url)
+	stat, err := db.Status(ctx, key)
 	if err == storage.ErrKeyNotFound {
 		// This is a new repository; set up the initial state.
 		stat = &Status{
@@ -158,7 +190,7 @@ func (db *DB) Check(ctx context.Context, url string, opts *CheckOptions) (*Check
 	stat.ErrorCount = 0 // success resets the counter
 
 	// Write the new state back to storage.
-	if err := db.st.Store(ctx, url, stat); err != nil {
+	if err := db.st.Store(ctx, key, stat); err != nil {
 		return nil, err
 	}
 	return st, nil
