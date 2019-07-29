@@ -50,12 +50,18 @@ type Interface interface {
 	Delete(ctx context.Context, key string) error
 }
 
+// Store is the interface required from a blob store.
+type Store interface {
+	blob.Store
+	blob.Deleter
+}
+
 // NewBlob constructs a storage implementation around a blob.Store.
-func NewBlob(bs blob.Store) BlobStore { return BlobStore{bs: bs} }
+func NewBlob(bs Store) BlobStore { return BlobStore{bs: bs} }
 
 // BlobStore implements the package Storage interfaces.
 type BlobStore struct {
-	bs blob.Store
+	bs Store
 }
 
 // Load implements part of graph.Storage and poll.Storage
