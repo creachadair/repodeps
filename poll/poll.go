@@ -54,7 +54,7 @@ func (db *DB) Status(ctx context.Context, url string) (*Status, error) {
 func (db *DB) Tags(ctx context.Context, base string) ([]*Status, error) {
 	var stat []*Status
 	if err := db.st.Scan(ctx, base, func(url string) error {
-		if !strings.HasPrefix(url, base) {
+		if url != base && !strings.HasPrefix(url, base+"/") {
 			return storage.ErrStopScan
 		}
 		s, err := db.Status(ctx, url)
