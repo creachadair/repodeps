@@ -92,6 +92,9 @@ func main() {
 		log.Fatalf("Creating updater: %v", err)
 	}
 	m := metrics.New()
+	if writeToken != "" {
+		m.SetLabel("token", writeToken)
+	}
 	if opts.ReadOnly {
 		m.SetLabel("mode", "read-only")
 	} else {
