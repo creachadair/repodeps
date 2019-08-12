@@ -1,7 +1,7 @@
 # The base build image with Go and git, so we can use go get.
 FROM golang:1.12-alpine AS build
 RUN apk add --no-cache git # so we can use "go get"
-ENV GO111MODULE=on
+ENV GO111MODULE=on GOPROXY=https://proxy.golang.org
 WORKDIR /build
 COPY . .
 RUN go build ./tools/depserver
