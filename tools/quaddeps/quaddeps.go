@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Program tripledpes compiles a graph into RDF triples.
+// Program quaddeps compiles a graph into RDF triples.
 package main
 
 import (
