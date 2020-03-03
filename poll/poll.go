@@ -309,14 +309,18 @@ func FixRepoURL(s string) string {
 
 // CleanRepoURL removes protocol and format tags from a repository URL.
 func CleanRepoURL(url string) string {
+	if parts := strings.SplitN(url, "://", 2); len(parts) == 2 {
+		url = parts[1] // discard http:// or https:// or ssh://
+	}
+
+	// N.B. Do this AFTER stripping the protocol to handle remotes
+	// with a format like ssh://git@github.com:user/repo.git
 	if trim := strings.TrimPrefix(url, "git@"); trim != url {
 		parts := strings.SplitN(trim, ":", 2)
 		url = parts[0]
 		if len(parts) == 2 {
 			url += "/" + parts[1]
 		}
-	} else if parts := strings.SplitN(url, "://", 2); len(parts) == 2 {
-		url = parts[1] // discard http:// or https://
 	}
 	return strings.TrimSuffix(url, ".git")
 }
