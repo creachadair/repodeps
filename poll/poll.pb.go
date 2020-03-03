@@ -174,7 +174,9 @@ func init() {
 	proto.RegisterType((*Status_Update)(nil), "poll.Status.Update")
 }
 
-func init() { proto.RegisterFile("poll.proto", fileDescriptor_5d64382c74eeea90) }
+func init() {
+	proto.RegisterFile("poll.proto", fileDescriptor_5d64382c74eeea90)
+}
 
 var fileDescriptor_5d64382c74eeea90 = []byte{
 	// 279 bytes of a gzipped FileDescriptorProto

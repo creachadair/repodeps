@@ -6,9 +6,9 @@ import (
 	"io"
 
 	"bitbucket.org/creachadair/stringset"
-	"github.com/cayleygraph/cayley/quad"
-	"github.com/cayleygraph/cayley/quad/nquads"
-	"github.com/cayleygraph/cayley/voc/rdf"
+	"github.com/cayleygraph/quad"
+	"github.com/cayleygraph/quad/nquads"
+	"github.com/cayleygraph/quad/voc/rdf"
 )
 
 const (

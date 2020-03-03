@@ -198,7 +198,9 @@ func init() {
 	proto.RegisterType((*Row_File)(nil), "graph.Row.File")
 }
 
-func init() { proto.RegisterFile("graph.proto", fileDescriptor_3e4c656902fc0e6b) }
+func init() {
+	proto.RegisterFile("graph.proto", fileDescriptor_3e4c656902fc0e6b)
+}
 
 var fileDescriptor_3e4c656902fc0e6b = []byte{
 	// 296 bytes of a gzipped FileDescriptorProto
