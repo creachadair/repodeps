@@ -8,3 +8,4 @@ cd ..
 
 docker build -t creachadair/deps-crawler --target=crawler -f $df .
 docker build -t creachadair/deps-server --target=server -f $df .
+docker image prune -f
