@@ -1,5 +1,6 @@
 # The base build image with Go and git, so we can use go get.
 FROM golang:1.14-alpine AS build
+RUN apk add --no-cache build-base
 WORKDIR /build
 COPY . .
 RUN go build -ldflags "-w -s" \
