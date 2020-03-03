@@ -3,19 +3,17 @@ FROM golang:1.14-alpine AS build
 RUN apk add --no-cache build-base
 WORKDIR /build
 COPY . .
-RUN go build -ldflags "-w -s" \
-	-o ./jcall github.com/creachadair/jrpc2/cmd/jcall
-RUN go build -ldflags "-w -s" \
-	-o ./depserver ./tools/depserver
+RUN go build -ldflags "-w -s" -o ./crawldeps ./tools/crawldeps
+RUN go build -ldflags "-w -s" -o ./depserver ./tools/depserver
 
 # The crawler.
 FROM alpine:latest AS crawler
-ENV SERVER= LOGDIR= SLEEPTIME=
-VOLUME /logs
-WORKDIR /crawl
-COPY --from=build /build/jcall .
-COPY ./docker/run-crawler.sh .
-CMD ./run-crawler.sh
+ENV SERVER= INTERVAL= SAMPLE_RATE=
+COPY --from=build /build/crawldeps .
+CMD ./crawldeps \
+	-address "$SERVER" \
+	-interval "$INTERVAL" \
+	-sample-rate "$SAMPLE_RATE"
 
 # The server.
 FROM alpine:latest AS server

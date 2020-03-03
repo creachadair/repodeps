@@ -23,9 +23,8 @@ docker run \
        --detach \
        --name deps-crawler \
        --network ${net} \
-       -v ${logs_volume}:/logs \
        --env SERVER=deps-server:${port} \
-       --env SLEEPTIME=600 \
-       --env FRACTION=0.2 \
+       --env INTERVAL=10m \
+       --env SAMPLE_RATE=0.2 \
        --env DEPSERVER_WRITE_TOKEN=${access_token} \
        ${image}
