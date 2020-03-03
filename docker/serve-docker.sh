@@ -27,11 +27,13 @@ docker run \
        --init \
        --name deps-server \
        --network ${net} \
-       -v ${root}:/data \
+       -v ${graph_volume}:/data/graph-db \
+       -v ${repo_volume}:/data/repo-db \
+       -v ${work_volume}:/data/tmp \
        -p 127.0.0.1:${port}:${port} \
        --env GRAPH_DB=/data/graph-db \
        --env REPO_DB=/data/repo-db \
        --env WORKDIR=/data/tmp \
        --env ADDRESS=0.0.0.0:${port} \
-       --env DEPSERVER_WRITE_TOKEN=37F23ABF-0D81-4B51-8D14-BE8A01ACDDE0 \
+       --env DEPSERVER_WRITE_TOKEN=${access_token} \
        ${image}
