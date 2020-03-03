@@ -18,6 +18,7 @@ package client
 
 import (
 	"context"
+	"fmt"
 	"net"
 
 	"github.com/creachadair/jrpc2"
@@ -32,6 +33,7 @@ import (
 type Client struct {
 	cli    *jrpc2.Client
 	notes  chan *jrpc2.Request
+	token  string
 	cancel func()
 }
 
@@ -65,6 +67,23 @@ func Dial(ctx context.Context, addr string) (*Client, error) {
 		notes:  notes,
 		cancel: cancel,
 	}, nil
+}
+
+// SetToken sets a write token that will be passed to the server during
+// requests that modify data.
+func (c *Client) SetToken(token string) { c.token = token }
+
+// Receive calls f with each server notification received by c as long as ctx
+// is active. Calls to f are synchronous with request processing.
+func (c *Client) Receive(ctx context.Context, f func(*jrpc2.Request)) {
+	for {
+		select {
+		case <-ctx.Done():
+			return // the request is done; don't accept any more pushes
+		case req := <-c.notes:
+			f(req)
+		}
+	}
 }
 
 // Close shuts down the client, terminating any pending calls.
@@ -147,6 +166,34 @@ func (c *Client) RepoStatus(ctx context.Context, repo string) (*service.RepoStat
 	if err := c.cli.CallResult(ctx, "RepoStatus", &service.RepoStatusReq{
 		Repository: repo,
 	}, &rsp); err != nil {
+		return nil, err
+	}
+	return &rsp, nil
+}
+
+// Scan calls the eponymous method of the service. If the server requires a
+// write token, the caller must provide one via SetToken.
+func (c *Client) Scan(ctx context.Context, req *service.ScanReq) (*service.ScanRsp, error) {
+	ctx, err := jctx.WithMetadata(ctx, c.token)
+	if err != nil {
+		return nil, fmt.Errorf("write token: %v", err)
+	}
+	var rsp service.ScanRsp
+	if err := c.cli.CallResult(ctx, "Scan", req, &rsp); err != nil {
+		return nil, err
+	}
+	return &rsp, nil
+}
+
+// Rank calls the eponymous method of the service. If the server requires a
+// write token, the caller must provide one via SetToken.
+func (c *Client) Rank(ctx context.Context, req *service.RankReq) (*service.RankRsp, error) {
+	ctx, err := jctx.WithMetadata(ctx, c.token)
+	if err != nil {
+		return nil, fmt.Errorf("write token: %v", err)
+	}
+	var rsp service.RankRsp
+	if err := c.cli.CallResult(ctx, "Rank", req, &rsp); err != nil {
 		return nil, err
 	}
 	return &rsp, nil
