@@ -59,36 +59,8 @@ existing ones.
    | jq -r '.[]|select(.fork|not).html_url' > repos.txt
    ```
 
-2. [optional] Fetch the repositories. For our original experiment, we did this
-   using the [Borges](https://github.com/src-d/borges) tool:
-
-   ```shell
-   export GITHUB_TOKEN=<token-string>  # recommended, because rate limits
-
-   mkdir ~/crawl
-
-   borges pack \
-      --workers=0 \
-      --log-level=info \
-      --root-repositories-dir=$HOME/crawl/siva \
-      --temp-dir=$HOME/crawl/tmp \
-      repos.txt
-   ```
-
-   Depending how big your seed list is, this may take a while. Repositories
-   that require authentication will be skipped. If you are starting from a
-   smallish set of repositories, you probably don't need to do this step.
-
-
-3. Extract dependency information into a database. If you used `borges` to
-   fetch the repositories as in step (2), you can run:
-
-   ```shell
-   find ~/crawl/siva -type f -name '*.siva' -print \
-   | repodeps -stdin -sourcehash -import-comments -store "$REPODEPS_ADDR"
-   ```
-
-   If, instead, you have a list of repository URLs as in step (1), use:
+2. Extract dependency information into a database.  Given a list of repository
+   URLs as in step (1), use:
 
    ```shell
    xargs -I@ jcall -c "$REPODEPS_ADDR" Update '{"repository":"@"}' < repos.txt
