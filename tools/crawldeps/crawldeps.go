@@ -69,9 +69,10 @@ func main() {
 	sig := make(chan os.Signal, 2)
 	signal.Notify(sig, os.Interrupt, syscall.SIGTERM)
 	go func() {
-		log.Printf("Received signal: %v; shutting down", <-sig)
-		cancel()
+		log.Printf("Received signal: %v; shutting down in 2 seconds", <-sig)
 		signal.Stop(sig)
+		time.Sleep(2 * time.Second) // give in-flight requests time to cancel
+		cancel()
 	}()
 	ticker := time.NewTicker(*pollInterval)
 
