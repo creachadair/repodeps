@@ -32,7 +32,7 @@ import (
 )
 
 var (
-	address = flag.String("address", os.Getenv("REPODEPS_ADDR"), "Service address")
+	address = flag.String("address", os.Getenv("DEPSERVER_ADDR"), "Service address")
 
 	repoPath   = flag.String("repo", "", "Path to local repository to analyze")
 	filterSame = flag.Bool("filter-same-repo", false, "Exclude dependencies from the same repository")

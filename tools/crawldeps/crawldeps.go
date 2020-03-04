@@ -34,7 +34,7 @@ import (
 )
 
 var (
-	address      = flag.String("address", os.Getenv("REPODEPS_ADDR"), "Service address")
+	address      = flag.String("address", os.Getenv("DEPSERVER_ADDR"), "Service address")
 	pollInterval = flag.Duration("interval", 720*time.Second, "Poll interval")
 	sampleRate   = flag.Float64("sample-rate", 0.1, "Sampling rate for updates")
 )

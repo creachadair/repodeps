@@ -28,7 +28,7 @@ import (
 	"github.com/creachadair/repodeps/tools"
 )
 
-var storePath = flag.String("store", os.Getenv("REPODEPS_DB"), "Storage path (required)")
+var storePath = flag.String("store", os.Getenv("DEPSERVER_DB"), "Storage path (required)")
 
 func main() {
 	flag.Parse()

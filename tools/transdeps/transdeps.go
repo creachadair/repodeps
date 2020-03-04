@@ -30,7 +30,7 @@ import (
 )
 
 var (
-	address = flag.String("address", os.Getenv("REPODEPS_ADDR"), "Service address")
+	address = flag.String("address", os.Getenv("DEPSERVER_ADDR"), "Service address")
 
 	noStdLib = flag.Bool("no-stdlib", false, "Filter out standard library packages")
 )

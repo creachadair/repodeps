@@ -33,7 +33,7 @@ import (
 )
 
 var (
-	address = flag.String("address", os.Getenv("REPODEPS_ADDR"), "Service address")
+	address = flag.String("address", os.Getenv("DEPSERVER_ADDR"), "Service address")
 
 	doReadStdin   = flag.Bool("stdin", false, "Read package names from stdin")
 	doFilterKnown = flag.Bool("filter-known", false, "Filter out known repositories")

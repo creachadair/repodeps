@@ -28,7 +28,7 @@ import (
 )
 
 var (
-	graphDB    = flag.String("graph-db", os.Getenv("REPODEPS_DB"), "Graph database path (required)")
+	graphDB    = flag.String("graph-db", os.Getenv("DEPSERVER_DB"), "Graph database path (required)")
 	outputPath = flag.String("output", "", "Output storage path (optional)")
 )
 

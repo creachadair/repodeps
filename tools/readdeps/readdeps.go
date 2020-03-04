@@ -29,7 +29,7 @@ import (
 )
 
 var (
-	address = flag.String("address", os.Getenv("REPODEPS_ADDR"), "Service address")
+	address = flag.String("address", os.Getenv("DEPSERVER_ADDR"), "Service address")
 
 	doCountOnly  = flag.Bool("count", false, "Count the number of matching packages")
 	doKeysOnly   = flag.Bool("keys", false, "Print only import paths, not full rows")

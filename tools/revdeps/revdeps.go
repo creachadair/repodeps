@@ -30,7 +30,7 @@ import (
 )
 
 var (
-	address    = flag.String("address", os.Getenv("REPODEPS_ADDR"), "Service address")
+	address    = flag.String("address", os.Getenv("DEPSERVER_ADDR"), "Service address")
 	countOnly  = flag.Bool("count", false, "Count the number of matching dependencies")
 	filterSame = flag.Bool("filter-same-repo", false, "Exclude dependencies from the same repository")
 	filterDom  = flag.Bool("domain-only", false, "Exclude local and intrinsic imports")

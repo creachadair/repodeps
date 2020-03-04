@@ -34,7 +34,7 @@ import (
 var (
 	limit     = flag.Int("limit", 0, "Show only this many top order statistics")
 	minCount  = flag.Int("min", 0, "Show only domains with at least this many packages")
-	storePath = flag.String("store", os.Getenv("REPODEPS_DB"), "Storage path (required)")
+	storePath = flag.String("store", os.Getenv("DEPSERVER_DB"), "Storage path (required)")
 )
 
 func main() {

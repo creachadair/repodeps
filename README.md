@@ -29,8 +29,8 @@ JSON-RPC requests to `depserver`. To set up a server, choose an address (either
 a host:port pair or a Unix-domain socket), and run:
 
 ```
-export REPODEPS_ADDR=$TMPDIR/depserver.sock
-depserver -address $REPODEPS_ADDR -graph-db path/to/graphdb -repo-db path/to/repodb
+export DEPSERVER_ADDR=$TMPDIR/depserver.sock
+depserver -address $DEPSERVER_ADDR -graph-db path/to/graphdb -repo-db path/to/repodb
 ```
 
 This will create empty databases if they do not already exist, or re-open
@@ -63,7 +63,7 @@ existing ones.
    URLs as in step (1), use:
 
    ```shell
-   xargs -I@ jcall -c "$REPODEPS_ADDR" Update '{"repository":"@"}' < repos.txt
+   xargs -I@ jcall -c "$DEPSERVER_ADDR" Update '{"repository":"@"}' < repos.txt
    ```
 
    This will be slow if the list is very long, but fine for a few dozen.
@@ -83,7 +83,7 @@ existing ones.
    authentication, or if there are other issues cloning the repository.
 
    ```shell
-   xargs -I@ jcall -c "$REPODEPS_ADDR" Update '{"repository":"@"}' < missing.txt
+   xargs -I@ jcall -c "$DEPSERVER_ADDR" Update '{"repository":"@"}' < missing.txt
    ```
 
    **Be warned**, however, that programs in the wild often have very weird
@@ -102,7 +102,7 @@ To scan all the repositories currently mentioned by the graph to check for
 updates:
 
 ```shell
-jcall -c "$REPODEPS_ADDR" Scan '{"logUpdates":true, "logErrors":true}'
+jcall -c "$DEPSERVER_ADDR" Scan '{"logUpdates":true, "logErrors":true}'
 ```
 
 This may be rerun as often as desired; the repository database keeps track of
@@ -119,7 +119,7 @@ The standard library packages follow different rules. To index them:
 
 ```shell
 git clone https://github.com/golang/go
-repodeps -store "$REPODEPS_ADDR" -stdlib -trim-repo -import-comments=0 -sourcehash=0 ./go/src
+repodeps -store "$DEPSERVER_ADDR" -stdlib -trim-repo -import-comments=0 -sourcehash=0 ./go/src
 ```
 
 Generally these only need to be reindexed when there is a new release.
@@ -130,7 +130,7 @@ Generally these only need to be reindexed when there is a new release.
 To compute or re-compute ranking stats,
 
 ```shell
-jcall -c "$REPODEPS_ADDR" Rank '{"logProgress": true, "update": true}'
+jcall -c "$DEPSERVER_ADDR" Rank '{"logProgress": true, "update": true}'
 ```
 
 ## Converting to Other Formats

@@ -34,7 +34,7 @@ import (
 )
 
 var (
-	address = flag.String("address", os.Getenv("REPODEPS_ADDR"), "Service address")
+	address = flag.String("address", os.Getenv("DEPSERVER_ADDR"), "Service address")
 
 	useIDFile  = flag.String("ids", "", "Use integer IDs for imports and write them to this file")
 	domainOnly = flag.Bool("domain-only", false, "Skip packages without an import domain")
