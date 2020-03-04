@@ -3,5 +3,4 @@
 docker/Dockerfile
 docker/build.sh
 docker/crawl-docker.sh
-docker/serve-local.sh
 docker/serve-docker.sh
