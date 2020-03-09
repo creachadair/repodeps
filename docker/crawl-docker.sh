@@ -4,9 +4,10 @@ readonly image=creachadair/deps-crawler:latest
 . "$(dirname $0)/config.sh"
 
 case "$1" in
-    (reset)
+    (reset|stop)
 	docker stop deps-crawler
 	docker rm deps-crawler
+	if [[ "$1" = stop ]] ; then exit 0 ; fi
 	;;
     ("")
 	# OK
