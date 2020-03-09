@@ -25,14 +25,13 @@ import (
 	"path/filepath"
 
 	"github.com/creachadair/repodeps/client"
-	"github.com/creachadair/repodeps/deps"
 	"github.com/creachadair/repodeps/service"
 )
 
 var (
 	address = flag.String("address", os.Getenv("DEPSERVER_ADDR"), "Service address")
 
-	base = service.UpdateReq{Options: new(deps.Options)}
+	base service.UpdateReq
 )
 
 func init() {
@@ -52,7 +51,6 @@ Options:
 	flag.BoolVar(&base.CheckOnly, "check", false, "Only check repository state; do not update")
 	flag.BoolVar(&base.Reset, "reset", false, "Remove existing packages before update")
 	flag.BoolVar(&base.Force, "force", false, "Force update even if up-to-date")
-	flag.BoolVar(&base.Options.StandardLibrary, "stdlib", false, "Treat packages as standard libraries")
 }
 
 func main() {
