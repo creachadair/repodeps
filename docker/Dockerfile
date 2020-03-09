@@ -1,6 +1,7 @@
-# The base build image with Go and git, so we can use go get.
+# The base build image. Because the server depends on modules that require cgo,
+# a stock Go image is not sufficient.
 FROM golang:1.14-alpine AS build
-RUN apk add --no-cache build-base
+RUN apk add --no-cache build-base # for cgo builds (badger)
 WORKDIR /build
 COPY . .
 RUN go build -ldflags "-w -s" -o ./crawldeps ./tools/crawldeps
