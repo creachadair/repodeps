@@ -4,11 +4,10 @@ readonly image=creachadair/deps-server:latest
 . "$(dirname $0)/config.sh"
 
 case "$1" in
-    (reset)
+    (reset|stop)
 	docker stop deps-server
 	docker rm deps-server
-	docker network rm ${net}
-	docker network create --driver=bridge ${net}
+	if [[ "$1" = stop ]] ; then exit 0 ; fi
 	;;
     ("")
 	# OK
@@ -18,6 +17,8 @@ case "$1" in
 	exit 2
 	;;
 esac
+docker network create --driver=bridge ${net} 2>/dev/null &&
+    echo "NOTE: Created bridge network ${net}"
 
 # N.B. The write token is for safety, not security.
 set -x
