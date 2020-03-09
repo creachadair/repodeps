@@ -199,4 +199,18 @@ func (c *Client) Rank(ctx context.Context, req *service.RankReq) (*service.RankR
 	return &rsp, nil
 }
 
+// Update calls the eponymous method of the service. If the server requires a
+// write token, the caller must provide one via SetToken.
+func (c *Client) Update(ctx context.Context, req *service.UpdateReq) (*service.UpdateRsp, error) {
+	ctx, err := jctx.WithMetadata(ctx, c.token)
+	if err != nil {
+		return nil, fmt.Errorf("write token: %v", err)
+	}
+	var rsp service.UpdateRsp
+	if err := c.cli.CallResult(ctx, "Update", req, &rsp); err != nil {
+		return nil, err
+	}
+	return &rsp, nil
+}
+
 // TODO: Implement the rest of the methods.
