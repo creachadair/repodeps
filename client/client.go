@@ -49,7 +49,7 @@ func Dial(ctx context.Context, addr string) (*Client, error) {
 
 	// Get a cancellable but detached context to control the notifier.
 	ctx, cancel := context.WithCancel(context.Background())
-	ch := channel.RawJSON(conn, conn)
+	ch := channel.Line(conn, conn)
 	notes := make(chan *jrpc2.Request)
 	return &Client{
 		cli: jrpc2.NewClient(ch, &jrpc2.ClientOptions{

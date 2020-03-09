@@ -27,6 +27,7 @@ import (
 	"time"
 
 	"github.com/creachadair/jrpc2"
+	"github.com/creachadair/jrpc2/channel"
 	"github.com/creachadair/jrpc2/handler"
 	"github.com/creachadair/jrpc2/jctx"
 	"github.com/creachadair/jrpc2/metrics"
@@ -101,6 +102,7 @@ func main() {
 		m.SetLabel("mode", "read-write")
 	}
 	if err := server.Loop(lst, handler.NewService(u), &server.LoopOptions{
+		Framing: channel.Line,
 		ServerOptions: &jrpc2.ServerOptions{
 			AllowPush:     true,
 			DecodeContext: jctx.Decode,
