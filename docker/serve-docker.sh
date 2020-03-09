@@ -9,11 +9,11 @@ case "$1" in
 	docker rm deps-server
 	if [[ "$1" = stop ]] ; then exit 0 ; fi
 	;;
-    ("")
+    (""|start)
 	# OK
 	;;
     (*)
-	echo "Usage: $(basename $0) [reset]" 1>&2
+	echo "Usage: $(basename $0) [start|stop|reset]" 1>&2
 	exit 2
 	;;
 esac
