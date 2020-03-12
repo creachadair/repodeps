@@ -35,7 +35,7 @@ import (
 	"github.com/creachadair/repodeps/storage"
 	"github.com/creachadair/repodeps/tools"
 	"github.com/creachadair/taskgroup"
-	"github.com/golang/protobuf/jsonpb"
+	"google.golang.org/protobuf/encoding/protojson"
 )
 
 var (
@@ -157,16 +157,13 @@ func writeReposDB(ctx context.Context, g *graph.Graph, repos []*deps.Repo) error
 }
 
 func writeReposJSON(ctx context.Context, path string, repos []*deps.Repo) error {
-	var enc jsonpb.Marshaler
 	var buf bytes.Buffer
 	buf.WriteByte('[')
 	for i, repo := range repos {
 		if i > 0 {
 			buf.WriteByte(',')
 		}
-		if err := enc.Marshal(&buf, repo); err != nil {
-			return err
-		}
+		buf.WriteString(protojson.Format(repo))
 	}
 	buf.WriteString("]\n")
 	out.Lock()

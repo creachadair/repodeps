@@ -20,8 +20,8 @@ import (
 	"errors"
 
 	"github.com/creachadair/ffs/blob"
-	"github.com/golang/protobuf/proto"
 	"golang.org/x/xerrors"
+	"google.golang.org/protobuf/proto"
 )
 
 var (

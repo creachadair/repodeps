@@ -4,6 +4,8 @@ syntax = "proto3";
 
 package graph;
 
+option go_package = '.;graph';
+
 // A Row is a single row of the dependency graph adjacency list.
 message Row {
   // The simple name and import path of the package whose row this is.
