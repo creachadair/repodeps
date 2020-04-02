@@ -9,7 +9,7 @@ require (
 	github.com/cayleygraph/quad v1.2.1
 	github.com/creachadair/badgerstore v0.0.6
 	github.com/creachadair/ffs v0.0.0-20200312020635-a8a4e761bb52
-	github.com/creachadair/jrpc2 v0.6.1
+	github.com/creachadair/jrpc2 v0.8.0
 	github.com/creachadair/taskgroup v0.2.0
 	github.com/cznic/mathutil v0.0.0-20181122101859-297441e03548 // indirect
 	github.com/dgraph-io/badger/v2 v2.0.2 // indirect
@@ -28,6 +28,7 @@ require (
 	github.com/remyoudompheng/bigfft v0.0.0-20190728182440-6a916e37a237 // indirect
 	golang.org/x/crypto v0.0.0-20200311171314-f7b00557c8c4 // indirect
 	golang.org/x/net v0.0.0-20200301022130-244492dfa37a // indirect
+	golang.org/x/sync v0.0.0-20200317015054-43a5402ce75a // indirect
 	golang.org/x/sys v0.0.0-20200302150141-5c8b2ff67527 // indirect
 	golang.org/x/tools v0.0.0-20200312194400-c312e98713c2 // indirect
 	golang.org/x/xerrors v0.0.0-20191204190536-9bdfabe68543

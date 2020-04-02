@@ -101,7 +101,8 @@ func main() {
 	} else {
 		m.SetLabel("mode", "read-write")
 	}
-	if err := server.Loop(lst, handler.NewService(u), &server.LoopOptions{
+	svc := server.NewStatic(handler.NewService(u))
+	if err := server.Loop(lst, svc, &server.LoopOptions{
 		Framing: channel.Line,
 		ServerOptions: &jrpc2.ServerOptions{
 			AllowPush:     true,
