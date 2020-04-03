@@ -1,5 +1,7 @@
 #!/bin/sh
 
+# Build the Docker images for the dependency server and crawler.
+
 readonly df=docker/Dockerfile
 
 set -e

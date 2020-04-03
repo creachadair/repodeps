@@ -1,4 +1,6 @@
-# Shared configuration.
+# Shared configuration for the build and starter scripts.
+# This file is sourced by those scripts.
+
 readonly net=deps-service
 readonly port=9735
 readonly graph_volume=deps-graph-db

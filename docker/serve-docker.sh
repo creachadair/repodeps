@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# Start, stop, or reset the dependency server in Docker.
+# Usage: serve-docker.sh [start|stop|reset]
+
 readonly image=creachadair/deps-server:latest
 . "$(dirname $0)/config.sh"
 

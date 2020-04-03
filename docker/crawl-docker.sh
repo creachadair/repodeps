@@ -1,5 +1,8 @@
 #!/bin/sh
 
+# Start, stop, or reset the dependency crawler in Docker.
+# Usage: crawl-docker.sh [start|stop|reset]
+
 readonly image=creachadair/deps-crawler:latest
 . "$(dirname $0)/config.sh"
 
