@@ -64,6 +64,8 @@ github.com/creachadair/ffs v0.0.0-20200609165809-11238299f31e h1:Ehi7DZzU8FqOUx5
 github.com/creachadair/ffs v0.0.0-20200609165809-11238299f31e/go.mod h1:oEexWZgJ/griBCJoIJz0OjFTSiKo2Y8EMo0hlQ+MWZc=
 github.com/creachadair/jrpc2 v0.8.1 h1:YX27WgtXa9v7g0kn3oYe7gmxt7e5M3miVgEgTXoTqcY=
 github.com/creachadair/jrpc2 v0.8.1/go.mod h1:yMFI6NwXGITWoWDEEdmZESIHp13SAuSkGCTBz9bSGBg=
+github.com/creachadair/jrpc2 v0.10.0 h1:mGfesLMmnbgFBqcbnowkn5CY1DTzl+S7lektnzFvJuE=
+github.com/creachadair/jrpc2 v0.10.0/go.mod h1:+3c/p6ON1SXme/oF6hX4/EODB+GIQ+e7FGPizh27VQQ=
 github.com/creachadair/staticfile v0.1.2/go.mod h1:a3qySzCIXEprDGxk6tSxSI+dBBdLzqeBOMhZ+o2d3pM=
 github.com/creachadair/taskgroup v0.2.0 h1:ekz6LTCIK5IiC+MBTy1XGqIvXLq18Hpw5S3/PLFKW8s=
 github.com/creachadair/taskgroup v0.2.0/go.mod h1:Sm24mgZhn5FscwtrzVkci2Lzi3uu4TshjR+T3hTtvaI=

@@ -131,7 +131,7 @@ func New(opts Options) (*Server, error) {
 			return f(ctx, key, arg)
 		}
 	} else {
-		u.log = jrpc2.ServerPush
+		u.log = jrpc2.PushNotify
 	}
 	openBadger := badgerstore.NewPath
 	if opts.ReadOnly {
