@@ -25,18 +25,17 @@ require (
 	github.com/karrick/godirwalk v1.15.6 // indirect
 	github.com/kr/text v0.2.0 // indirect
 	github.com/niemeyer/pretty v0.0.0-20200227124842-a10e7caefd8e // indirect
-	github.com/prometheus/client_golang v1.6.0 // indirect
-	github.com/prometheus/common v0.10.0 // indirect
-	github.com/prometheus/procfs v0.1.0 // indirect
+	github.com/prometheus/client_golang v1.7.1 // indirect
 	github.com/remyoudompheng/bigfft v0.0.0-20200410134404-eec4a21b6bb0 // indirect
 	github.com/rogpeppe/go-internal v1.6.0 // indirect
 	github.com/sirupsen/logrus v1.6.0 // indirect
 	github.com/spf13/cobra v1.0.0 // indirect
 	github.com/stretchr/testify v1.6.1 // indirect
 	github.com/tylertreat/BoomFilters v0.0.0-20200520150052-42a7b4300c0c // indirect
+	golang.org/x/crypto v0.0.0-20200709230013-948cd5f35899 // indirect
 	golang.org/x/net v0.0.0-20200707034311-ab3426394381 // indirect
 	golang.org/x/sys v0.0.0-20200720211630-cb9d2d5c5666 // indirect
-	golang.org/x/tools v0.0.0-20200609164405-eb789aa7ce50 // indirect
+	golang.org/x/tools v0.0.0-20200721213000-acdb8c158a35 // indirect
 	golang.org/x/xerrors v0.0.0-20191204190536-9bdfabe68543
 	google.golang.org/protobuf v1.25.0
 	gopkg.in/check.v1 v1.0.0-20200227125254-8fa46927fb4f // indirect
