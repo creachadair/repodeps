@@ -9,11 +9,11 @@ require (
 	github.com/cayleygraph/cayley v0.7.7
 	github.com/cayleygraph/quad v1.2.4
 	github.com/creachadair/badgerstore v0.0.6
-	github.com/creachadair/ffs v0.0.0-20200715185330-7d33c56e21df
-	github.com/creachadair/jrpc2 v0.10.0
+	github.com/creachadair/ffs v0.0.0-20200813060701-ae0d21c7a862
+	github.com/creachadair/jrpc2 v0.10.1
 	github.com/creachadair/taskgroup v0.2.0
 	github.com/cznic/mathutil v0.0.0-20181122101859-297441e03548 // indirect
-	github.com/dgraph-io/badger/v2 v2.0.3 // indirect
+	github.com/dgraph-io/badger/v2 v2.2007.1 // indirect
 	github.com/dgraph-io/ristretto v0.0.3 // indirect
 	github.com/dgryski/go-farm v0.0.0-20200201041132-a6ae2369ad13 // indirect
 	github.com/dlclark/regexp2 v1.2.0 // indirect
@@ -33,10 +33,10 @@ require (
 	github.com/stretchr/testify v1.6.1 // indirect
 	github.com/tylertreat/BoomFilters v0.0.0-20200520150052-42a7b4300c0c // indirect
 	golang.org/x/crypto v0.0.0-20200709230013-948cd5f35899 // indirect
-	golang.org/x/net v0.0.0-20200707034311-ab3426394381 // indirect
-	golang.org/x/sys v0.0.0-20200720211630-cb9d2d5c5666 // indirect
+	golang.org/x/net v0.0.0-20200822124328-c89045814202 // indirect
+	golang.org/x/sys v0.0.0-20200828194041-157a740278f4 // indirect
 	golang.org/x/tools v0.0.0-20200721213000-acdb8c158a35 // indirect
-	golang.org/x/xerrors v0.0.0-20191204190536-9bdfabe68543
+	golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1
 	google.golang.org/protobuf v1.25.0
 	gopkg.in/check.v1 v1.0.0-20200227125254-8fa46927fb4f // indirect
 	gopkg.in/yaml.v2 v2.3.0 // indirect
