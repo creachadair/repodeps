@@ -1,6 +1,6 @@
 # The base build image. Because the server depends on modules that require cgo,
 # a stock Go image is not sufficient.
-FROM golang:1.14-alpine AS build
+FROM golang:1.15-alpine AS build
 RUN apk add --no-cache build-base # for cgo builds (badger)
 WORKDIR /build
 COPY . .
