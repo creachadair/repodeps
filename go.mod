@@ -3,14 +3,14 @@ module github.com/creachadair/repodeps
 go 1.12
 
 require (
-	bitbucket.org/creachadair/stringset v0.0.8
+	bitbucket.org/creachadair/stringset v0.0.9
 	github.com/DataDog/zstd v1.4.5 // indirect
 	github.com/OneOfOne/xxhash v1.2.8 // indirect
 	github.com/cayleygraph/cayley v0.7.7
 	github.com/cayleygraph/quad v1.2.4
 	github.com/creachadair/badgerstore v0.0.6
 	github.com/creachadair/ffs v0.0.0-20200916045332-33ad94347b93
-	github.com/creachadair/jrpc2 v0.10.1
+	github.com/creachadair/jrpc2 v0.10.3
 	github.com/creachadair/taskgroup v0.2.0
 	github.com/cznic/mathutil v0.0.0-20181122101859-297441e03548 // indirect
 	github.com/dgraph-io/badger/v2 v2.2007.2 // indirect
