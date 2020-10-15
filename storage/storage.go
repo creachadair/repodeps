@@ -20,7 +20,6 @@ import (
 	"errors"
 
 	"github.com/creachadair/ffs/blob"
-	"golang.org/x/xerrors"
 	"google.golang.org/protobuf/proto"
 )
 
@@ -50,24 +49,18 @@ type Interface interface {
 	Delete(ctx context.Context, key string) error
 }
 
-// Store is the interface required from a blob store.
-type Store interface {
-	blob.Store
-	blob.Deleter
-}
-
 // NewBlob constructs a storage implementation around a blob.Store.
-func NewBlob(bs Store) BlobStore { return BlobStore{bs: bs} }
+func NewBlob(bs blob.Store) BlobStore { return BlobStore{bs: bs} }
 
 // BlobStore implements the package Storage interfaces.
 type BlobStore struct {
-	bs Store
+	bs blob.Store
 }
 
 // Load implements part of graph.Storage and poll.Storage
 func (s BlobStore) Load(ctx context.Context, key string, val proto.Message) error {
 	bits, err := s.bs.Get(ctx, key)
-	if xerrors.Is(err, blob.ErrKeyNotFound) {
+	if errors.Is(err, blob.ErrKeyNotFound) {
 		return ErrKeyNotFound
 	} else if err != nil {
 		return err
