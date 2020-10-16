@@ -9,7 +9,7 @@ require (
 	github.com/cayleygraph/cayley v0.7.7
 	github.com/cayleygraph/quad v1.2.4
 	github.com/creachadair/badgerstore v0.0.6
-	github.com/creachadair/ffs v0.0.0-20201015161306-487a09628da6
+	github.com/creachadair/ffs v0.0.0-20201016181435-0d4dccf55695
 	github.com/creachadair/jrpc2 v0.10.3
 	github.com/creachadair/taskgroup v0.2.0
 	github.com/cznic/mathutil v0.0.0-20181122101859-297441e03548 // indirect
