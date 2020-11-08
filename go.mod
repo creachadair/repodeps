@@ -7,8 +7,8 @@ require (
 	github.com/cayleygraph/cayley v0.7.7
 	github.com/cayleygraph/quad v1.2.4
 	github.com/creachadair/badgerstore v0.0.8
-	github.com/creachadair/ffs v0.0.0-20201103200711-69590edcdf03
-	github.com/creachadair/jrpc2 v0.10.3
+	github.com/creachadair/ffs v0.0.0-20201106211445-fbd5cb51780c
+	github.com/creachadair/jrpc2 v0.10.5
 	github.com/creachadair/taskgroup v0.2.1
 	github.com/cznic/mathutil v0.0.0-20181122101859-297441e03548 // indirect
 	github.com/dlclark/regexp2 v1.2.0 // indirect
@@ -26,7 +26,7 @@ require (
 	github.com/tylertreat/BoomFilters v0.0.0-20200520150052-42a7b4300c0c // indirect
 	golang.org/x/crypto v0.0.0-20201016220609-9e8e0b390897 // indirect
 	golang.org/x/net v0.0.0-20201031054903-ff519b6c9102 // indirect
-	golang.org/x/sys v0.0.0-20201101102859-da207088b7d1 // indirect
-	golang.org/x/tools v0.0.0-20201103235415-b653051172e4 // indirect
+	golang.org/x/sys v0.0.0-20201107080550-4d91cf3a1aaf // indirect
+	golang.org/x/tools v0.0.0-20201105220310-78b158585360 // indirect
 	google.golang.org/protobuf v1.25.0
 )
