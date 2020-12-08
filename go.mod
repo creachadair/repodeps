@@ -31,6 +31,6 @@ require (
 	golang.org/x/sync v0.0.0-20201207232520-09787c993a3a // indirect
 	golang.org/x/sys v0.0.0-20201207223542-d4d67f95c62d // indirect
 	golang.org/x/term v0.0.0-20201207232118-ee85cb95a76b // indirect
-	golang.org/x/tools v0.0.0-20201208194006-5737becde9d2 // indirect
+	golang.org/x/tools v0.0.0-20201208211828-de58e7c01d49 // indirect
 	google.golang.org/protobuf v1.25.0
 )
