@@ -28,7 +28,6 @@ import (
 
 	"github.com/creachadair/jrpc2"
 	"github.com/creachadair/jrpc2/channel"
-	"github.com/creachadair/jrpc2/handler"
 	"github.com/creachadair/jrpc2/jctx"
 	"github.com/creachadair/jrpc2/metrics"
 	"github.com/creachadair/jrpc2/server"
@@ -101,7 +100,7 @@ func main() {
 	} else {
 		m.SetLabel("mode", "read-write")
 	}
-	svc := server.NewStatic(handler.NewService(u))
+	svc := server.Static(u.Methods())
 	if err := server.Loop(lst, svc, &server.LoopOptions{
 		Framing: channel.Line,
 		ServerOptions: &jrpc2.ServerOptions{

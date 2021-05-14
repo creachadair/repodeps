@@ -29,6 +29,7 @@ import (
 	"github.com/creachadair/badgerstore"
 	"github.com/creachadair/jrpc2"
 	"github.com/creachadair/jrpc2/code"
+	"github.com/creachadair/jrpc2/handler"
 	"github.com/creachadair/repodeps/deps"
 	"github.com/creachadair/repodeps/graph"
 	"github.com/creachadair/repodeps/poll"
@@ -131,7 +132,9 @@ func New(opts Options) (*Server, error) {
 			return f(ctx, key, arg)
 		}
 	} else {
-		u.log = jrpc2.PushNotify
+		u.log = func(ctx context.Context, key string, arg interface{}) error {
+			return jrpc2.ServerFromContext(ctx).Notify(ctx, key, arg)
+		}
 	}
 	openBadger := badgerstore.NewPath
 	if opts.ReadOnly {
@@ -176,6 +179,20 @@ func (u *Server) Close() error {
 		return gerr
 	}
 	return rerr
+}
+
+// Methods returns a method assigner for u.
+func (u *Server) Methods() handler.Map {
+	return handler.Map{
+		"Match":      handler.New(u.Match),
+		"Rank":       handler.New(u.Rank),
+		"Remove":     handler.New(u.Remove),
+		"RepoStatus": handler.New(u.RepoStatus),
+		"Resolve":    handler.New(u.Resolve),
+		"Reverse":    handler.New(u.Reverse),
+		"Scan":       handler.New(u.Scan),
+		"Update":     handler.New(u.Update),
+	}
 }
 
 func (u *Server) pushLog(ctx context.Context, sel bool, key string, arg interface{}) {
