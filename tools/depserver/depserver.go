@@ -69,7 +69,7 @@ func main() {
 	if *serviceAddr == "" {
 		log.Fatal("You must provide a non-empty service -address")
 	}
-	lst, err := net.Listen(jrpc2.Network(*serviceAddr), *serviceAddr)
+	lst, err := net.Listen(jrpc2.Network(*serviceAddr))
 	if err != nil {
 		log.Fatalf("Listen %q: %v", *serviceAddr, err)
 	}

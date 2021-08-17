@@ -42,7 +42,8 @@ type Client struct {
 // operation of the resulting client.
 func Dial(ctx context.Context, addr string) (*Client, error) {
 	var d net.Dialer
-	conn, err := d.DialContext(ctx, jrpc2.Network(addr), addr)
+	net, addr := jrpc2.Network(addr)
+	conn, err := d.DialContext(ctx, net, addr)
 	if err != nil {
 		return nil, err
 	}
