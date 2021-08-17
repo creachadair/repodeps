@@ -10,14 +10,18 @@ require (
 	github.com/creachadair/badgerstore v0.0.8
 	github.com/creachadair/ffs v0.0.0-20210330135354-d2fe618a7bf6
 	github.com/creachadair/jrpc2 v0.20.0
-	github.com/creachadair/taskgroup v0.2.1
+	github.com/creachadair/taskgroup v0.3.0
 	github.com/cznic/mathutil v0.0.0-20181122101859-297441e03548 // indirect
+	github.com/dgraph-io/badger/v2 v2.2007.3 // indirect
+	github.com/dgraph-io/ristretto v0.1.0 // indirect
 	github.com/dlclark/regexp2 v1.2.0 // indirect
 	github.com/dop251/goja v0.0.0-20200526165454-f1752421c432 // indirect
 	github.com/go-sourcemap/sourcemap v2.1.3+incompatible // indirect
 	github.com/gobuffalo/packr/v2 v2.8.1 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
+	github.com/golang/glog v0.0.0-20210429001901-424d2337a529 // indirect
 	github.com/golang/protobuf v1.5.2
+	github.com/golang/snappy v0.0.4 // indirect
 	github.com/hidal-go/hidalgo v0.0.0-20201109092204-05749a6d73df // indirect
 	github.com/karrick/godirwalk v1.16.1 // indirect
 	github.com/prometheus/client_golang v1.10.0 // indirect
@@ -28,9 +32,9 @@ require (
 	github.com/spf13/cobra v1.1.3 // indirect
 	github.com/tylertreat/BoomFilters v0.0.0-20210315201527-1a82519a3e43 // indirect
 	golang.org/x/crypto v0.0.0-20210506145944-38f3c27a63bf // indirect
-	golang.org/x/net v0.0.0-20210508051633-16afe75a6701 // indirect
-	golang.org/x/sys v0.0.0-20210507161434-a76c4d0a0096 // indirect
+	golang.org/x/net v0.0.0-20210813160813-60bc85c4be6d // indirect
+	golang.org/x/sys v0.0.0-20210817190340-bfb29a6856f2 // indirect
 	golang.org/x/term v0.0.0-20210503060354-a79de5458b56 // indirect
 	golang.org/x/tools v0.1.0 // indirect
-	google.golang.org/protobuf v1.26.0
+	google.golang.org/protobuf v1.27.1
 )
