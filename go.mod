@@ -8,7 +8,7 @@ require (
 	github.com/cayleygraph/cayley v0.7.7
 	github.com/cayleygraph/quad v1.2.4
 	github.com/creachadair/badgerstore v0.0.8
-	github.com/creachadair/ffs v0.0.0-20210330135354-d2fe618a7bf6
+	github.com/creachadair/ffs v0.0.0-20210911191118-dafc412c971c
 	github.com/creachadair/jrpc2 v0.24.0
 	github.com/creachadair/taskgroup v0.3.0
 	github.com/cznic/mathutil v0.0.0-20181122101859-297441e03548 // indirect
@@ -21,7 +21,6 @@ require (
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/golang/glog v0.0.0-20210429001901-424d2337a529 // indirect
 	github.com/golang/protobuf v1.5.2
-	github.com/golang/snappy v0.0.4 // indirect
 	github.com/hidal-go/hidalgo v0.0.0-20201109092204-05749a6d73df // indirect
 	github.com/karrick/godirwalk v1.16.1 // indirect
 	github.com/prometheus/client_golang v1.10.0 // indirect
