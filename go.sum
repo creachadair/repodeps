@@ -97,8 +97,8 @@ github.com/creachadair/binpack v0.0.1/go.mod h1:zmlHeuQ87UnfV9tZuheYLABUqmtE71g5
 github.com/creachadair/ffs v0.0.0-20201015022807-e2e481d341ed/go.mod h1:eXGKRFZnZqcZHbEIulKJsE0MvgIeiYNACxsidH9eh2I=
 github.com/creachadair/ffs v0.0.0-20210911191118-dafc412c971c h1:CXyduTe27N/WrpEBkvLp+AFd+vJd7LGzC6fpByxx1bk=
 github.com/creachadair/ffs v0.0.0-20210911191118-dafc412c971c/go.mod h1:CSnP5V18bT/O59GgdLDcoir8FpeLjW7i8l6tOh+UMAE=
-github.com/creachadair/jrpc2 v0.24.0 h1:miPpdVKDyrk9URXBELTTgwqx8Rq1bjeFCjaQ+LawkpQ=
-github.com/creachadair/jrpc2 v0.24.0/go.mod h1:OaokvCiyGiCvI8hT/drVu2LJCFrqXR7hwuAYlsY3fDE=
+github.com/creachadair/jrpc2 v0.24.3 h1:mA3OUdSvkhEGLAACaQ/heUlLekPDuH0TIbKv9p7xo50=
+github.com/creachadair/jrpc2 v0.24.3/go.mod h1:w+GXZGc+NwsH0xsUOgeLBIIRM0jBOSTXhv28KaWGRZU=
 github.com/creachadair/staticfile v0.1.3/go.mod h1:a3qySzCIXEprDGxk6tSxSI+dBBdLzqeBOMhZ+o2d3pM=
 github.com/creachadair/taskgroup v0.3.0 h1:h42skPNcqhLndhhJvtlPyeNLhh+23gJ7TXOTnuwDVh4=
 github.com/creachadair/taskgroup v0.3.0/go.mod h1:Sm24mgZhn5FscwtrzVkci2Lzi3uu4TshjR+T3hTtvaI=
