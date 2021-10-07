@@ -8,7 +8,7 @@ require (
 	github.com/cayleygraph/quad v1.2.4
 	github.com/creachadair/badgerstore v0.0.8
 	github.com/creachadair/ffs v0.0.0-20211003042612-1fdb18aded4d
-	github.com/creachadair/jrpc2 v0.26.1
+	github.com/creachadair/jrpc2 v0.27.0
 	github.com/creachadair/taskgroup v0.3.1
 	github.com/cznic/mathutil v0.0.0-20181122101859-297441e03548 // indirect
 	github.com/dgraph-io/badger/v2 v2.2007.4 // indirect

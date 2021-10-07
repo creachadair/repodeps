@@ -100,9 +100,8 @@ func main() {
 	} else {
 		m.SetLabel("mode", "read-write")
 	}
-	svc := server.Static(u.Methods())
-	if err := server.Loop(lst, svc, &server.LoopOptions{
-		Framing: channel.Line,
+	acc := server.NetAccepter(lst, channel.Line)
+	if err := server.Loop(acc, server.Static(u.Methods()), &server.LoopOptions{
 		ServerOptions: &jrpc2.ServerOptions{
 			AllowPush:     true,
 			DecodeContext: jctx.Decode,
