@@ -62,7 +62,7 @@ func (u *Server) Update(ctx context.Context, req *UpdateReq) (*UpdateRsp, error)
 	if u.opts.ErrorLimit > 0 && out.Errors >= u.opts.ErrorLimit {
 		u.repoDB.Remove(ctx, out.Repository, out.Tag)
 		out.Removed = true
-		return nil, jrpc2.DataErrorf(code.SystemError, out, "removed after %d failures", out.Errors)
+		return nil, jrpc2.Errorf(code.SystemError, "removed after %d failures", out.Errors).WithData(out)
 	} else if req.CheckOnly {
 		return out, nil
 	}
@@ -86,7 +86,7 @@ func (u *Server) Update(ctx context.Context, req *UpdateReq) (*UpdateRsp, error)
 		np, err := u.cloneAndUpdate(ctx, res, u.opts.merge(req.Options))
 		out.NumPackages = np
 		if err != nil {
-			return nil, jrpc2.DataErrorf(code.SystemError, out, "update %s: %v", res.URL, err)
+			return nil, jrpc2.Errorf(code.SystemError, "update %s: %v", res.URL, err).WithData(out)
 		}
 	}
 	return out, nil

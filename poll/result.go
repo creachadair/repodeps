@@ -5,8 +5,6 @@ import (
 	"os"
 	"path/filepath"
 	"time"
-
-	"github.com/golang/protobuf/ptypes"
 )
 
 // CheckResult records the update status of a repository.
@@ -61,7 +59,7 @@ func ShouldCheck(stat *Status, min time.Duration) bool {
 		return true
 	}
 	now := time.Now()
-	then, _ := ptypes.Timestamp(stat.LastCheck)
+	then := stat.LastCheck.AsTime()
 
 	// Do not do an update within min after the last update.
 	if then.Add(min).After(now) {
@@ -74,8 +72,8 @@ func ShouldCheck(stat *Status, min time.Duration) bool {
 	}
 	// Compute the average time between updates and schedule one if it has been
 	// at least that long since the last.
-	first, _ := ptypes.Timestamp(stat.Updates[0].When)
-	last, _ := ptypes.Timestamp(stat.Updates[n-1].When)
+	first := stat.Updates[0].When.AsTime()
+	last := stat.Updates[n-1].When.AsTime()
 	avg := last.Sub(first) / time.Duration(n)
 	return then.Add(avg).Before(now)
 }

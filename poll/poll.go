@@ -17,7 +17,6 @@
 package poll
 
 import (
-	"bytes"
 	"context"
 	"encoding/hex"
 	"errors"
@@ -26,8 +25,8 @@ import (
 	"strings"
 
 	"github.com/creachadair/repodeps/storage"
-	"github.com/golang/protobuf/jsonpb"
-	"github.com/golang/protobuf/ptypes"
+	"google.golang.org/protobuf/encoding/protojson"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 //go:generate protoc --go_out=. poll.proto
@@ -193,7 +192,7 @@ func (db *DB) Check(ctx context.Context, url string, opts *CheckOptions) (*Check
 	}
 	stat.RefName = name
 	stat.Digest = digest
-	stat.LastCheck = ptypes.TimestampNow()
+	stat.LastCheck = timestamppb.Now()
 	stat.ErrorCount = 0 // success resets the counter
 
 	// Write the new state back to storage.
@@ -284,23 +283,11 @@ func runErr(err error) error {
 	return err
 }
 
-// MarshalJSON implements json.Marshaler for a Status by delegating to jsonpb.
-func (s *Status) MarshalJSON() ([]byte, error) {
-	// It is manifestly ridiculous that we have to do this.
-
-	var enc jsonpb.Marshaler
-	t, err := enc.MarshalToString(s)
-	if err != nil {
-		return nil, err
-	}
-	return []byte(t), nil
-}
+// MarshalJSON implements json.Marshaler for a Status by delegating to protojson.
+func (s *Status) MarshalJSON() ([]byte, error) { return protojson.Marshal(s) }
 
 // UnmarshalJSON implements json.Unmarshaler for a Status by delegating to jsonpb.
-func (s *Status) UnmarshalJSON(data []byte) error {
-	var dec jsonpb.Unmarshaler
-	return dec.Unmarshal(bytes.NewReader(data), s)
-}
+func (s *Status) UnmarshalJSON(data []byte) error { return protojson.Unmarshal(data, s) }
 
 // FixRepoURL ensures s has a valid protocol prefix for Git.
 func FixRepoURL(s string) string {

@@ -18,14 +18,13 @@
 package graph
 
 import (
-	"bytes"
 	"context"
 	"fmt"
 	"sort"
 
 	"github.com/creachadair/repodeps/deps"
 	"github.com/creachadair/repodeps/storage"
-	"github.com/golang/protobuf/jsonpb"
+	"google.golang.org/protobuf/encoding/protojson"
 )
 
 //go:generate protoc --go_out=. graph.proto
@@ -141,20 +140,8 @@ func (g *Graph) MatchImporters(ctx context.Context, match func(string) bool, f f
 	})
 }
 
-// MarshalJSON implements json.Marshaler for a Row by delegating to jsonpb.
-func (r *Row) MarshalJSON() ([]byte, error) {
-	// It is manifestly ridiculous that we have to do this.
-
-	var enc jsonpb.Marshaler
-	s, err := enc.MarshalToString(r)
-	if err != nil {
-		return nil, err
-	}
-	return []byte(s), nil
-}
+// MarshalJSON implements json.Marshaler for a Row by delegating to protojson.
+func (r *Row) MarshalJSON() ([]byte, error) { return protojson.Marshal(r) }
 
 // UnmarshalJSON implements json.Unmarshaler for a Row by delegating to jsonpb.
-func (r *Row) UnmarshalJSON(data []byte) error {
-	var dec jsonpb.Unmarshaler
-	return dec.Unmarshal(bytes.NewReader(data), r)
-}
+func (r *Row) UnmarshalJSON(data []byte) error { return protojson.Unmarshal(data, r) }

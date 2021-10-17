@@ -7,8 +7,8 @@ require (
 	github.com/cayleygraph/cayley v0.7.7
 	github.com/cayleygraph/quad v1.2.4
 	github.com/creachadair/badgerstore v0.0.8
-	github.com/creachadair/ffs v0.0.0-20211013230823-ae39e39f88f2
-	github.com/creachadair/jrpc2 v0.27.1
+	github.com/creachadair/ffs v0.0.0-20211017043302-4f39fad08f4b
+	github.com/creachadair/jrpc2 v0.28.0
 	github.com/creachadair/taskgroup v0.3.1
 	github.com/cznic/mathutil v0.0.0-20181122101859-297441e03548 // indirect
 	github.com/dgraph-io/badger/v2 v2.2007.4 // indirect
@@ -19,7 +19,7 @@ require (
 	github.com/gobuffalo/packr/v2 v2.8.1 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/golang/glog v1.0.0 // indirect
-	github.com/golang/protobuf v1.5.2
+	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/hidal-go/hidalgo v0.0.0-20201109092204-05749a6d73df // indirect
 	github.com/karrick/godirwalk v1.16.1 // indirect
 	github.com/prometheus/client_golang v1.11.0 // indirect
@@ -29,8 +29,8 @@ require (
 	github.com/sirupsen/logrus v1.8.1 // indirect
 	github.com/spf13/cobra v1.2.1 // indirect
 	github.com/tylertreat/BoomFilters v0.0.0-20210315201527-1a82519a3e43 // indirect
-	golang.org/x/net v0.0.0-20211013171255-e13a2654a71e // indirect
-	golang.org/x/sys v0.0.0-20211013075003-97ac67df715c // indirect
+	golang.org/x/net v0.0.0-20211015210444-4f30a5c0130f // indirect
+	golang.org/x/sys v0.0.0-20211015200801-69063c4bb744 // indirect
 	golang.org/x/term v0.0.0-20210927222741-03fcf44c2211 // indirect
 	golang.org/x/tools v0.1.7 // indirect
 	google.golang.org/protobuf v1.27.1

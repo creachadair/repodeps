@@ -10,7 +10,7 @@ import (
 	"github.com/creachadair/ffs/blob/memstore"
 	"github.com/creachadair/repodeps/poll"
 	"github.com/creachadair/repodeps/storage"
-	"github.com/golang/protobuf/proto"
+	"google.golang.org/protobuf/encoding/prototext"
 )
 
 func TestCheck(t *testing.T) {
@@ -65,5 +65,5 @@ func TestCheck(t *testing.T) {
 	if err := st.Load(ctx, url, &stat); err != nil {
 		t.Fatalf("Loading status: %v", err)
 	}
-	t.Logf("Status message:\n%s", proto.MarshalTextString(&stat))
+	t.Logf("Status message:\n%s", prototext.Format(&stat))
 }
