@@ -7,8 +7,8 @@ require (
 	github.com/cayleygraph/cayley v0.7.7
 	github.com/cayleygraph/quad v1.2.4
 	github.com/creachadair/badgerstore v0.0.9
-	github.com/creachadair/ffs v0.0.0-20211023173333-5576c74d3fee
-	github.com/creachadair/jrpc2 v0.28.1
+	github.com/creachadair/ffs v0.0.0-20211024191637-71e3a3b81cae
+	github.com/creachadair/jrpc2 v0.28.5
 	github.com/creachadair/taskgroup v0.3.1
 	github.com/cznic/mathutil v0.0.0-20181122101859-297441e03548 // indirect
 	github.com/dgraph-io/badger/v2 v2.2007.4 // indirect
@@ -30,7 +30,7 @@ require (
 	github.com/spf13/cobra v1.2.1 // indirect
 	github.com/tylertreat/BoomFilters v0.0.0-20210315201527-1a82519a3e43 // indirect
 	golang.org/x/net v0.0.0-20211020060615-d418f374d309 // indirect
-	golang.org/x/sys v0.0.0-20211023085530-d6a326fbbf70 // indirect
+	golang.org/x/sys v0.0.0-20211025201205-69cdffdb9359 // indirect
 	golang.org/x/term v0.0.0-20210927222741-03fcf44c2211 // indirect
 	golang.org/x/tools v0.1.7 // indirect
 	google.golang.org/protobuf v1.27.1
