@@ -20,7 +20,7 @@ import (
 	"crypto/sha256"
 	"go/build"
 	"io"
-	"io/ioutil"
+	"os"
 	"path/filepath"
 	"regexp"
 	"strings"
@@ -77,7 +77,7 @@ var modRE = regexp.MustCompile(`(?m)^ *module\s+(\S+)\s*$`)
 // ModuleName reports whether the specified directory contains a go.mod file,
 // and if so reports the module name declared therein.
 func ModuleName(path string) (string, bool) {
-	data, err := ioutil.ReadFile(filepath.Join(path, "go.mod"))
+	data, err := os.ReadFile(filepath.Join(path, "go.mod"))
 	if err != nil {
 		return "", false
 	}

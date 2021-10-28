@@ -23,7 +23,7 @@ import (
 	"encoding/csv"
 	"flag"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"log"
 	"os"
 
@@ -41,7 +41,7 @@ var (
 	skipNoDeps = flag.Bool("skip-no-deps", false, "Skip packages without any dependencies")
 
 	pathID = make(map[string]string) // :: import path → id
-	idFile = ioutil.Discard
+	idFile = io.Discard
 )
 
 func main() {

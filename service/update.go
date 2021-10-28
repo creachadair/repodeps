@@ -18,7 +18,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"os"
 
@@ -134,7 +133,7 @@ type UpdateRsp struct {
 }
 
 func (u *Server) cloneAndUpdate(ctx context.Context, res *poll.CheckResult, opts *deps.Options) (int, error) {
-	path, err := ioutil.TempDir(u.opts.WorkDir, res.Digest)
+	path, err := os.MkdirTemp(u.opts.WorkDir, res.Digest)
 	if err != nil {
 		return 0, fmt.Errorf("creating clone directory: %v", err)
 	}

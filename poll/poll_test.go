@@ -2,7 +2,6 @@ package poll_test
 
 import (
 	"context"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
@@ -36,7 +35,7 @@ func TestCheck(t *testing.T) {
 	}
 
 	// Verify that we can clone based on the status of the check.
-	tmp, err := ioutil.TempDir("", "clone")
+	tmp, err := os.MkdirTemp("", "clone")
 	if err != nil {
 		t.Fatalf("Creating temp dir: %v", err)
 	}
