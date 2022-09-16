@@ -21,7 +21,7 @@ import (
 	"fmt"
 	"go/build"
 	"io"
-	"io/ioutil"
+	"io/fs"
 	"log"
 	"os"
 	"os/exec"
@@ -193,8 +193,20 @@ func (v vfs) openFile(path string) (io.ReadCloser, error) {
 	return os.Open(v.fixPath(path))
 }
 
-func (v vfs) readDir(path string) ([]os.FileInfo, error) {
-	return ioutil.ReadDir(v.fixPath(path))
+func (v vfs) readDir(path string) ([]fs.FileInfo, error) {
+	des, err := os.ReadDir(v.fixPath(path))
+	if err != nil {
+		return nil, err
+	}
+	fss := make([]fs.FileInfo, len(des))
+	for i, de := range des {
+		fs, err := de.Info()
+		if err != nil {
+			return nil, err
+		}
+		fss[i] = fs
+	}
+	return fss, nil
 }
 
 func (v vfs) hasSubdir(root, dir string) (string, bool) {
